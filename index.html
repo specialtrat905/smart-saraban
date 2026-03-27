@@ -105,37 +105,44 @@ async function login() {
   // 2. ระบบดึงรายการหนังสือ (อ่าน logs.csv)
   async function loadLogs() {
   const tableBody = document.getElementById('bookData');
-  tableBody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">กำลังดึงข้อมูลล่าสุด...</td></tr>';
+  tableBody.innerHTML = '<tr><td colspan="3" class="text-center p-4"><div class="spinner-border text-success spinner-border-sm" role="status"></div> กำลังดึงข้อมูลจาก Google Sheets...</td></tr>';
+
+  // *** สำคัญ: ครูต้องใส่ URL Web App ของครูตรงนี้ครับ ***
+  const scriptUrl = "https://script.google.com/macros/s/AKfycbyr-ssiUkdM9LPbDujJO-uD0V7SbQsdyWAnUaFYbaVES5fqbPW4Nd231bta82Km1BMw9g/exec"; 
 
   try {
-    // เพิ่ม Timestamp เพื่อป้องกัน Browser จำค่าเก่า (Cache)
-    const response = await fetch(`https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/main/logs.csv?t=${new Date().getTime()}`);
-    const csvData = await response.text();
+    // ดึงข้อมูลจาก Google Sheets ผ่าน action=getLogs
+    const response = await fetch(`${scriptUrl}?action=getLogs`);
+    const allData = await response.json();
     
-    // แยกบรรทัดและตัดบรรทัดว่างทิ้ง
-    const rows = csvData.split('\n').filter(row => row.trim() !== "");
-    
-    // ถ้ามีแค่หัวตาราง หรือไม่มีข้อมูลเลย
-    if (rows.length <= 1) {
-      tableBody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">ไม่พบประวัติการส่งหนังสือ</td></tr>';
+    if (allData.error) {
+      tableBody.innerHTML = `<tr><td colspan="3" class="text-center text-danger">ผิดพลาด: ${allData.error}</td></tr>`;
       return;
     }
 
-    // ข้อมูลจริงเริ่มที่แถวที่ 2 (index 1) และเรียงจากใหม่ไปเก่า (reverse)
-    const dataRows = rows.slice(1).reverse(); 
+    // กรองข้อมูล: Admin เห็นหมด / ฝ่ายอื่นๆ เห็นเฉพาะของตัวเอง
+    const filteredData = allData.filter(row => {
+      if (currentUser.role === 'Admin') return true;
+      // ตรวจสอบคอลัมน์กลุ่มงาน (index 3) ให้ตรงกับ Role ของผู้ใช้
+      return String(row[3]).trim() === String(currentUser.role).trim();
+    });
 
-    const html = dataRows.map(row => {
-      // ใช้ Regex ในการแยกคอลัมน์ เพื่อรองรับกรณีชื่อไฟล์มีเครื่องหมายคอมมา
-      const col = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/); 
-      
-      if(col.length < 5) return ''; // ข้ามถ้าคอลัมน์ไม่ครบ
-      
+    if (filteredData.length === 0) {
+      tableBody.innerHTML = '<tr><td colspan="3" class="text-center text-muted p-4">ไม่พบรายการหนังสือ</td></tr>';
+      return;
+    }
+
+    const html = filteredData.map(row => {
+      // row[0]=วันที่, row[1]=ผู้ส่ง, row[2]=ชื่อไฟล์, row[4]=ลิงก์
       return `
         <tr>
-          <td style="font-size: 0.8rem; color: #666;">${col[0]}</td>
-          <td style="font-size: 0.9rem; font-weight: 500;">${col[2]}</td>
-          <td>
-            <button onclick="openDriveFile('${col[4]}')" class="btn btn-sm btn-outline-primary w-100">เปิดดู</button>
+          <td style="font-size: 0.75rem; color: #666; width: 25%;">${formatDate(row[0])}</td>
+          <td style="font-size: 0.85rem; font-weight: 500; width: 55%; word-break: break-all;">
+            ${row[2]}<br>
+            <small class="text-muted">ผู้ส่ง: ${row[1]}</small>
+          </td>
+          <td style="width: 20%;">
+            <button onclick="openDriveFile('${row[4]}')" class="btn btn-sm btn-primary w-100">เปิดดู</button>
           </td>
         </tr>
       `;
@@ -144,8 +151,19 @@ async function login() {
     tableBody.innerHTML = html;
   } catch (err) {
     console.error(err);
-    tableBody.innerHTML = '<tr><td colspan="3" class="text-center text-danger">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>';
+    tableBody.innerHTML = '<tr><td colspan="3" class="text-center text-danger p-4">เชื่อมต่อฐานข้อมูลไม่ได้ <br><small>ตรวจสอบการ Deploy ใน Apps Script นะครับ</small></td></tr>';
   }
+}
+
+// ฟังก์ชันแปลงวันที่ให้สวยงาม
+function formatDate(dateInput) {
+  if (!dateInput) return "";
+  try {
+    const d = new Date(dateInput);
+    if (isNaN(d.getTime())) return dateInput; 
+    return d.toLocaleDateString('th-TH', {day:'2-digit', month:'2-digit', year:'2-digit'}) + ' ' + 
+           d.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'});
+  } catch(e) { return dateInput; }
 }
 
 // เพิ่มฟังก์ชันเปิดไฟล์เพื่อให้รองรับลิ้งก์ Google Drive โดยตรง
@@ -174,7 +192,7 @@ function openDriveFile(url) {
       const fileData = e.target.result;
       
       // ใส่ URL ของ Web App (Google Apps Script) ที่ครู Deploy ไว้
-      const scriptUrl = "https://script.google.com/macros/s/AKfycbxHDkeUNc1mtOOJDM3_G8NRuEBT0oHU79twmgn7lo1bjtdXXxEVMkjGXmtyllDBJ9ix1Q/exec"; 
+      const scriptUrl = "https://script.google.com/macros/s/AKfycbyr-ssiUkdM9LPbDujJO-uD0V7SbQsdyWAnUaFYbaVES5fqbPW4Nd231bta82Km1BMw9g/exec"; 
       
       try {
         const response = await fetch(scriptUrl, {

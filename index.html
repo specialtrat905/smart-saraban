@@ -28,7 +28,7 @@
   <nav class="navbar nav-custom p-3 shadow-sm">
     <div class="container-fluid">
       <span class="fw-bold">ระบบ Smart Saraban : <span id="userDisplay"></span></span>
-      <button onclick="location.reload()" class="btn btn-sm btn-outline-light">ออก</button>
+      <button onclick="location.reload()" class="btn btn-sm btn-outline-light">ออกจากระบบ</button>
     </div>
   </nav>
 
@@ -104,21 +104,58 @@ async function login() {
 
   // 2. ระบบดึงรายการหนังสือ (อ่าน logs.csv)
   async function loadLogs() {
+  const tableBody = document.getElementById('bookData');
+  tableBody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">กำลังดึงข้อมูลล่าสุด...</td></tr>';
+
+  try {
+    // เพิ่ม Timestamp เพื่อป้องกัน Browser จำค่าเก่า (Cache)
     const response = await fetch(`https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/main/logs.csv?t=${new Date().getTime()}`);
     const csvData = await response.text();
-    const rows = csvData.split('\n').slice(1).reverse(); // เอาล่าสุดขึ้นก่อน
     
-    const html = rows.map(row => {
-      const col = row.split(',');
-      if(!col[0]) return '';
-      return `<tr>
-        <td><small>${col[0]}</small></td>
-        <td>${col[2]}</td>
-        <td><a href="${col[4]}" target="_blank" class="btn btn-sm btn-outline-primary">เปิด</a></td>
-      </tr>`;
+    // แยกบรรทัดและตัดบรรทัดว่างทิ้ง
+    const rows = csvData.split('\n').filter(row => row.trim() !== "");
+    
+    // ถ้ามีแค่หัวตาราง หรือไม่มีข้อมูลเลย
+    if (rows.length <= 1) {
+      tableBody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">ไม่พบประวัติการส่งหนังสือ</td></tr>';
+      return;
+    }
+
+    // ข้อมูลจริงเริ่มที่แถวที่ 2 (index 1) และเรียงจากใหม่ไปเก่า (reverse)
+    const dataRows = rows.slice(1).reverse(); 
+
+    const html = dataRows.map(row => {
+      // ใช้ Regex ในการแยกคอลัมน์ เพื่อรองรับกรณีชื่อไฟล์มีเครื่องหมายคอมมา
+      const col = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/); 
+      
+      if(col.length < 5) return ''; // ข้ามถ้าคอลัมน์ไม่ครบ
+      
+      return `
+        <tr>
+          <td style="font-size: 0.8rem; color: #666;">${col[0]}</td>
+          <td style="font-size: 0.9rem; font-weight: 500;">${col[2]}</td>
+          <td>
+            <button onclick="openDriveFile('${col[4]}')" class="btn btn-sm btn-outline-primary w-100">เปิดดู</button>
+          </td>
+        </tr>
+      `;
     }).join('');
-    document.getElementById('bookData').innerHTML = html;
+
+    tableBody.innerHTML = html;
+  } catch (err) {
+    console.error(err);
+    tableBody.innerHTML = '<tr><td colspan="3" class="text-center text-danger">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>';
   }
+}
+
+// เพิ่มฟังก์ชันเปิดไฟล์เพื่อให้รองรับลิ้งก์ Google Drive โดยตรง
+function openDriveFile(url) {
+  if (!url || url === "undefined") return alert("ไม่พบลิ้งก์ไฟล์ครับ");
+  const win = window.open(url.trim(), '_blank');
+  if (!win) {
+    window.top.location.href = url.trim();
+  }
+}
 
   // 3. ระบบส่งไฟล์เข้า GitHub (แทนการส่งเข้า Drive)
   async function uploadToGithub() {
@@ -137,7 +174,7 @@ async function login() {
       const fileData = e.target.result;
       
       // ใส่ URL ของ Web App (Google Apps Script) ที่ครู Deploy ไว้
-      const scriptUrl = "https://script.google.com/macros/s/AKfycbwrrt6qrG6iac0Jkf3iTW_xH5epZc_0XeH5qfXOHt5t5onEB0YhagnakmTbrDFYKxqd1Q/exec"; 
+      const scriptUrl = "https://script.google.com/macros/s/AKfycbxHDkeUNc1mtOOJDM3_G8NRuEBT0oHU79twmgn7lo1bjtdXXxEVMkjGXmtyllDBJ9ix1Q/exec"; 
       
       try {
         const response = await fetch(scriptUrl, {
@@ -152,14 +189,24 @@ async function login() {
         
         const result = await response.json();
         
+        // --- แก้ไขเฉพาะช่วงท้ายของฟังก์ชัน uploadToGithub ---
         if(result.success) {
-          // เมื่อบันทึกใน Drive สำเร็จ ก็นำลิงก์มาลง logs.csv ใน GitHub
+          // 1. บันทึกประวัติลง GitHub
           await updateLogs(result.fileName, result.url);
+          
           alert("ส่งหนังสือเรียบร้อยแล้วครับ!");
-          location.reload();
+
+          // 2. ล้างค่าในช่องกรอก (แทนการสั่ง reload)
+          document.getElementById('fileInput').value = ""; // ล้างชื่อไฟล์ที่เลือกไว้
+          document.getElementById('deptSelect').value = ""; // ล้างกลุ่มงานที่เลือกไว้
+          
+          // 3. สั่งโหลดตารางใหม่เพื่อให้เห็นรายการล่าสุดทันที
+          loadLogs(); 
+
         } else {
           alert("เกิดข้อผิดพลาดจากฝั่ง Google: " + result.message);
         }
+// --------------------------------------------------
       } catch (err) {
         alert("ไม่สามารถเชื่อมต่อกับ Google ได้ (เช็กการ Deploy ของครูอีกครั้งนะครับ)");
         console.error(err);

@@ -113,31 +113,48 @@ async function login() {
   // 3. ระบบส่งไฟล์เข้า GitHub (แทนการส่งเข้า Drive)
   async function uploadToGithub() {
     const file = document.getElementById('fileInput').files[0];
-    if(!file) return alert("เลือกไฟล์ก่อนครับครู");
+    const dept = document.getElementById('deptSelect').value; // อย่าลืมเลือกกลุ่มงาน
+    if(!file || !dept) return alert("กรุณาเลือกไฟล์และกลุ่มงานครับ");
     
     const btn = document.getElementById('uploadBtn');
-    btn.disabled = true; btn.innerText = "กำลังส่ง...";
+    btn.disabled = true; btn.innerText = "กำลังส่งเข้า Google Drive...";
 
     const reader = new FileReader();
     reader.onload = async (e) => {
-      const content = e.target.result.split(',')[1]; // Base64
-      const path = `uploads/${file.name}`;
+      const fileData = e.target.result;
       
-      // อัปโหลดไฟล์เข้าโฟลเดอร์ uploads
-      await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${path}`, {
-        method: 'PUT',
-        headers: { 'Authorization': `token ${GH_TOKEN}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: `Add ${file.name}`, content: content })
-      });
-
-      // อัปเดตไฟล์ logs.csv
-      await updateLogs(file.name, `https://${GH_OWNER}.github.io/${GH_REPO}/${path}`);
+      // 1. ส่งไฟล์ไปที่ Google Apps Script
+      const scriptUrl = "https://script.google.com/macros/s/AKfycbwrrt6qrG6iac0Jkf3iTW_xH5epZc_0XeH5qfXOHt5t5onEB0YhagnakmTbrDFYKxqd1Q/exec"; 
       
-      alert("ส่งเรียบร้อย!");
-      location.reload();
+      try {
+        const response = await fetch(scriptUrl, {
+          method: 'POST',
+          body: JSON.stringify({
+            department: dept,
+            sender: currentUser.name,
+            fileName: file.name,
+            fileData: fileData
+          })
+        });
+        
+        const result = await response.json();
+        
+        if(result.success) {
+          // 2. ถ้าส่งไป Drive สำเร็จ ให้เอาลิงก์มาบันทึกใน logs.csv ของ GitHub
+          await updateLogs(result.fileName, result.url);
+          alert("ส่งหนังสือเข้า Google Drive และบันทึกประวัติเรียบร้อย!");
+          location.reload();
+        } else {
+          alert("เกิดข้อผิดพลาด: " + result.message);
+        }
+      } catch (err) {
+        alert("การเชื่อมต่อกับ Google Apps Script ผิดพลาด");
+      } finally {
+        btn.disabled = false; btn.innerText = "ส่งเข้า GitHub/Drive";
+      }
     };
     reader.readAsDataURL(file);
-  }
+}
 
   async function updateLogs(fileName, url) {
     const logRes = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/logs.csv`, {

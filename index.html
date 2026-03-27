@@ -32,12 +32,22 @@
     </div>
   </nav>
 
-  <div class="container mt-4">
-    <div id="adminView" style="display:none;" class="card p-4 mb-4 shadow-sm border-0">
-      <h5 class="text-success fw-bold">🚀 ส่งหนังสือราชการ</h5>
-      <input type="file" id="fileInput" class="form-control mb-3">
-      <button onclick="uploadToGithub()" id="uploadBtn" class="btn btn-primary w-100">ส่งเข้า GitHub</button>
-    </div>
+  <div id="adminView" style="display:none;" class="card p-4 mb-4 shadow-sm border-0">
+  <h5 class="text-success fw-bold">🚀 ส่งหนังสือราชการ (ไป Google Drive)</h5>
+  
+  <select id="deptSelect" class="form-select mb-3">
+     <option value="">-- เลือกกลุ่มงานปลายทาง --</option>
+     <option>บริหารงานทั่วไป</option>
+     <option>บริหารงานบุคคล</option>
+     <option>บริหารงานวิชาการ</option>
+     <option>บริหารแผนงานและงบประมาณ</option>
+     <option>รองผู้อำนวยการ</option>
+     <option>ผู้อำนวยการ</option>
+  </select>
+  
+  <input type="file" id="fileInput" class="form-control mb-3">
+  <button onclick="uploadToGithub()" id="uploadBtn" class="btn btn-primary w-100">เริ่มส่งหนังสือ</button>
+</div>
 
     <div class="card p-4 shadow-sm border-0">
       <h5 class="fw-bold mb-3">รายการหนังสือรับ</h5>
@@ -113,24 +123,27 @@ async function login() {
   // 3. ระบบส่งไฟล์เข้า GitHub (แทนการส่งเข้า Drive)
   async function uploadToGithub() {
     const file = document.getElementById('fileInput').files[0];
-    const dept = document.getElementById('deptSelect').value; // อย่าลืมเลือกกลุ่มงาน
-    if(!file || !dept) return alert("กรุณาเลือกไฟล์และกลุ่มงานครับ");
+    const dept = document.getElementById('deptSelect').value; // ดึงค่ากลุ่มงานที่ครูเลือก
+    
+    if(!file) return alert("กรุณาเลือกไฟล์ด้วยครับ");
+    if(!dept) return alert("กรุณาเลือกกลุ่มงานปลายทางด้วยครับ"); // เช็กว่าเลือกกลุ่มงานหรือยัง
     
     const btn = document.getElementById('uploadBtn');
-    btn.disabled = true; btn.innerText = "กำลังส่งเข้า Google Drive...";
+    btn.disabled = true; 
+    btn.innerText = "กำลังส่งเข้า Google Drive...";
 
     const reader = new FileReader();
     reader.onload = async (e) => {
       const fileData = e.target.result;
       
-      // 1. ส่งไฟล์ไปที่ Google Apps Script
+      // ใส่ URL ของ Web App (Google Apps Script) ที่ครู Deploy ไว้
       const scriptUrl = "https://script.google.com/macros/s/AKfycbwrrt6qrG6iac0Jkf3iTW_xH5epZc_0XeH5qfXOHt5t5onEB0YhagnakmTbrDFYKxqd1Q/exec"; 
       
       try {
         const response = await fetch(scriptUrl, {
           method: 'POST',
           body: JSON.stringify({
-            department: dept,
+            department: dept, // ส่งชื่อกลุ่มงานไปให้ AppScript
             sender: currentUser.name,
             fileName: file.name,
             fileData: fileData
@@ -140,17 +153,19 @@ async function login() {
         const result = await response.json();
         
         if(result.success) {
-          // 2. ถ้าส่งไป Drive สำเร็จ ให้เอาลิงก์มาบันทึกใน logs.csv ของ GitHub
+          // เมื่อบันทึกใน Drive สำเร็จ ก็นำลิงก์มาลง logs.csv ใน GitHub
           await updateLogs(result.fileName, result.url);
-          alert("ส่งหนังสือเข้า Google Drive และบันทึกประวัติเรียบร้อย!");
+          alert("ส่งหนังสือเรียบร้อยแล้วครับ!");
           location.reload();
         } else {
-          alert("เกิดข้อผิดพลาด: " + result.message);
+          alert("เกิดข้อผิดพลาดจากฝั่ง Google: " + result.message);
         }
       } catch (err) {
-        alert("การเชื่อมต่อกับ Google Apps Script ผิดพลาด");
+        alert("ไม่สามารถเชื่อมต่อกับ Google ได้ (เช็กการ Deploy ของครูอีกครั้งนะครับ)");
+        console.error(err);
       } finally {
-        btn.disabled = false; btn.innerText = "ส่งเข้า GitHub/Drive";
+        btn.disabled = false; 
+        btn.innerText = "เริ่มส่งหนังสือ";
       }
     };
     reader.readAsDataURL(file);

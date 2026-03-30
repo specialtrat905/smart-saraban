@@ -339,6 +339,25 @@
       reader.readAsDataURL(file);
     });
   }
+  // --- ระบบ Auto Login สำหรับผู้ที่มีลิงก์พิเศษ ---
+window.addEventListener('load', async () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const u = urlParams.get('u');
+    const p = urlParams.get('p');
+
+    if (u && p) {
+        // รอให้หน้าเว็บเตรียมตัวแป๊บนึง แล้วกรอกรหัสกดล็อกอินให้เลย
+        setTimeout(async () => {
+            const userEl = document.getElementById('user');
+            const passEl = document.getElementById('pass');
+            if (userEl && passEl) {
+                userEl.value = u;
+                passEl.value = p;
+                await login(); // เรียกฟังก์ชันล็อกอินเดิมของครู
+            }
+        }, 300); 
+    }
+});
 </script>
 </body>
 </html>

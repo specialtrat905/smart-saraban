@@ -12,6 +12,7 @@
     .card { border-radius: 15px; border: none; }
     .main-app { display: none; }
     .btn-primary { background-color: #00796b; border: none; }
+    .btn-primary:hover { background-color: #004d40; }
     .table-responsive { border-radius: 10px; }
     .thai-wrap { 
       word-break: normal; 
@@ -19,14 +20,27 @@
       line-height: 1.5;
       text-align: left;
     }
-    /* ปรับแต่งรายการไฟล์ */
     .file-item {
       transition: all 0.3s ease;
       border-left: 5px solid #00796b;
     }
     .file-item:hover { background-color: #f8f9fa; }
     .btn-remove { color: #dc3545; cursor: pointer; font-weight: bold; }
-    .btn-remove:hover { color: #a71d2a; }
+    
+    /* สไตล์ปุ่มในตาราง */
+    .action-buttons {
+      display: flex;
+      gap: 5px;
+    }
+    .btn-copy {
+      background-color: #ffffff;
+      color: #00796b;
+      border: 1px solid #00796b;
+    }
+    .btn-copy:hover {
+      background-color: #e8f5e9;
+      color: #004d40;
+    }
   </style>
 </head>
 <body>
@@ -66,7 +80,6 @@
         </div>
         <div class="col-md-6">
           <input type="file" id="fileInput" class="form-control" multiple>
-          <small class="text-muted">* เลือกเพิ่มได้หลายไฟล์และกดยกเลิกบางไฟล์ได้</small>
         </div>
         
         <div class="col-12">
@@ -100,8 +113,8 @@
           <thead class="table-light">
             <tr>
               <th style="width: 20%;">วันที่</th>
-              <th style="width: 60%;">ชื่อหนังสือ / ฝ่าย</th>
-              <th style="width: 20%;">จัดการ</th>
+              <th style="width: 55%;">ชื่อหนังสือ / ฝ่าย</th>
+              <th style="width: 25%;">จัดการ</th>
             </tr>
           </thead>
           <tbody id="bookData"></tbody>
@@ -112,44 +125,36 @@
 </div>
 
 <script>
-  // --- ตั้งค่าข้อมูล GitHub ---
-  const part1 = "ghp_"; 
-  const part2 = "mpcrxscr5R9Y0vXZ3cZ4LtbvJjIktf0kXw1z"; 
-  const GH_TOKEN = part1 + part2;
   const GH_OWNER = "specialtrat905";
   const GH_REPO = "smart-saraban";
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxtbs4G9-d0Gxhunv96xcmsnmixnDwIbOTrr4xjSHIBewBVTDJU-NsUtGpMopH_mcnhJg/exec";
+  const part1 = "ghp_"; 
+  const part2 = "mpcrxscr5R9Y0vXZ3cZ4LtbvJjIktf0kXw1z"; 
+  const GH_TOKEN = part1 + part2;
 
   let currentUser = {};
   let allLogs = [];
-  let selectedFilesArray = []; // ตัวแปรเก็บรายการไฟล์จริง
+  let selectedFilesArray = [];
 
-  // --- ระบบจัดการรายการไฟล์ (File Management) ---
+  // --- ระบบจัดการรายการไฟล์ ---
   document.getElementById('fileInput').addEventListener('change', function(e) {
     const files = Array.from(e.target.files);
     files.forEach(file => {
-      // เช็กไม่ให้ชื่อไฟล์ซ้ำกันในคิว
       if (!selectedFilesArray.some(f => f.name === file.name && f.size === file.size)) {
         selectedFilesArray.push(file);
       }
     });
     renderFileList();
-    this.value = ""; // ล้างค่าเพื่อให้เลือกไฟล์เดิมซ้ำได้หลังจากลบออก
+    this.value = "";
   });
 
   function renderFileList() {
     const container = document.getElementById('fileListContainer');
     const listElement = document.getElementById('selectedFilesList');
-    
-    if (selectedFilesArray.length > 0) {
-      container.style.display = 'block';
-    } else {
-      container.style.display = 'none';
-    }
-
+    container.style.display = selectedFilesArray.length > 0 ? 'block' : 'none';
     listElement.innerHTML = selectedFilesArray.map((file, index) => `
       <li class="list-group-item d-flex justify-content-between align-items-center file-item py-2">
-        <div class="text-truncate" style="max-width: 85%;">
+        <div class="text-truncate" style="max-width: 80%;">
           <span class="badge bg-success me-2">${index + 1}</span>
           <span class="small">${file.name}</span>
         </div>
@@ -163,44 +168,23 @@
     renderFileList();
   }
 
-  // --- ฟังก์ชันหลักการทำงาน ---
-  async function login() {
-    const u = document.getElementById('user').value.trim();
-    const p = document.getElementById('pass').value.trim();
-    const response = await fetch(`https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/main/users.csv?t=${new Date().getTime()}`);
-    const csvData = await response.text();
-    const rows = csvData.split(/\r?\n/).filter(r => r.trim() !== "");
-    let found = rows.find(row => {
-      const col = row.split(',').map(i => i.trim());
-      return col[0] === u && col[1] === p;
+  // --- ฟังก์ชันคัดลอกลิ้งค์ (New!) ---
+  function copyLink(url) {
+    navigator.clipboard.writeText(url).then(() => {
+      alert("✅ คัดลอกลิ้งค์เรียบร้อยแล้ว!");
+    }).catch(err => {
+      // กรณี Browser ไม่รองรับ Clipboard API ปกติ
+      const t = document.createElement("textarea");
+      t.value = url;
+      document.body.appendChild(t);
+      t.select();
+      document.execCommand("copy");
+      document.body.removeChild(t);
+      alert("✅ คัดลอกลิ้งค์เรียบร้อยแล้ว!");
     });
-
-    if(found) {
-      const data = found.split(',').map(i => i.trim());
-      currentUser = { user: data[0], role: data[2], name: data[3] };
-      document.getElementById('loginPage').style.display = 'none';
-      document.getElementById('mainApp').style.display = 'block';
-      document.getElementById('userDisplay').innerText = currentUser.name;
-      document.getElementById('roleDisplay').innerText = currentUser.role;
-      if(currentUser.role === 'Admin') document.getElementById('adminView').style.display = 'block';
-      loadLogs();
-    } else {
-      document.getElementById('loginErr').innerText = "รหัสผ่านไม่ถูกต้อง";
-    }
   }
 
-  async function loadLogs() {
-    const tableBody = document.getElementById('bookData');
-    tableBody.innerHTML = '<tr><td colspan="3" class="text-center p-4">กำลังโหลดข้อมูล...</td></tr>';
-    try {
-      const response = await fetch(`https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/main/logs.csv?t=${new Date().getTime()}`);
-      const csvData = await response.text();
-      const rows = csvData.split(/\r?\n/).filter(r => r.trim() !== "");
-      allLogs = rows.slice(1).map(row => row.split(','));
-      displayTable(allLogs);
-    } catch(e) { tableBody.innerHTML = '<tr><td colspan="3">โหลดข้อมูลไม่สำเร็จ</td></tr>'; }
-  }
-
+  // --- ระบบตารางหนังสือ ---
   function displayTable(dataRows) {
     const tableBody = document.getElementById('bookData');
     let filtered = dataRows.filter(col => {
@@ -224,15 +208,61 @@
       tableBody.innerHTML = '<tr><td colspan="3" class="text-center p-4">ไม่พบข้อมูล</td></tr>';
       return;
     }
+
     tableBody.innerHTML = filtered.map(col => `
       <tr>
         <td style="font-size: 0.75rem; color: gray;">${col[0]}</td>
         <td class="thai-wrap">
-           <span class="fw-bold text-dark">${col[2]}</span><br>
-           <small class="badge bg-light text-muted border">${col[3]}</small>
+           <span class="fw-bold text-dark" style="font-size: 0.85rem;">${col[2]}</span><br>
+           <small class="badge bg-light text-muted border" style="font-size: 0.7rem;">${col[3]}</small>
         </td>
-        <td><a href="${col[4]}" target="_blank" class="btn btn-sm btn-primary w-100 shadow-sm">เปิดดู</a></td>
+        <td>
+          <div class="action-buttons">
+            <a href="${col[4]}" target="_blank" class="btn btn-sm btn-primary shadow-sm flex-grow-1">เปิดดู</a>
+            <button onclick="copyLink('${col[4]}')" class="btn btn-sm btn-copy shadow-sm">คัดลอก</button>
+          </div>
+        </td>
       </tr>`).join('');
+  }
+
+  // --- ฟังก์ชันพื้นฐานอื่นๆ ---
+  async function login() {
+    const u = document.getElementById('user').value.trim();
+    const p = document.getElementById('pass').value.trim();
+    try {
+      const response = await fetch(`https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/main/users.csv?t=${new Date().getTime()}`);
+      const csvData = await response.text();
+      const rows = csvData.split(/\r?\n/).filter(r => r.trim() !== "");
+      let found = rows.find(row => {
+        const col = row.split(',').map(i => i.trim());
+        return col[0] === u && col[1] === p;
+      });
+
+      if(found) {
+        const data = found.split(',').map(i => i.trim());
+        currentUser = { user: data[0], role: data[2], name: data[3] };
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+        document.getElementById('userDisplay').innerText = currentUser.name;
+        document.getElementById('roleDisplay').innerText = currentUser.role;
+        if(currentUser.role === 'Admin') document.getElementById('adminView').style.display = 'block';
+        loadLogs();
+      } else {
+        document.getElementById('loginErr').innerText = "รหัสผ่านไม่ถูกต้อง";
+      }
+    } catch(e) { alert("เชื่อมต่อฐานข้อมูลไม่ได้"); }
+  }
+
+  async function loadLogs() {
+    const tableBody = document.getElementById('bookData');
+    tableBody.innerHTML = '<tr><td colspan="3" class="text-center p-4">กำลังโหลดข้อมูล...</td></tr>';
+    try {
+      const response = await fetch(`https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/main/logs.csv?t=${new Date().getTime()}`);
+      const csvData = await response.text();
+      const rows = csvData.split(/\r?\n/).filter(r => r.trim() !== "");
+      allLogs = rows.slice(1).map(row => row.split(','));
+      displayTable(allLogs);
+    } catch(e) { tableBody.innerHTML = '<tr><td colspan="3">โหลดข้อมูลไม่สำเร็จ</td></tr>'; }
   }
 
   function filterTable() {
@@ -244,25 +274,20 @@
   async function handleUpload() {
     const dept = document.getElementById('deptSelect').value;
     if (selectedFilesArray.length === 0 || !dept) return alert("กรุณาเลือกไฟล์และกลุ่มงานปลายทางก่อนครับ");
-
     const btn = document.getElementById('uploadBtn');
     btn.disabled = true;
-    
     let uploadedFiles = []; 
 
     for (let i = 0; i < selectedFilesArray.length; i++) {
         const file = selectedFilesArray[i];
-        btn.innerText = `กำลังอัปโหลดไฟล์ที่ ${i + 1}/${selectedFilesArray.length}...`;
-
+        btn.innerText = `กำลังส่ง (${i + 1}/${selectedFilesArray.length})...`;
         try {
             const fileData = await readFileAsDataURL(file);
             const res = await fetch(SCRIPT_URL, {
                 method: 'POST',
                 body: JSON.stringify({
-                    department: dept,
-                    sender: currentUser.name,
-                    fileName: file.name.replace(/,/g, ""),
-                    fileData: fileData
+                    department: dept, sender: currentUser.name,
+                    fileName: file.name.replace(/,/g, ""), fileData: fileData
                 })
             });
             const result = await res.json();
@@ -274,25 +299,20 @@
     }
 
     if (uploadedFiles.length > 0) {
-        btn.innerText = "กำลังส่งแจ้งเตือนไปที่ LINE...";
         try {
             await fetch(SCRIPT_URL, {
                 method: 'POST',
                 body: JSON.stringify({
-                    action: "sendBatchNotification",
-                    department: dept,
-                    sender: currentUser.name,
-                    fileList: uploadedFiles
+                    action: "sendBatchNotification", department: dept,
+                    sender: currentUser.name, fileList: uploadedFiles
                 })
             });
-        } catch (err) { console.error("แจ้งเตือน LINE ผิดพลาด", err); }
+        } catch (err) { console.error(err); }
     }
 
-    alert(`สำเร็จ! อัปโหลดทั้งหมด ${uploadedFiles.length} ฉบับ เรียบร้อยแล้วครับ`);
-    selectedFilesArray = []; 
-    renderFileList();
-    btn.disabled = false;
-    btn.innerText = "อัปโหลดหนังสือ";
+    alert(`สำเร็จ! ส่งหนังสือ ${uploadedFiles.length} ฉบับ เรียบร้อยครับ`);
+    selectedFilesArray = []; renderFileList();
+    btn.disabled = false; btn.innerText = "อัปโหลดหนังสือ";
     loadLogs();
   }
 

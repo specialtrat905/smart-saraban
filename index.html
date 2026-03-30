@@ -92,17 +92,23 @@
 
   let currentUser = {};
 
-  // 1. ระบบ Login (อ่านจาก users.csv ใน GitHub)
+  // 1. ระบบ Login (ฉบับปรับปรุงการแยกบรรทัด)
   async function login() {
     const u = document.getElementById('user').value.trim();
     const p = document.getElementById('pass').value.trim();
     
+    // ใส่ ?t= เพื่อไม่ให้มันจำค่าเก่า
     const response = await fetch(`https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/main/users.csv?t=${new Date().getTime()}`);
     const csvData = await response.text();
-    const rows = csvData.split('\n').filter(r => r.trim() !== "");
     
+    // เปลี่ยนจาก .split('\n') เป็น regex เพื่อรองรับทั้ง \n และ \r\n
+    const rows = csvData.split(/\r?\n/).filter(r => r.trim() !== "");
+    
+    console.log("จำนวนแถวที่พบ:", rows.length); // ช่วยเช็กใน Console
+
     let found = rows.find(row => {
       const col = row.split(',').map(i => i.trim());
+      // ตรวจสอบว่ามีข้อมูลครบ 2 คอลัมน์แรกไหม
       return col[0] === u && col[1] === p;
     });
 
@@ -118,7 +124,8 @@
       if(currentUser.role === 'Admin') document.getElementById('adminView').style.display = 'block';
       loadLogs();
     } else {
-      document.getElementById('loginErr').innerText = "รหัสผิดครับครู!";
+      document.getElementById('loginErr').innerText = "รหัสผิดครับครู! (ตรวจสอบชื่อผู้ใช้/รหัสผ่านอีกครั้ง)";
+      console.log("ไม่พบผู้ใช้:", u);
     }
   }
 

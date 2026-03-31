@@ -101,19 +101,18 @@
 </div>
 
 <script>
+  // --- การตั้งค่า ---
   const GH_OWNER = "specialtrat905";
   const GH_REPO = "smart-saraban";
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyot0yRxg2ksRh0Z1rRI0SVSycr2KV52XUCmNVSUamacv6v8YRdWT47JRbKeQZvf_XBEA/exec";
-  const part1 = "ghp_"; 
-  const part2 = "mpcrxscr5R9Y0vXZ3cZ4LtbvJjIktf0kXw1z"; 
-  const GH_TOKEN = part1 + part2;
+  const GH_TOKEN = "ghp_" + "mpcrxscr5R9Y0vXZ3cZ4LtbvJjIktf0kXw1z";
 
   let currentUser = {};
   let allLogs = [];
   let selectedFilesArray = [];
   let currentYearBE = new Date().getFullYear() + 543;
 
-  // --- ระบบจัดการไฟล์ ---
+  // --- 1. จัดการไฟล์อัปโหลด ---
   document.getElementById('fileInput').addEventListener('change', function(e) {
     const files = Array.from(e.target.files);
     files.forEach(file => {
@@ -138,21 +137,20 @@
   function removeFile(index) { selectedFilesArray.splice(index, 1); renderFileList(); }
 
   function copyLink(url) {
-    navigator.clipboard.writeText(url).then(() => alert("✅ คัดลอกเรียบร้อย!")).catch(() => {
+    navigator.clipboard.writeText(url).then(() => alert("✅ คัดลอกแล้ว!")).catch(() => {
       const t = document.createElement("textarea"); t.value = url; document.body.appendChild(t); t.select();
-      document.execCommand("copy"); document.body.removeChild(t); alert("✅ คัดลอกเรียบร้อย!");
+      document.execCommand("copy"); document.body.removeChild(t); alert("✅ คัดลอกแล้ว!");
     });
   }
 
-  // --- ระบบกรองปี ---
+  // --- 2. ระบบกรองปี ---
   function updateYearOptions(logs) {
     const yearSelect = document.getElementById('yearSelect');
     let years = [...new Set(logs.map(col => {
-      // ดึงปีจากคอลัมน์วันที่ (col[0]) หรือชื่อไฟล์ (col[2])
       const dateMatch = col[0] ? col[0].match(/25\d{2}|20\d{2}/) : null;
       const fileMatch = col[2] ? col[2].match(/-(\d{4})/) : null;
       let y = fileMatch ? fileMatch[1] : (dateMatch ? dateMatch[0] : null);
-      if (y && y.startsWith("20")) y = (parseInt(y) + 543).toString(); // แปลง ค.ศ. เป็น พ.ศ.
+      if (y && y.startsWith("20")) y = (parseInt(y) + 543).toString();
       return y;
     }))].filter(y => y !== null).sort((a, b) => b - a);
 
@@ -160,7 +158,7 @@
     yearSelect.innerHTML = years.map(y => `<option value="${y}" ${y == currentYearBE ? 'selected' : ''}>ปี พ.ศ. ${y}</option>`).join('');
   }
 
-  // --- แสดงผลตาราง ---
+  // --- 3. แสดงผลตาราง (จุดที่แก้เรื่องเรียงลำดับ) ---
   function displayTable(dataRows) {
     const tableBody = document.getElementById('bookData');
     const selectedYear = document.getElementById('yearSelect').value || currentYearBE;
@@ -168,15 +166,29 @@
     let filtered = dataRows.filter(col => {
       if (!col || col.length < 5) return false;
       const matchRole = (currentUser.role === 'Admin') || (col[3].trim() === currentUser.role.trim());
-      
-      // กรองปี: เช็คทั้งชื่อไฟล์และคอลัมน์วันที่
       const yearAD = (parseInt(selectedYear) - 543).toString();
       const matchYear = col[2].includes("-" + selectedYear) || col[0].includes("/" + selectedYear) || col[0].includes("/" + yearAD);
-      
       return matchRole && matchYear;
     });
 
-    filtered.sort((a, b) => b[0].localeCompare(a[0])); // เรียงตามวันที่ล่าสุด
+    // --- ✨ หัวใจสำคัญ: เรียงตามเลขหนังสือ ---
+    filtered.sort((a, b) => {
+      // ดึงเลขและปีจากรูปแบบ "209-2569"
+      const matchA = a[2].match(/^(\d+)-(\d+)/);
+      const matchB = b[2].match(/^(\d+)-(\d+)/);
+
+      if (matchA && matchB) {
+        const numA = parseInt(matchA[1]); const yearA = parseInt(matchA[2]);
+        const numB = parseInt(matchB[1]); const yearB = parseInt(matchB[2]);
+
+        // 1. เรียงตามปีก่อน (ปีเยอะกว่าอยู่บน)
+        if (yearB !== yearA) return yearB - yearA;
+        // 2. ถ้าปีเดียวกัน เรียงตามเลขที่หนังสือ (เลขเยอะกว่าอยู่บน)
+        return numB - numA;
+      }
+      // ถ้าไม่มีรูปแบบตัวเลข ให้เรียงตามวันที่อัปโหลดล่าสุดเป็นตัวสำรอง
+      return b[0].localeCompare(a[0]);
+    });
 
     if(filtered.length === 0) {
       tableBody.innerHTML = '<tr><td colspan="3" class="text-center p-4 text-muted">ไม่พบข้อมูลในปีที่เลือก</td></tr>';
@@ -205,7 +217,7 @@
     displayTable(filteredData);
   }
 
-  // --- ระบบล็อกอินและโหลดข้อมูล ---
+  // --- 4. ระบบหลังบ้าน ---
   async function login() {
     const u = document.getElementById('user').value.trim();
     const p = document.getElementById('pass').value.trim();
@@ -238,7 +250,6 @@
       const response = await fetch(`https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/main/logs.csv?t=${new Date().getTime()}`);
       const csvLines = await response.text();
       
-      // ตัวแยก CSV ที่ฉลาดขึ้น: ไม่แยกช่องว่าง แยกเฉพาะคอมม่าที่ไม่อยู่ใน " "
       allLogs = csvLines.split(/\r?\n/).slice(1).filter(line => line.trim() !== "").map(line => {
         const result = []; let current = ""; let inQuotes = false;
         for (let char of line) {

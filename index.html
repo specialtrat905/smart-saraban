@@ -104,7 +104,7 @@
   // --- การตั้งค่า ---
   const GH_OWNER = "specialtrat905";
   const GH_REPO = "smart-saraban";
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyot0yRxg2ksRh0Z1rRI0SVSycr2KV52XUCmNVSUamacv6v8YRdWT47JRbKeQZvf_XBEA/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxtbs4G9-d0Gxhunv96xcmsnmixnDwIbOTrr4xjSHIBewBVTDJU-NsUtGpMopH_mcnhJg/exec";
   const GH_TOKEN = "ghp_" + "mpcrxscr5R9Y0vXZ3cZ4LtbvJjIktf0kXw1z";
 
   let currentUser = {};
@@ -286,7 +286,27 @@
     }
 
     if (uploadedFiles.length > 0) {
-      await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: "sendBatchNotification", department: dept, sender: currentUser.name, fileList: uploadedFiles }) });
+        btn.innerText = "กำลังแจ้งเตือน LINE...";
+        try {
+            const lineRes = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: "sendBatchNotification", 
+                    department: dept,
+                    sender: currentUser.name, 
+                    fileList: uploadedFiles
+                })
+            });
+            
+            // เพิ่มการตรวจเช็กผลลัพธ์จาก Apps Script
+            const lineResult = await lineRes.json();
+            if (lineResult.message && lineResult.message.includes("failed")) {
+                alert("⚠️ ไฟล์อัปโหลดสำเร็จ แต่แจ้งเตือน LINE ผิดพลาด: " + lineResult.message);
+            }
+        } catch (err) { 
+            console.error(err);
+            alert("❌ ระบบแจ้งเตือน LINE ขัดข้อง (ตรวจสอบ Token หรือการเชื่อมต่อ)");
+        }
     }
     alert(`สำเร็จ! ส่งหนังสือ ${uploadedFiles.length} ฉบับ เรียบร้อย`);
     selectedFilesArray = []; renderFileList(); btn.disabled = false; btn.innerText = "อัปโหลดหนังสือและแจ้งเตือน LINE";

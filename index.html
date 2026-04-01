@@ -163,6 +163,7 @@
     const tableBody = document.getElementById('bookData');
     const selectedYear = document.getElementById('yearSelect').value || currentYearBE;
 
+    // 1. กรองข้อมูลตามสิทธิ์และปีที่เลือก (เหมือนเดิม)
     let filtered = dataRows.filter(col => {
       if (!col || col.length < 5) return false;
       const matchRole = (currentUser.role === 'Admin') || (col[3].trim() === currentUser.role.trim());
@@ -171,22 +172,48 @@
       return matchRole && matchYear;
     });
 
-    // --- ✨ หัวใจสำคัญ: เรียงตามเลขหนังสือ ---
+    // 2. ✨ ส่วนใหม่: รวมกลุ่มข้อมูล (สำหรับ Admin เท่านั้น)
+    if (currentUser.role === 'Admin') {
+      const groupedData = {};
+      
+      filtered.forEach(col => {
+        const fileName = col[2]; // ใช้ชื่อหนังสือเป็นคีย์ในการรวม
+        if (!groupedData[fileName]) {
+          // ถ้ายังไม่มีชื่อหนังสือนี้ในระบบกรุ๊ป ให้สร้างก้อนข้อมูลใหม่
+          groupedData[fileName] = {
+            date: col[0],
+            fileName: col[2],
+            departments: [col[3].trim()], // เก็บกลุ่มงานเป็น Array
+            url: col[4]
+          };
+        } else {
+          // ถ้ามีชื่อหนังสือนี้อยู่แล้ว ให้เพิ่มกลุ่มงานเข้าไป (ถ้ายังไม่มีในลิสต์)
+          if (!groupedData[fileName].departments.includes(col[3].trim())) {
+            groupedData[fileName].departments.push(col[3].trim());
+          }
+        }
+      });
+      
+      // แปลง Object กลับเป็น Array เพื่อเอาไปเรียงลำดับและแสดงผล
+      filtered = Object.values(groupedData).map(item => [
+        item.date, 
+        "", 
+        item.fileName, 
+        item.departments.join(", "), // รวมชื่อกลุ่มงานด้วยจุลภาค
+        item.url
+      ]);
+    }
+
+    // 3. เรียงลำดับตามเลขที่หนังสือ (เหมือนเดิม)
     filtered.sort((a, b) => {
-      // ดึงเลขและปีจากรูปแบบ "209-2569"
       const matchA = a[2].match(/^(\d+)-(\d+)/);
       const matchB = b[2].match(/^(\d+)-(\d+)/);
-
       if (matchA && matchB) {
         const numA = parseInt(matchA[1]); const yearA = parseInt(matchA[2]);
         const numB = parseInt(matchB[1]); const yearB = parseInt(matchB[2]);
-
-        // 1. เรียงตามปีก่อน (ปีเยอะกว่าอยู่บน)
         if (yearB !== yearA) return yearB - yearA;
-        // 2. ถ้าปีเดียวกัน เรียงตามเลขที่หนังสือ (เลขเยอะกว่าอยู่บน)
         return numB - numA;
       }
-      // ถ้าไม่มีรูปแบบตัวเลข ให้เรียงตามวันที่อัปโหลดล่าสุดเป็นตัวสำรอง
       return b[0].localeCompare(a[0]);
     });
 
@@ -195,12 +222,19 @@
       return;
     }
 
-    tableBody.innerHTML = filtered.map(col => `
+    // 4. แสดงผลตาราง (ปรับแต่งการโชว์กลุ่มงานให้สวยขึ้น)
+    tableBody.innerHTML = filtered.map(col => {
+      // แยกชื่อกลุ่มงานออกมาเป็น Badge สวยๆ
+      const deptBadges = col[3].split(', ').map(d => 
+        `<small class="badge bg-light text-muted border me-1" style="font-size: 0.7rem;">${d}</small>`
+      ).join('');
+
+      return `
       <tr>
         <td style="font-size: 0.75rem; color: gray;">${col[0]}</td>
         <td class="thai-wrap">
            <span class="fw-bold text-dark" style="font-size: 0.85rem;">${col[2]}</span><br>
-           <small class="badge bg-light text-muted border" style="font-size: 0.7rem;">${col[3]}</small>
+           <div class="mt-1">${deptBadges}</div>
         </td>
         <td>
           <div class="action-buttons">
@@ -208,15 +242,9 @@
             <button onclick="copyLink('${col[4]}')" class="btn btn-sm btn-copy shadow-sm">คัดลอก</button>
           </div>
         </td>
-      </tr>`).join('');
+      </tr>`;
+    }).join('');
   }
-
-  function filterTable() {
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-    const filteredData = allLogs.filter(col => col[2].toLowerCase().includes(searchTerm));
-    displayTable(filteredData);
-  }
-
   // --- 4. ระบบหลังบ้าน ---
   async function login() {
     const u = document.getElementById('user').value.trim();

@@ -174,7 +174,7 @@
     const tableBody = document.getElementById('bookData');
     const selectedYear = document.getElementById('yearSelect').value;
 
-    // 1. กรองข้อมูลตามสิทธิ์และปีที่เลือกแบบแม่นยำ (Regex)
+    // 1. กรองข้อมูลปกติ ตามสิทธิ์และปีที่เลือก
     let filtered = dataRows.filter(col => {
       if (!col || col.length < 5) return false;
       const matchRole = (currentUser.role === 'Admin') || (col[3].trim() === currentUser.role.trim());
@@ -183,7 +183,6 @@
       if (selectedYear === "all") {
         matchYear = true;
       } else {
-        // ใช้ Regex ตรวจสอบปีจากเลขที่หนังสือหน้าสุดเท่านั้น เพื่อไม่ให้หลงไปจับปีในชื่อเรื่อง
         const fileYearMatch = col[2].match(/^(\d+)-(\d{4})/);
         const fileYear = fileYearMatch ? fileYearMatch[2] : null;
         matchYear = (fileYear === selectedYear);
@@ -191,7 +190,33 @@
       return matchRole && matchYear;
     });
 
-    // 2. รวมกลุ่มข้อมูลสำหรับ Admin (ถ้าชื่อเดียวกันให้รวมฝ่ายเข้าด้วยกัน)
+    // 2. ✨ ส่วนที่เพิ่ม: ตรวจหาเลขที่หายไป (เฉพาะปี 2569 เป็นต้นไป และสำหรับ Admin)
+    if (currentUser.role === 'Admin' && (selectedYear === "2569" || selectedYear === "all")) {
+        // ดึงเลขหน้าของปี 2569 ทั้งหมดที่มีในระบบ
+        const existingNumbers = dataRows.map(col => {
+            const m = col[2].match(/^(\d+)-2569/);
+            return m ? parseInt(m[1]) : null;
+        }).filter(n => n !== null);
+
+        if (existingNumbers.length > 0) {
+            const maxNum = Math.max(...existingNumbers);
+            // วนลูปเช็กเลขที่หายไปตั้งแต่ 1 ถึงเลขล่าสุด
+            for (let i = 1; i <= maxNum; i++) {
+                if (!existingNumbers.includes(i)) {
+                    // แทรกแถว "กากบาท" เข้าไปในรายการ
+                    filtered.push([
+                        "❌", // วันที่แสดงเป็นกากบาท
+                        "SYSTEM", 
+                        `${i}-2569 <span class="text-danger fw-bold">[ยังไม่ได้ลงระบบ]</span>`, 
+                        "ยังไม่มีข้อมูล", 
+                        "#"
+                    ]);
+                }
+            }
+        }
+    }
+
+    // 3. รวมกลุ่มข้อมูลสำหรับ Admin (ถ้าชื่อเดียวกันให้รวมฝ่าย)
     if (currentUser.role === 'Admin') {
       const groupedData = {};
       filtered.forEach(col => {
@@ -209,10 +234,16 @@
           }
         }
       });
-      filtered = Object.values(groupedData).map(item => [item.date, "", item.fileName, item.departments.join(", "), item.url]);
+      filtered = Object.values(groupedData).map(item => [
+        item.date, 
+        "", 
+        item.fileName, 
+        item.departments.join(", "), 
+        item.url
+      ]);
     }
 
-    // 3. เรียงลำดับตามปีและเลขที่หนังสือ (มากไปน้อย)
+    // 4. เรียงลำดับตามปีและเลขที่หนังสือ (มากไปน้อย)
     filtered.sort((a, b) => {
       const matchA = a[2].match(/^(\d+)-(\d+)/);
       const matchB = b[2].match(/^(\d+)-(\d+)/);
@@ -230,28 +261,32 @@
       return;
     }
 
-    // 4. แสดงผลตารางแบบ Badge
+    // 5. แสดงผลตาราง (Render)
     tableBody.innerHTML = filtered.map(col => {
-      const deptBadges = col[3].split(', ').map(d => 
+      const isMissing = col[0] === "❌"; // ตรวจสอบว่าเป็นข้อมูลที่หายไปหรือไม่
+      const deptBadges = isMissing ? "" : col[3].split(', ').map(d => 
         `<small class="badge bg-light text-muted border me-1" style="font-size: 0.7rem;">${d}</small>`
       ).join('');
 
       return `
-      <tr>
-        <td style="font-size: 0.75rem; color: gray;">${col[0]}</td>
+      <tr class="${isMissing ? 'table-warning' : ''}">
+        <td style="font-size: ${isMissing ? '1.2rem' : '0.75rem'}; color: ${isMissing ? 'red' : 'gray'}; text-align: center;">${col[0]}</td>
         <td class="thai-wrap">
-           <span class="fw-bold text-dark" style="font-size: 0.85rem;">${col[2]}</span><br>
+           <span class="fw-bold ${isMissing ? 'text-danger' : 'text-dark'}" style="font-size: 0.85rem;">${col[2]}</span><br>
            <div class="mt-1">${deptBadges}</div>
         </td>
         <td>
           <div class="action-buttons">
-            <a href="${col[4]}" target="_blank" class="btn btn-sm btn-primary shadow-sm flex-grow-1">เปิดดู</a>
-            <button onclick="copyLink('${col[4]}')" class="btn btn-sm btn-copy shadow-sm">คัดลอก</button>
+            ${isMissing ? 
+                '<button class="btn btn-sm btn-outline-secondary w-100" disabled>ไม่มีไฟล์</button>' : 
+                `<a href="${col[4]}" target="_blank" class="btn btn-sm btn-primary shadow-sm flex-grow-1">เปิดดู</a>
+                 <button onclick="copyLink('${col[4]}')" class="btn btn-sm btn-copy shadow-sm">คัดลอก</button>`
+            }
           </div>
         </td>
       </tr>`;
     }).join('');
-  }
+}
 
   // --- 4. ระบบหลังบ้าน ---
   async function login() {

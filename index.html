@@ -143,68 +143,76 @@
     });
   }
 
-  // --- 2. ระบบกรองปี ---
+  // --- 2. ระบบกรองปี (ปรับปรุงใหม่ตามที่คุยกัน) ---
   function updateYearOptions(logs) {
     const yearSelect = document.getElementById('yearSelect');
+    
+    // ดึงปีจากเลขที่หนังสือเท่านั้น (รูปแบบ เลขที่-ปี)
     let years = [...new Set(logs.map(col => {
-      const dateMatch = col[0] ? col[0].match(/25\d{2}|20\d{2}/) : null;
-      const fileMatch = col[2] ? col[2].match(/-(\d{4})/) : null;
-      let y = fileMatch ? fileMatch[1] : (dateMatch ? dateMatch[0] : null);
-      if (y && y.startsWith("20")) y = (parseInt(y) + 543).toString();
-      return y;
+      const match = col[2].match(/^(\d+)-(\d{4})/); 
+      return match ? match[2] : null;
     }))].filter(y => y !== null).sort((a, b) => b - a);
 
     if (!years.includes(currentYearBE.toString())) years.unshift(currentYearBE.toString());
-    yearSelect.innerHTML = years.map(y => `<option value="${y}" ${y == currentYearBE ? 'selected' : ''}>ปี พ.ศ. ${y}</option>`).join('');
+
+    // เพิ่มตัวเลือก "📂 ดูทั้งหมด (ทุกปี)"
+    let options = `<option value="all">📂 ดูทั้งหมด (ทุกปี)</option>`;
+    options += years.map(y => `<option value="${y}">ปี พ.ศ. ${y}</option>`).join('');
+    
+    yearSelect.innerHTML = options;
+
+    // เงื่อนไขการเลือกค่าเริ่มต้น
+    if (currentUser.role === 'Admin') {
+      yearSelect.value = "all"; // Admin เห็นทั้งหมด
+    } else {
+      yearSelect.value = currentYearBE.toString(); // กลุ่มงานเห็นปีปัจจุบัน
+    }
   }
 
-  // --- 3. แสดงผลตาราง (จุดที่แก้เรื่องเรียงลำดับ) ---
+  // --- 3. แสดงผลตาราง (ปรับปรุงการกรองปีและจัดกลุ่ม) ---
   function displayTable(dataRows) {
     const tableBody = document.getElementById('bookData');
-    const selectedYear = document.getElementById('yearSelect').value || currentYearBE;
+    const selectedYear = document.getElementById('yearSelect').value;
 
-    // 1. กรองข้อมูลตามสิทธิ์และปีที่เลือก (เหมือนเดิม)
+    // 1. กรองข้อมูลตามสิทธิ์และปีที่เลือกแบบแม่นยำ (Regex)
     let filtered = dataRows.filter(col => {
       if (!col || col.length < 5) return false;
       const matchRole = (currentUser.role === 'Admin') || (col[3].trim() === currentUser.role.trim());
-      const yearAD = (parseInt(selectedYear) - 543).toString();
-      const matchYear = col[2].includes("-" + selectedYear) || col[0].includes("/" + selectedYear) || col[0].includes("/" + yearAD);
+      
+      let matchYear = false;
+      if (selectedYear === "all") {
+        matchYear = true;
+      } else {
+        // ใช้ Regex ตรวจสอบปีจากเลขที่หนังสือหน้าสุดเท่านั้น เพื่อไม่ให้หลงไปจับปีในชื่อเรื่อง
+        const fileYearMatch = col[2].match(/^(\d+)-(\d{4})/);
+        const fileYear = fileYearMatch ? fileYearMatch[2] : null;
+        matchYear = (fileYear === selectedYear);
+      }
       return matchRole && matchYear;
     });
 
-    // 2. ✨ ส่วนใหม่: รวมกลุ่มข้อมูล (สำหรับ Admin เท่านั้น)
+    // 2. รวมกลุ่มข้อมูลสำหรับ Admin (ถ้าชื่อเดียวกันให้รวมฝ่ายเข้าด้วยกัน)
     if (currentUser.role === 'Admin') {
       const groupedData = {};
-      
       filtered.forEach(col => {
-        const fileName = col[2]; // ใช้ชื่อหนังสือเป็นคีย์ในการรวม
+        const fileName = col[2];
         if (!groupedData[fileName]) {
-          // ถ้ายังไม่มีชื่อหนังสือนี้ในระบบกรุ๊ป ให้สร้างก้อนข้อมูลใหม่
           groupedData[fileName] = {
             date: col[0],
             fileName: col[2],
-            departments: [col[3].trim()], // เก็บกลุ่มงานเป็น Array
+            departments: [col[3].trim()],
             url: col[4]
           };
         } else {
-          // ถ้ามีชื่อหนังสือนี้อยู่แล้ว ให้เพิ่มกลุ่มงานเข้าไป (ถ้ายังไม่มีในลิสต์)
           if (!groupedData[fileName].departments.includes(col[3].trim())) {
             groupedData[fileName].departments.push(col[3].trim());
           }
         }
       });
-      
-      // แปลง Object กลับเป็น Array เพื่อเอาไปเรียงลำดับและแสดงผล
-      filtered = Object.values(groupedData).map(item => [
-        item.date, 
-        "", 
-        item.fileName, 
-        item.departments.join(", "), // รวมชื่อกลุ่มงานด้วยจุลภาค
-        item.url
-      ]);
+      filtered = Object.values(groupedData).map(item => [item.date, "", item.fileName, item.departments.join(", "), item.url]);
     }
 
-    // 3. เรียงลำดับตามเลขที่หนังสือ (เหมือนเดิม)
+    // 3. เรียงลำดับตามปีและเลขที่หนังสือ (มากไปน้อย)
     filtered.sort((a, b) => {
       const matchA = a[2].match(/^(\d+)-(\d+)/);
       const matchB = b[2].match(/^(\d+)-(\d+)/);
@@ -218,13 +226,12 @@
     });
 
     if(filtered.length === 0) {
-      tableBody.innerHTML = '<tr><td colspan="3" class="text-center p-4 text-muted">ไม่พบข้อมูลในปีที่เลือก</td></tr>';
+      tableBody.innerHTML = '<tr><td colspan="3" class="text-center p-4 text-muted">ไม่พบข้อมูล</td></tr>';
       return;
     }
 
-    // 4. แสดงผลตาราง (ปรับแต่งการโชว์กลุ่มงานให้สวยขึ้น)
+    // 4. แสดงผลตารางแบบ Badge
     tableBody.innerHTML = filtered.map(col => {
-      // แยกชื่อกลุ่มงานออกมาเป็น Badge สวยๆ
       const deptBadges = col[3].split(', ').map(d => 
         `<small class="badge bg-light text-muted border me-1" style="font-size: 0.7rem;">${d}</small>`
       ).join('');
@@ -245,6 +252,7 @@
       </tr>`;
     }).join('');
   }
+
   // --- 4. ระบบหลังบ้าน ---
   async function login() {
     const u = document.getElementById('user').value.trim();
@@ -294,6 +302,12 @@
     } catch(e) { tableBody.innerHTML = '<tr><td colspan="3">โหลดข้อมูลไม่สำเร็จ</td></tr>'; }
   }
 
+  function filterTable() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const filteredData = allLogs.filter(col => col[2].toLowerCase().includes(searchTerm));
+    displayTable(filteredData);
+  }
+
   async function handleUpload() {
     const dept = document.getElementById('deptSelect').value;
     if (selectedFilesArray.length === 0 || !dept) return alert("เลือกไฟล์และกลุ่มงานปลายทาง");
@@ -325,8 +339,6 @@
                     fileList: uploadedFiles
                 })
             });
-            
-            // เพิ่มการตรวจเช็กผลลัพธ์จาก Apps Script
             const lineResult = await lineRes.json();
             if (lineResult.message && lineResult.message.includes("failed")) {
                 alert("⚠️ ไฟล์อัปโหลดสำเร็จ แต่แจ้งเตือน LINE ผิดพลาด: " + lineResult.message);

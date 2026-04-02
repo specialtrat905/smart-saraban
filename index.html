@@ -21,6 +21,9 @@
     .action-buttons { display: flex; gap: 5px; }
     .btn-copy { background-color: #ffffff; color: #00796b; border: 1px solid #00796b; }
     .btn-copy:hover { background-color: #e8f5e9; color: #004d40; }
+    /* เพิ่มต่อท้ายในส่วน <style> */
+    .row-missing { background-color: #fffdf5 !important; /* สีเหลืองนวลจางๆ */}
+    .text-missing { color: #d93025; /* สีแดงเข้มแบบ Google เพื่อให้ดู Soft ลงแต่ยังเด่น */ font-weight: bold; }
   </style>
 </head>
 <body>
@@ -269,12 +272,12 @@
       ).join('');
 
       return `
-      <tr class="${isMissing ? 'table-warning' : ''}">
-        <td style="font-size: ${isMissing ? '1.2rem' : '0.75rem'}; color: ${isMissing ? 'red' : 'gray'}; text-align: center;">${col[0]}</td>
-        <td class="thai-wrap">
-           <span class="fw-bold ${isMissing ? 'text-danger' : 'text-dark'}" style="font-size: 0.85rem;">${col[2]}</span><br>
-           <div class="mt-1">${deptBadges}</div>
-        </td>
+      <tr class="${isMissing ? 'row-missing' : ''}">
+  <td style="font-size: ${isMissing ? '1.1rem' : '0.75rem'}; color: ${isMissing ? '#ff4d4d' : 'gray'}; text-align: center;">${col[0]}</td>
+  <td class="thai-wrap">
+     <span class="${isMissing ? 'text-missing' : 'text-dark'}" style="font-size: 0.85rem;">${col[2]}</span><br>
+     <div class="mt-1">${deptBadges}</div>
+  </td>
         <td>
           <div class="action-buttons">
             ${isMissing ? 

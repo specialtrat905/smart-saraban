@@ -59,6 +59,7 @@
              <option>บริหารแผนงานและงบประมาณ</option>
              <option>รองผู้อำนวยการ</option>
              <option>ผู้อำนวยการ</option>
+             <option>อื่นๆ</option>
           </select>
         </div>
         <div class="col-md-6"><input type="file" id="fileInput" class="form-control" multiple></div>
@@ -72,13 +73,24 @@
         </div>
       </div>
     </div>
-
     <div class="card p-4 shadow-sm mb-5">
       <div class="row mb-3 align-items-center">
         <div class="col-md-3"><h5 class="fw-bold m-0 text-dark">รายการหนังสือรับ</h5></div>
         <div class="col-md-3 mt-2 mt-md-0">
           <select id="yearSelect" class="form-select border-success shadow-sm" onchange="displayTable(allLogs)"></select>
         </div>
+        <div class="col-md-3 mt-2 mt-md-0" id="deptFilterContainer" style="display:none;">
+  <select id="deptFilter" class="form-select border-success shadow-sm" onchange="displayTable(allLogs)">
+    <option value="all">🏢 ทุกกลุ่มงาน</option>
+    <option>บริหารงานทั่วไป</option>
+    <option>บริหารงานบุคคล</option>
+    <option>บริหารงานวิชาการ</option>
+    <option>บริหารแผนงานและงบประมาณ</option>
+    <option>รองผู้อำนวยการ</option>
+    <option>ผู้อำนวยการ</option>
+    <option>อื่นๆ</option>
+  </select>
+</div>
         <div class="col-md-6 mt-2 mt-md-0">
           <div class="input-group shadow-sm">
             <span class="input-group-text bg-white border-end-0">🔍</span>
@@ -177,14 +189,20 @@
     const tableBody = document.getElementById('bookData');
     const selectedYear = document.getElementById('yearSelect').value;
     
-    // ดึงค่าจากช่องค้นหามาเช็ก
+    // --- [จุดที่ 1: ดึงค่ากลุ่มงานที่เลือก และคำค้นหา] ---
+    const selectedDept = document.getElementById('deptFilter').value; 
     const searchTerm = document.getElementById('searchInput').value.trim();
+    const isSearching = searchTerm !== ""; 
 
-    // 1. กรองข้อมูลปกติ ตามสิทธิ์และปีที่เลือก
+    // 1. กรองข้อมูลตามสิทธิ์, ปี และกลุ่มงาน
     let filtered = dataRows.filter(col => {
       if (!col || col.length < 5) return false;
-      const matchRole = (currentUser.role === 'Admin') || (col[3].trim() === currentUser.role.trim());
       
+      // กรองตามสิทธิ์ (Admin เห็นหมด / กลุ่มงานเห็นเฉพาะของตัวเอง)
+      const isUserAdmin = currentUser.role === 'Admin';
+      const matchRole = isUserAdmin || (col[3].trim() === currentUser.role.trim());
+      
+      // กรองตามปี (แบบ Regex แม่นยำ)
       let matchYear = false;
       if (selectedYear === "all") {
         matchYear = true;
@@ -193,11 +211,19 @@
         const fileYear = fileYearMatch ? fileYearMatch[2] : null;
         matchYear = (fileYear === selectedYear);
       }
-      return matchRole && matchYear;
+
+      // --- [จุดที่ 2: เพิ่มการกรองตามกลุ่มงานสำหรับ Admin] ---
+      let matchDept = true;
+      if (isUserAdmin && selectedDept !== "all") {
+        matchDept = (col[3].trim() === selectedDept);
+      }
+      
+      return matchRole && matchYear && matchDept;
     });
 
-    // 2. ✨ ส่วนตรวจหาเลขที่หายไป (เพิ่มเงื่อนไข: จะทำงานเมื่อไม่ได้พิมพ์ค้นหาเท่านั้น)
-    if (currentUser.role === 'Admin' && (selectedYear === "2569" || selectedYear === "all") && searchTerm === "") {
+    // 2. ส่วนตรวจหาเลขที่หายไป (เฉพาะปี 2569 และตอนที่ไม่ได้ค้นหา/ไม่ได้กรองกลุ่มงาน)
+    // เพิ่มเงื่อนไข: selectedDept === "all" เพื่อไม่ให้กากบาทโผล่ตอนดูเจาะจงรายกลุ่ม
+    if (currentUser.role === 'Admin' && (selectedYear === "2569" || selectedYear === "all") && !isSearching && selectedDept === "all") {
         const existingNumbers = dataRows.map(col => {
             const m = col[2].match(/^(\d+)-2569/);
             return m ? parseInt(m[1]) : null;
@@ -219,7 +245,7 @@
         }
     }
 
-    // 3. รวมกลุ่มข้อมูลสำหรับ Admin (เหมือนเดิม)
+    // 3. รวมกลุ่มข้อมูลสำหรับ Admin (Badge)
     if (currentUser.role === 'Admin') {
       const groupedData = {};
       filtered.forEach(col => {
@@ -311,7 +337,10 @@
         document.getElementById('mainApp').style.display = 'block';
         document.getElementById('userDisplay').innerText = currentUser.name;
         document.getElementById('roleDisplay').innerText = currentUser.role;
-        if(currentUser.role === 'Admin') document.getElementById('adminView').style.display = 'block';
+        if(currentUser.role === 'Admin') {
+          document.getElementById('adminView').style.display = 'block';
+          document.getElementById('deptFilterContainer').style.display = 'block';
+        }
         loadLogs();
       } else { document.getElementById('loginErr').innerText = "รหัสผ่านไม่ถูกต้อง"; }
     } catch(e) { alert("เชื่อมต่อฐานข้อมูลไม่ได้"); }

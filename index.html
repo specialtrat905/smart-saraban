@@ -75,46 +75,61 @@
     </div>
     <div class="card p-4 shadow-sm mb-5">
       <div class="row g-2 mb-3 align-items-center">
-  <div class="col-6 col-md-2">
-    <select id="yearSelect" class="form-select border-success shadow-sm" onchange="displayTable(allLogs)"></select>
-  </div>
-  
-  <div class="col-6 col-md-4" id="deptFilterContainer" style="display:none;">
-    <select id="deptFilter" class="form-select border-success shadow-sm" onchange="displayTable(allLogs)">
-      <option value="all">🏢 ทุกกลุ่มงาน</option>
-      <option>บริหารงานทั่วไป</option>
-      <option>บริหารงานบุคคล</option>
-      <option>บริหารงานวิชาการ</option>
-      <option>บริหารแผนงานและงบประมาณ</option>
-      <option>รองผู้อำนวยการ</option>
-      <option>ผู้อำนวยการ</option>
-      <option>อื่นๆ</option>
-    </select>
-  </div>
-  
-  <div class="col-12 col-md">
-    <div class="input-group shadow-sm">
-      <span class="input-group-text bg-white border-end-0">🔍</span>
-      <input type="text" id="searchInput" class="form-control border-start-0" placeholder="พิมพ์ชื่อหนังสือเพื่อค้นหา..." onkeyup="filterTable()">
-    </div>
-  </div>
-</div>
+        <div class="col-12 col-md-2">
+          <h5 class="fw-bold m-0 text-dark" style="font-size: 1.1rem;">รายการหนังสือรับ</h5>
+        </div>
+
+        <div class="col-6 col-md-2">
+          <select id="yearSelect" class="form-select border-success shadow-sm" onchange="displayTable(allLogs)"></select>
+        </div>
+
+        <div class="col-6 col-md-3" id="deptFilterContainer" style="display:none;">
+          <select id="deptFilter" class="form-select border-success shadow-sm" onchange="displayTable(allLogs)">
+            <option value="all">🏢 ทุกกลุ่มงาน</option>
+            <option>บริหารงานทั่วไป</option>
+            <option>บริหารงานบุคคล</option>
+            <option>บริหารงานวิชาการ</option>
+            <option>บริหารแผนงานและงบประมาณ</option>
+            <option>รองผู้อำนวยการ</option>
+            <option>ผู้อำนวยการ</option>
+            <option>อื่นๆ</option>
+          </select>
+        </div>
+
+        <div class="col-12 col-md">
+          <div class="input-group shadow-sm">
+            <span class="input-group-text bg-white border-end-0">🔍</span>
+            <input type="text" id="searchInput" class="form-control border-start-0" placeholder="พิมพ์ชื่อหนังสือเพื่อค้นหา..." onkeyup="filterTable()">
+          </div>
+        </div>
+      </div>
 
       <div class="table-responsive">
         <table class="table table-hover align-middle" style="font-size: 0.9rem;">
           <thead class="table-light">
-  <tr class="text-center align-middle">
-    <th style="width: 15%;">วันที่</th>
-    <th style="width: 60%;">ชื่อหนังสือ / ฝ่าย</th>
-    <th style="width: 25%;">จัดการ</th>
-  </tr>
-</thead>
+            <tr class="text-center align-middle">
+              <th style="width: 15%;">วันที่</th>
+              <th style="width: 60%;">ชื่อหนังสือ / ฝ่าย</th>
+              <th style="width: 25%;">จัดการ</th>
+            </tr>
+          </thead>
           <tbody id="bookData"></tbody>
         </table>
       </div>
-    </div>
-  </div>
-</div>
+    </div> </div> </div> ```
+
+---
+
+### 📝 สิ่งที่ครูแบ็คต้องทำต่อ (เพื่อให้เนื้อหาในตารางอยู่ตรงกลางด้วย):
+
+เพื่อให้ **"ข้อมูลในตาราง"** (วันที่, ชื่อ, ปุ่ม) อยู่ตรงกลางตามหัวตาราง ครูอย่าลืมไปปรับในฟังก์ชัน **`displayTable`** ตรงส่วนที่สร้าง `<tr>` ให้ใส่คลาส `text-center align-middle` เข้าไปด้วยนะครับ (ตามที่ผมเคยส่งให้ในรอบที่แล้ว)
+
+**สรุปสิ่งที่เปลี่ยนไป:**
+1.  **Layout:** ทุกอย่าง (หัวข้อ, ปี, กลุ่มงาน, ค้นหา) จะเรียงเป็นแถวหน้ากระดานสวยงามบนหน้าจอคอมครับ
+2.  **Width:** ผมปรับความกว้างวันที่เหลือ 15% และชื่อหนังสือเพิ่มเป็น 60% เพื่อให้ชื่อเรื่องยาวๆ แสดงผลได้ดีขึ้นครับ
+3.  **Centered:** หัวตารางถูกสั่งให้จัดวางไว้กึ่งกลางคอลัมน์เรียบร้อยครับ
+
+ครูแบ็ควางทับแล้วลองรีเฟรชดูนะครับ หน้าตาจะดูเป็นสัดส่วนและใช้งานง่ายขึ้นมากเลยครับ! มีตรงไหนอยากขยับอีกบอกได้เลยครับ สู้ๆ ครับครู!
 
 <script>
   // --- การตั้งค่า ---

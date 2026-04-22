@@ -119,10 +119,7 @@
     </div> </div> </div> 
 <script>
   // --- การตั้งค่า ---
-  const GH_OWNER = "specialtrat905";
-  const GH_REPO = "smart-saraban";
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxtbs4G9-d0Gxhunv96xcmsnmixnDwIbOTrr4xjSHIBewBVTDJU-NsUtGpMopH_mcnhJg/exec";
-  const GH_TOKEN = "ghp_" + "mpcrxscr5R9Y0vXZ3cZ4LtbvJjIktf0kXw1z";
 
   let currentUser = {};
   let allLogs = [];
@@ -352,23 +349,16 @@
     const tableBody = document.getElementById('bookData');
     tableBody.innerHTML = '<tr><td colspan="3" class="text-center p-4">กำลังโหลดข้อมูล...</td></tr>';
     try {
-      const response = await fetch(`https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/main/logs.csv?t=${new Date().getTime()}`);
-      const csvLines = await response.text();
-      
-      allLogs = csvLines.split(/\r?\n/).slice(1).filter(line => line.trim() !== "").map(line => {
-        const result = []; let current = ""; let inQuotes = false;
-        for (let char of line) {
-          if (char === '"') inQuotes = !inQuotes;
-          else if (char === ',' && !inQuotes) { result.push(current.trim()); current = ""; }
-          else current += char;
-        }
-        result.push(current.trim());
-        return result;
-      });
+      // เปลี่ยนมาดึงจาก SCRIPT_URL (ซึ่งจะไปเรียก doGet ใน Apps Script)
+      const response = await fetch(`${SCRIPT_URL}?t=${new Date().getTime()}`);
+      allLogs = await response.json(); // ข้อมูลจากชีตจะเป็น Array มาให้เลย
       
       updateYearOptions(allLogs);
       displayTable(allLogs);
-    } catch(e) { tableBody.innerHTML = '<tr><td colspan="3">โหลดข้อมูลไม่สำเร็จ</td></tr>'; }
+    } catch(e) { 
+      console.error("Load Error:", e);
+      tableBody.innerHTML = '<tr><td colspan="3">โหลดข้อมูลไม่สำเร็จ</td></tr>'; 
+    }
   }
 
   function filterTable() {
@@ -390,7 +380,6 @@
             const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ department: dept, sender: currentUser.name, fileName: file.name.replace(/,/g, ""), fileData: fileData }) });
             const result = await res.json();
             if (result.success) {
-                await updateGithubLogs(result.fileName, dept, result.url);
                 uploadedFiles.push({ name: result.fileName, url: result.url });
             }
         } catch (err) { console.error(err); }
@@ -421,16 +410,6 @@
     selectedFilesArray = []; renderFileList(); btn.disabled = false; btn.innerText = "อัปโหลดหนังสือและแจ้งเตือน LINE";
     loadLogs();
   }
-
-  async function updateGithubLogs(fileName, dept, driveUrl) {
-    const logRes = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/logs.csv`, { headers: { 'Authorization': `token ${GH_TOKEN}` } });
-    const logJson = await logRes.json();
-    const oldContent = decodeURIComponent(escape(atob(logJson.content)));
-    const newRow = `\n${new Date().toLocaleString('th-TH')},${currentUser.name},"${fileName}",${dept},${driveUrl}`;
-    const newContent = btoa(unescape(encodeURIComponent(oldContent + newRow)));
-    await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/logs.csv`, { method: 'PUT', headers: { 'Authorization': `token ${GH_TOKEN}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ message: "Update logs", content: newContent, sha: logJson.sha }) });
-  }
-
   window.addEventListener('load', () => {
     const p = new URLSearchParams(window.location.search);
     if (p.get('u') && p.get('p')) {

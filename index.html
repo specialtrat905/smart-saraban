@@ -43,6 +43,7 @@
     <div class="container-fluid">
       <span class="fw-bold text-white">👤 <span id="userDisplay"></span> | <span id="roleDisplay" class="badge bg-warning text-dark"></span></span>
       <button onclick="location.reload()" class="btn btn-sm btn-outline-light">ออกจากระบบ</button>
+      <button onclick="logout()" class="btn btn-sm btn-outline-light">ออกจากระบบ</button>
     </div>
   </nav>
 
@@ -127,6 +128,40 @@
   let allLogs = [];
   let selectedFilesArray = [];
   let currentYearBE = new Date().getFullYear() + 543;
+
+  // เพิ่มไว้ด้านบนของส่วน <script>
+function checkSession() {
+    const savedUser = localStorage.getItem('sarabanUser');
+    const loginTime = localStorage.getItem('loginTime');
+    
+    if (savedUser && loginTime) {
+        const now = new Date().getTime();
+        const twoHours = 2 * 60 * 60 * 1000; // 2 ชั่วโมง (มิลลิวินาที)
+        
+        if (now - loginTime < twoHours) {
+            // ยังไม่หมดเวลา: ดึงข้อมูลมาล็อกอินให้อัตโนมัติ
+            currentUser = JSON.parse(savedUser);
+            document.getElementById('loginPage').style.display = 'none';
+            document.getElementById('mainApp').style.display = 'block';
+            document.getElementById('userDisplay').innerText = currentUser.name;
+            document.getElementById('roleDisplay').innerText = currentUser.role;
+            if(currentUser.role === 'Admin') {
+                document.getElementById('adminView').style.display = 'block';
+                document.getElementById('deptFilterContainer').style.display = 'block';
+            }
+            loadLogs(); // โหลดข้อมูลทันที
+        } else {
+            // หมดเวลา 2 ชม. แล้ว: ล้างค่า
+            logout();
+        }
+    }
+}
+
+function logout() {
+    localStorage.removeItem('sarabanUser');
+    localStorage.removeItem('loginTime');
+    location.reload();
+}
 
   // --- 1. จัดการไฟล์อัปโหลด ---
   document.getElementById('fileInput').addEventListener('change', function(e) {
@@ -334,6 +369,9 @@
       if(found) {
         const data = found.split(',').map(i => i.trim());
         currentUser = { user: data[0], role: data[2], name: data[3] };
+        // --- เพิ่ม 2 บรรทัดนี้ครับ ---
+        localStorage.setItem('sarabanUser', JSON.stringify(currentUser));
+        localStorage.setItem('loginTime', new Date().getTime());
         document.getElementById('loginPage').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
         document.getElementById('userDisplay').innerText = currentUser.name;
@@ -413,6 +451,7 @@
     loadLogs();
   }
   window.addEventListener('load', () => {
+    checkSession();
     const p = new URLSearchParams(window.location.search);
     if (p.get('u') && p.get('p')) {
       document.getElementById('user').value = p.get('u');

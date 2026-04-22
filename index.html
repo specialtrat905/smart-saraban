@@ -42,8 +42,7 @@
   <nav class="navbar nav-custom p-3 shadow-sm sticky-top">
     <div class="container-fluid">
       <span class="fw-bold text-white">👤 <span id="userDisplay"></span> | <span id="roleDisplay" class="badge bg-warning text-dark"></span></span>
-      <button onclick="location.reload()" class="btn btn-sm btn-outline-light">ออกจากระบบ</button>
-      <button onclick="logout()" class="btn btn-sm btn-outline-light">ออกจากระบบ</button>
+      <button id="logoutBtn" onclick="logout()" class="btn btn-sm btn-outline-light" style="display:none;">ออกจากระบบ</button>
     </div>
   </nav>
 
@@ -136,22 +135,29 @@ function checkSession() {
     
     if (savedUser && loginTime) {
         const now = new Date().getTime();
-        const twoHours = 2 * 60 * 60 * 1000; // 2 ชั่วโมง (มิลลิวินาที)
+        const twoHours = 2 * 60 * 60 * 1000; // 2 ชั่วโมง
         
         if (now - loginTime < twoHours) {
-            // ยังไม่หมดเวลา: ดึงข้อมูลมาล็อกอินให้อัตโนมัติ
+            // ✅ กรณีที่ยังไม่หมดเวลา 2 ชม. ให้ล็อกอินอัตโนมัติ
             currentUser = JSON.parse(savedUser);
             document.getElementById('loginPage').style.display = 'none';
             document.getElementById('mainApp').style.display = 'block';
             document.getElementById('userDisplay').innerText = currentUser.name;
             document.getElementById('roleDisplay').innerText = currentUser.role;
+
+            // --- ส่วนที่ต้องเน้น: เช็คสิทธิ์เพื่อโชว์/ซ่อนปุ่ม ตอนรีเฟรชหน้าจอ ---
             if(currentUser.role === 'Admin') {
+                document.getElementById('logoutBtn').style.display = 'block'; // โชว์ปุ่มถ้าเป็น Admin
                 document.getElementById('adminView').style.display = 'block';
                 document.getElementById('deptFilterContainer').style.display = 'block';
+            } else {
+                document.getElementById('logoutBtn').style.display = 'none';  // ซ่อนปุ่มถ้าเป็นกลุ่มงาน
             }
-            loadLogs(); // โหลดข้อมูลทันที
+            // ---------------------------------------------------------
+
+            loadLogs(); 
         } else {
-            // หมดเวลา 2 ชม. แล้ว: ล้างค่า
+            // ❌ ถ้าเกิน 2 ชม. แล้ว ให้เตะออกไปหน้าล็อกอิน
             logout();
         }
     }
@@ -369,9 +375,18 @@ function logout() {
       if(found) {
         const data = found.split(',').map(i => i.trim());
         currentUser = { user: data[0], role: data[2], name: data[3] };
-        // --- เพิ่ม 2 บรรทัดนี้ครับ ---
+    // 1. สั่งให้เครื่องจำชื่อผู้ใช้และเวลาที่ล็อกอิน (เอาไว้เช็ก 2 ชม.)
         localStorage.setItem('sarabanUser', JSON.stringify(currentUser));
         localStorage.setItem('loginTime', new Date().getTime());
+
+    // 2. เช็กสิทธิ์: ถ้าเป็น Admin ให้โชว์ปุ่มออกจากระบบ
+    if (currentUser.role === 'Admin') {
+        document.getElementById('logoutBtn').style.display = 'block'; // ดึงม่านออก (โชว์ปุ่ม)
+        document.getElementById('adminView').style.display = 'block';
+        document.getElementById('deptFilterContainer').style.display = 'block';
+    } else {
+        document.getElementById('logoutBtn').style.display = 'none';  // ปิดม่านไว้ (ซ่อนปุ่ม)
+    }
         document.getElementById('loginPage').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
         document.getElementById('userDisplay').innerText = currentUser.name;

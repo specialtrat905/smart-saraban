@@ -93,6 +93,7 @@
             <option>รองผู้อำนวยการ</option>
             <option>ผู้อำนวยการ</option>
             <option>อื่นๆ</option>
+            <option>ยังไม่ได้ลงระบบ</option>
           </select>
         </div>
 
@@ -236,15 +237,13 @@ function logout() {
     const searchTerm = document.getElementById('searchInput').value.trim();
     const isSearching = searchTerm !== ""; 
 
-    // 1. กรองข้อมูลตามสิทธิ์, ปี และกลุ่มงาน
+    // 1. กรองข้อมูลตามสิทธิ์, ปี และกลุ่มงาน (ข้อมูลที่มีในระบบ)
     let filtered = dataRows.filter(col => {
       if (!col || col.length < 5) return false;
       
-      // กรองตามสิทธิ์ (Admin เห็นหมด / กลุ่มงานเห็นเฉพาะของตัวเอง)
       const isUserAdmin = currentUser.role === 'Admin';
       const matchRole = isUserAdmin || (col[3].trim() === currentUser.role.trim());
       
-      // กรองตามปี (แบบ Regex แม่นยำ)
       let matchYear = false;
       if (selectedYear === "all") {
         matchYear = true;
@@ -254,40 +253,20 @@ function logout() {
         matchYear = (fileYear === selectedYear);
       }
 
-      // --- [จุดที่ 2: เพิ่มการกรองตามกลุ่มงานสำหรับ Admin] ---
-      let matchDept = true;
-      if (isUserAdmin && selectedDept !== "all") {
+      // --- ปรับปรุง: การกรองตามกลุ่มงานรวมถึงตัวเลือกใหม่ ---
+      let matchDept = false;
+      if (selectedDept === "all") {
+        matchDept = true;
+      } else if (selectedDept === "ยังไม่ได้ลงระบบ") {
+        matchDept = false; // ข้อมูลที่มีในระบบจะไม่แสดงในหัวข้อนี้ (จะไปรอแสดงในส่วน missing ด้านล่างแทน)
+      } else {
         matchDept = (col[3].trim() === selectedDept);
       }
       
       return matchRole && matchYear && matchDept;
     });
 
-    // 2. ส่วนตรวจหาเลขที่หายไป (เฉพาะปี 2569 และตอนที่ไม่ได้ค้นหา/ไม่ได้กรองกลุ่มงาน)
-    // เพิ่มเงื่อนไข: selectedDept === "all" เพื่อไม่ให้กากบาทโผล่ตอนดูเจาะจงรายกลุ่ม
-    if (currentUser.role === 'Admin' && (selectedYear === "2569" || selectedYear === "all") && !isSearching && selectedDept === "all") {
-        const existingNumbers = dataRows.map(col => {
-            const m = col[2].match(/^(\d+)-2569/);
-            return m ? parseInt(m[1]) : null;
-        }).filter(n => n !== null);
-
-        if (existingNumbers.length > 0) {
-            const maxNum = Math.max(...existingNumbers);
-            for (let i = 1; i <= maxNum; i++) {
-                if (!existingNumbers.includes(i)) {
-                    filtered.push([
-                        "❌", 
-                        "SYSTEM", 
-                        `${i}-2569 <span class="text-missing">[ยังไม่ได้ลงระบบ]</span>`, 
-                        "ยังไม่มีข้อมูล", 
-                        "#"
-                    ]);
-                }
-            }
-        }
-    }
-
-    // 3. รวมกลุ่มข้อมูลสำหรับ Admin (Badge)
+    // 2. รวมกลุ่มข้อมูลสำหรับ Admin (Badge) - ของเดิมคงไว้
     if (currentUser.role === 'Admin') {
       const groupedData = {};
       filtered.forEach(col => {
@@ -314,7 +293,7 @@ function logout() {
       ]);
     }
 
-    // 4. เรียงลำดับตามปีและเลขที่หนังสือ (มากไปน้อย)
+    // 3. เรียงลำดับข้อมูลที่มีในระบบ (มากไปน้อย) - ของเดิมคงไว้
     filtered.sort((a, b) => {
       const matchA = a[2].match(/^(\d+)-(\d+)/);
       const matchB = b[2].match(/^(\d+)-(\d+)/);
@@ -327,12 +306,41 @@ function logout() {
       return b[0].localeCompare(a[0]);
     });
 
+    // ✨ 4. ส่วนตรวจหาเลขที่หายไป: แสดงเมื่อเลือก "ทุกกลุ่มงาน" หรือ "ยังไม่ได้ลงระบบ"
+    // และจะนำไปต่อ "ท้ายสุด" ของตารางเสมอ
+    if (currentUser.role === 'Admin' && (selectedYear === "2569" || selectedYear === "all") && !isSearching) {
+      if (selectedDept === "all" || selectedDept === "ยังไม่ได้ลงระบบ") {
+        const missingRows = [];
+        const existingNumbers = dataRows.map(col => {
+            const m = col[2].match(/^(\d+)-2569/);
+            return m ? parseInt(m[1]) : null;
+        }).filter(n => n !== null);
+
+        if (existingNumbers.length > 0) {
+            const maxNum = Math.max(...existingNumbers);
+            for (let i = 1; i <= maxNum; i++) {
+                if (!existingNumbers.includes(i)) {
+                    missingRows.push([
+                        "❌", 
+                        "SYSTEM", 
+                        `${i}-2569 <span style="color: red; font-weight: bold;">[ยังไม่ได้ลงระบบ]</span>`, 
+                        "ยังไม่มีข้อมูล", 
+                        "#"
+                    ]);
+                }
+            }
+        }
+        // เอารายการที่หายไปมาต่อท้าย (concat) ข้อมูลหลัก
+        filtered = filtered.concat(missingRows);
+      }
+    }
+
     if(filtered.length === 0) {
       tableBody.innerHTML = '<tr><td colspan="3" class="text-center p-4 text-muted">ไม่พบข้อมูล</td></tr>';
       return;
     }
 
-    // 5. แสดงผลตาราง (Render)
+    // 5. แสดงผลตาราง (Render) - ปรับจัดกึ่งกลางให้สวยงาม
     tableBody.innerHTML = filtered.map(col => {
       const isMissing = col[0] === "❌";
       const deptBadges = isMissing ? "" : col[3].split(', ').map(d => 
@@ -340,16 +348,16 @@ function logout() {
       ).join('');
 
       return `
-      <tr class="${isMissing ? 'row-missing' : ''}">
-        <td style="font-size: ${isMissing ? '1.1rem' : '0.75rem'}; color: ${isMissing ? '#ff4d4d' : 'gray'}; text-align: center;">${col[0]}</td>
+      <tr class="${isMissing ? 'row-missing' : ''} text-center align-middle">
+        <td style="font-size: ${isMissing ? '1.1rem' : '0.75rem'}; color: ${isMissing ? '#ff4d4d' : 'gray'};">${col[0]}</td>
         <td class="thai-wrap">
-           <span class="${isMissing ? 'text-missing' : 'text-dark'}" style="font-size: 0.85rem;">${col[2]}</span><br>
-           <div class="mt-1">${deptBadges}</div>
+           <span class="${isMissing ? '' : 'text-dark'}" style="font-size: 0.85rem;">${col[2]}</span><br>
+           <div class="mt-1 d-flex justify-content-center flex-wrap">${deptBadges}</div>
         </td>
         <td>
-          <div class="action-buttons">
+          <div class="action-buttons justify-content-center">
             ${isMissing ? 
-                '<button class="btn btn-sm btn-outline-secondary w-100" disabled>ไม่มีไฟล์</button>' : 
+                '<button class="btn btn-sm btn-outline-danger w-100" disabled style="font-size: 0.7rem;">ตามหนังสือฉบับนี้</button>' : 
                 `<a href="${col[4]}" target="_blank" class="btn btn-sm btn-primary shadow-sm flex-grow-1">เปิดดู</a>
                  <button onclick="copyLink('${col[4]}')" class="btn btn-sm btn-copy shadow-sm">คัดลอก</button>`
             }

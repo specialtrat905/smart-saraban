@@ -235,38 +235,30 @@ function logout() {
     const searchTerm = document.getElementById('searchInput').value.trim();
     const isSearching = searchTerm !== ""; 
 
-    // 1. กำหนดสีกรอบตามกลุ่มงาน (ตามที่ครูระบุ)
     const deptColors = {
         "บริหารงานวิชาการ": "#ffde59",
         "บริหารแผนงานและงบประมาณ": "#ff5757",
         "บริหารงานบุคคล": "#0cc0df",
         "บริหารงานทั่วไป": "#8c52ff",
-        "ผู้อำนวยการ": "#add8e6",     // น้ำเงินอ่อน
-        "รองผู้อำนวยการ": "#d2b48c",   // น้ำตาลอ่อน
-        "อื่นๆ": "#adb5bd"           // เทา
+        "ผู้อำนวยการ": "#add8e6",
+        "รองผู้อำนวยการ": "#d2b48c",
+        "อื่นๆ": "#adb5bd"
     };
 
-    // 2. กรองข้อมูลที่มีในระบบ (Registered)
+    // 1. กรองข้อมูลที่มีในระบบ
     let filtered = dataRows.filter(col => {
       if (!col || col.length < 5) return false;
       const isUserAdmin = currentUser.role === 'Admin';
       const matchRole = isUserAdmin || (col[3].trim() === currentUser.role.trim());
-      
       let matchYear = (selectedYear === "all") || (col[2].match(/^(\d+)-(\d{4})/)?.[2] === selectedYear);
-      
       let matchDept = false;
-      if (selectedDept === "all") {
-        matchDept = true;
-      } else if (selectedDept === "ยังไม่ได้ลงระบบ") {
-        matchDept = false; // ข้อมูลจริงจะไม่โชว์ในหัวข้อนี้
-      } else {
-        matchDept = (col[3].trim() === selectedDept);
-      }
-      
+      if (selectedDept === "all") { matchDept = true; }
+      else if (selectedDept === "ยังไม่ได้ลงระบบ") { matchDept = false; }
+      else { matchDept = (col[3].trim() === selectedDept); }
       return matchRole && matchYear && matchDept;
     });
 
-    // 3. รวมกลุ่มข้อมูลสำหรับ Admin (Badge)
+    // 2. รวมกลุ่มข้อมูลสำหรับ Admin (Badge)
     if (currentUser.role === 'Admin') {
       const groupedData = {};
       filtered.forEach(col => {
@@ -280,8 +272,7 @@ function logout() {
       filtered = Object.values(groupedData).map(item => [item.date, "", item.fileName, item.departments.join(", "), item.url]);
     }
 
-    // ✨ 4. ส่วนตรวจหาเลขที่หายไป (Missing)
-    // นำรายการที่หายไปมา "รวมเข้ากับรายการปกติ" ก่อนทำการเรียงลำดับ (Sort)
+    // 3. ตรวจหาเลขที่หายไป (โชว์เมื่อเลือก "ทุกกลุ่มงาน" หรือ "ยังไม่ได้ลงระบบ")
     if (currentUser.role === 'Admin' && (selectedYear === "2569" || selectedYear === "all") && !isSearching) {
       if (selectedDept === "all" || selectedDept === "ยังไม่ได้ลงระบบ") {
         const missingRows = [];
@@ -304,19 +295,18 @@ function logout() {
                 }
             }
         }
-        // รวมร่าง: เอาข้อมูลที่มีในระบบ มารวมกับ ข้อมูลที่หายไป
         filtered = filtered.concat(missingRows);
       }
     }
 
-    // ✨ 5. เรียงลำดับทั้งหมดรวมกัน (ใหม่ไปเก่า: 24 -> 23 -> 22)
+    // 4. เรียงลำดับทั้งหมด (ใหม่ไปเก่า: 24 -> 23 -> 22)
     filtered.sort((a, b) => {
       const matchA = a[2].match(/^(\d+)-(\d+)/), matchB = b[2].match(/^(\d+)-(\d+)/);
       if (matchA && matchB) {
         const numA = parseInt(matchA[1]), yearA = parseInt(matchA[2]);
         const numB = parseInt(matchB[1]), yearB = parseInt(matchB[2]);
-        if (yearB !== yearA) return yearB - yearA; // ปีใหม่กว่าขึ้นก่อน
-        return numB - numA; // เลขที่ใหม่กว่าขึ้นก่อน
+        if (yearB !== yearA) return yearB - yearA;
+        return numB - numA;
       }
       return b[0].localeCompare(a[0]);
     });
@@ -326,21 +316,28 @@ function logout() {
       return;
     }
 
-    // 6. แสดงผลตาราง (Render)
+    // 5. แสดงผลตาราง
     tableBody.innerHTML = filtered.map(col => {
       const isMissing = col[0] === "❌";
       
-      // ปรับแต่ง Badge สีตามกลุ่มงานที่ครูกำหนด
+      // จุดที่ 1: ตัดเวลาออก แสดงแค่วันที่ (แยกด้วยเว้นวรรคหรือคอมม่า)
+      const dateDisplay = isMissing ? "❌" : col[0].split(/[\s,]+/)[0];
+
+      // จุดที่ 2: ปรับ Badge ให้ตัวบาง (font-weight: 400)
       const deptBadges = isMissing ? "" : col[3].split(', ').map(d => {
         const color = deptColors[d.trim()] || "#adb5bd"; 
-        return `<small class="badge border me-1" style="font-size: 0.7rem; background-color: ${color}; color: #000; border-color: rgba(0,0,0,0.1) !important;">${d}</small>`;
+        return `<small class="badge border me-1" style="font-size: 0.7rem; font-weight: 400; background-color: ${color}; color: #000; border-color: rgba(0,0,0,0.1) !important;">${d}</small>`;
       }).join('');
       
       return `
       <tr class="${isMissing ? 'row-missing' : ''} align-middle">
-        <td class="text-center" style="font-size: ${isMissing ? '1.1rem' : '0.75rem'}; color: ${isMissing ? '#ff4d4d' : 'gray'};">${col[0]}</td>
-        <td class="thai-wrap text-start"> <span class="${isMissing ? '' : 'text-dark'} d-block mb-1" style="font-size: 0.85rem;">${col[2]}</span>
-           <div class="d-flex justify-content-start flex-wrap">${deptBadges}</div> </td>
+        <td class="text-center" style="font-size: ${isMissing ? '1.1rem' : '0.75rem'}; color: ${isMissing ? '#ff4d4d' : 'gray'};">
+          ${dateDisplay}
+        </td>
+        <td class="thai-wrap text-start">
+           <span class="${isMissing ? '' : 'text-dark'} fw-bold d-block mb-1" style="font-size: 0.85rem;">${col[2]}</span>
+           <div class="d-flex justify-content-start flex-wrap">${deptBadges}</div>
+        </td>
         <td class="text-center">
           <div class="action-buttons justify-content-center">
             ${isMissing ? 

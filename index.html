@@ -375,21 +375,36 @@ function logout() {
         localStorage.setItem('loginTime', new Date().getTime());
 
     // 2. เช็กสิทธิ์: ถ้าเป็น Admin ให้โชว์ปุ่มออกจากระบบ
+    // ค้นหาในฟังก์ชัน login() ช่วงที่ตรวจสอบพบผู้ใช้งาน (if(found))
+if(found) {
+    const data = found.split(',').map(i => i.trim());
+    currentUser = { user: data[0], role: data[2], name: data[3] };
+
+    // --- ปรับปรุงจุดนี้ครับ: ให้จำเฉพาะ Admin ---
     if (currentUser.role === 'Admin') {
-        document.getElementById('logoutBtn').style.display = 'block'; // ดึงม่านออก (โชว์ปุ่ม)
+        localStorage.setItem('sarabanUser', JSON.stringify(currentUser));
+        localStorage.setItem('loginTime', new Date().getTime());
+        
+        // แสดงเมนูและปุ่มออกจากระบบสำหรับ Admin
+        document.getElementById('logoutBtn').style.display = 'block';
         document.getElementById('adminView').style.display = 'block';
         document.getElementById('deptFilterContainer').style.display = 'block';
     } else {
-        document.getElementById('logoutBtn').style.display = 'none';  // ปิดม่านไว้ (ซ่อนปุ่ม)
+        // ถ้าไม่ใช่ Admin ให้ล้างค่าที่อาจค้างอยู่ในเครื่องทิ้ง (เพื่อความปลอดภัย)
+        localStorage.removeItem('sarabanUser');
+        localStorage.removeItem('loginTime');
+        
+        // ซ่อนปุ่มออกจากระบบสำหรับกลุ่มงาน
+        document.getElementById('logoutBtn').style.display = 'none';
     }
-        document.getElementById('loginPage').style.display = 'none';
-        document.getElementById('mainApp').style.display = 'block';
-        document.getElementById('userDisplay').innerText = currentUser.name;
-        document.getElementById('roleDisplay').innerText = currentUser.role;
-        if(currentUser.role === 'Admin') {
-          document.getElementById('adminView').style.display = 'block';
-          document.getElementById('deptFilterContainer').style.display = 'block';
-        }
+    // ---------------------------------------
+
+    document.getElementById('loginPage').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    document.getElementById('userDisplay').innerText = currentUser.name;
+    document.getElementById('roleDisplay').innerText = currentUser.role;
+    loadLogs();
+}
         loadLogs();
       } else { document.getElementById('loginErr').innerText = "รหัสผ่านไม่ถูกต้อง"; }
     } catch(e) { alert("เชื่อมต่อฐานข้อมูลไม่ได้"); }
@@ -460,15 +475,22 @@ function logout() {
     selectedFilesArray = []; renderFileList(); btn.disabled = false; btn.innerText = "อัปโหลดหนังสือและแจ้งเตือน LINE";
     loadLogs();
   }
-  window.addEventListener('load', () => {
-    checkSession();
+  // ค้นหาช่วงล่างสุดของไฟล์ แล้วแทนที่ด้วยก้อนนี้ครับ
+window.addEventListener('load', () => {
     const p = new URLSearchParams(window.location.search);
+    
+    // 1. ถ้ามาด้วยลิงก์ทางลัด (?u=...&p=...) ให้ล้างค่าเก่าและล็อกอินใหม่ทันที
     if (p.get('u') && p.get('p')) {
-      document.getElementById('user').value = p.get('u');
-      document.getElementById('pass').value = p.get('p');
-      setTimeout(login, 500);
+        localStorage.clear(); // ล้างค่าเผื่อมี Admin เคยล็อกอินค้างไว้
+        document.getElementById('user').value = p.get('u');
+        document.getElementById('pass').value = p.get('p');
+        setTimeout(login, 500);
+    } 
+    // 2. ถ้าไม่ได้มาด้วยลิงก์ ถึงจะไปเช็คว่ามีบัญชี Admin จำค้างไว้ไหม
+    else {
+        checkSession();
     }
-  });
+});
 </script>
 </body>
 </html>

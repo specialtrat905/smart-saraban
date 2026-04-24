@@ -7,30 +7,36 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;700&display=swap" rel="stylesheet">
   <style>
-    /* โทนสีขาว-ฟ้าสบายตา */
-    body { background: #f8f9fa; font-family: 'Sarabun', sans-serif; color: #333; }
+    body { background: #f0f4f8; font-family: 'Sarabun', sans-serif; color: #333; }
     
-    /* Navbar ขาว-ฟ้า */
+    /* 1. Navbar เข้มขึ้น มองง่าย */
     .nav-custom { 
-        background: linear-gradient(135deg, #ffffff 0%, #e3f2fd 100%); 
-        color: #007bff; 
-        border-bottom: 2px solid #90caf9; 
+        background: linear-gradient(135deg, #0056b3 0%, #007bff 100%); 
+        color: white; 
+        border-bottom: 3px solid #ffc107; /* ตัดด้วยสีเหลืองเล็กน้อยให้ดูเด่น */
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
-    .nav-custom .text-white { color: #0056b3 !important; }
-    
-    .card { border-radius: 15px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-    .main-app { display: none; }
-    
-    /* ปุ่มสีฟ้าโทนเย็น */
-    .btn-primary { background-color: #4dabf7; border: none; }
-    .btn-primary:hover { background-color: #339af0; }
-    .btn-success { background-color: #74c0fc; border: none; }
-    .btn-success:hover { background-color: #4dabf7; }
+    .nav-custom .fw-bold { color: #ffffff !important; }
 
-    .table-responsive { border-radius: 10px; background: white; }
-    .thai-wrap { word-break: normal; overflow-wrap: break-word; line-height: 1.5; }
-    
-    /* สไตล์กลุ่มงานแบบเรืองแสง (Glow Effect) */
+    /* 4. กรอบ Card ชัดเจน แบ่งโซนสวยงาม */
+    .card { 
+        border-radius: 12px; 
+        border: 1px solid #dee2e6; /* ขอบชัดเจน */
+        box-shadow: 0 4px 6px rgba(0,0,0,0.07); 
+        background: #ffffff;
+    }
+    #adminView { border-left: 5px solid #007bff; } /* เน้นโซนส่งหนังสือด้วยสีฟ้าเข้ม */
+    #bookListCard { border-left: 5px solid #28a745; } /* เน้นโซนรายการด้วยสีเขียว */
+
+    /* 2. ปุ่มเปิดดู จางลง (Soft Blue) */
+    .btn-primary { 
+        background-color: #74c0fc; 
+        border: none; 
+        color: #004a99; 
+        font-weight: bold;
+    }
+    .btn-primary:hover { background-color: #4dabf7; color: #fff; }
+
     .dept-glow {
         border: none;
         padding: 2px 8px;
@@ -38,11 +44,9 @@
         font-weight: 400;
         font-size: 0.7rem;
         display: inline-block;
-        transition: all 0.3s ease;
     }
-
-    .row-missing { background-color: #fff5f5 !important; }
-    .btn-copy { background-color: #fff; color: #4dabf7; border: 1px solid #74c0fc; }
+    .row-missing { background-color: #fff8f8 !important; }
+    .thai-wrap { word-break: normal; overflow-wrap: break-word; line-height: 1.5; }
 </style>
 </head>
 <body>
@@ -254,17 +258,17 @@ function logout() {
     const searchTerm = document.getElementById('searchInput').value.trim();
     const isSearching = searchTerm !== ""; 
 
-    // สีกรอบกลุ่มงาน (ใช้สำหรับทำ Glow)
     const deptColors = {
         "บริหารงานวิชาการ": "#ffde59",
         "บริหารแผนงานและงบประมาณ": "#ff5757",
         "บริหารงานบุคคล": "#0cc0df",
         "บริหารงานทั่วไป": "#8c52ff",
-        "ผู้อำนวยการ": "#4dabf7", // ปรับฟ้าให้เข้ากับธีม
+        "ผู้อำนวยการ": "#4dabf7",
         "รองผู้อำนวยการ": "#d2b48c",
         "อื่นๆ": "#adb5bd"
     };
 
+    // 1. กรองข้อมูลที่มีในระบบ
     let filtered = dataRows.filter(col => {
       if (!col || col.length < 5) return false;
       const isUserAdmin = currentUser.role === 'Admin';
@@ -274,6 +278,7 @@ function logout() {
       return matchRole && matchYear && matchDept;
     });
 
+    // 2. รวมกลุ่มสำหรับ Admin
     if (currentUser.role === 'Admin') {
       const groupedData = {};
       filtered.forEach(col => {
@@ -287,7 +292,7 @@ function logout() {
       filtered = Object.values(groupedData).map(item => [item.date, "", item.fileName, item.departments.join(", "), item.url]);
     }
 
-    // ส่วนตรวจหาเลขที่หายไป
+    // ✨ 3. นำรายการที่หายไปมารวมก่อน (เพื่อให้มันไปแทรกตามเลขที่)
     if (currentUser.role === 'Admin' && (selectedYear === "2569" || selectedYear === "all") && !isSearching) {
       if (selectedDept === "all" || selectedDept === "ยังไม่ได้ลงระบบ") {
         const missingRows = [];
@@ -300,7 +305,7 @@ function logout() {
             const maxNum = Math.max(...existingNumbers);
             for (let i = 1; i <= maxNum; i++) {
                 if (!existingNumbers.includes(i)) {
-                    // จุดที่ 1: แก้ให้เลขหนังสือเป็นสีแดงด้วย
+                    // จุดที่ 1: เลขหนังสือสีแดงเข้มเหมือนตัวอักษร
                     missingRows.push([
                         "❌", 
                         "SYSTEM", 
@@ -315,11 +320,14 @@ function logout() {
       }
     }
 
+    // ✨ 4. เรียงลำดับจาก ใหม่ -> เก่า (24 -> 23 -> 22)
     filtered.sort((a, b) => {
       const matchA = a[2].match(/^(\d+)-(\d+)/), matchB = b[2].match(/^(\d+)-(\d+)/);
       if (matchA && matchB) {
-        if (parseInt(matchB[2]) !== parseInt(matchA[2])) return parseInt(matchB[2]) - parseInt(matchA[2]);
-        return parseInt(matchB[1]) - parseInt(matchA[1]);
+        const numA = parseInt(matchA[1]), yearA = parseInt(matchA[2]);
+        const numB = parseInt(matchB[1]), yearB = parseInt(matchB[2]);
+        if (yearB !== yearA) return yearB - yearA;
+        return numB - numA;
       }
       return b[0].localeCompare(a[0]);
     });
@@ -329,15 +337,14 @@ function logout() {
       return;
     }
 
+    // 5. แสดงผลลงในตาราง
     tableBody.innerHTML = filtered.map(col => {
       const isMissing = col[0] === "❌";
       const dateDisplay = isMissing ? "❌" : col[0].split(/[\s,]+/)[0];
 
-      // จุดที่ 3: ปรับ Badge เป็นแบบเรืองแสง (Glow) และตัวบาง
       const deptBadges = isMissing ? "" : col[3].split(', ').map(d => {
         const color = deptColors[d.trim()] || "#adb5bd"; 
-        // สร้าง Effect เรืองแสงโดยใช้ rgba
-        return `<small class="dept-glow me-1" style="color: ${color}; background-color: ${color}15; box-shadow: 0 0 5px ${color}40;">${d}</small>`;
+        return `<small class="dept-glow me-1" style="color: ${color}; background-color: ${color}15; box-shadow: 0 0 5px ${color}30;">${d}</small>`;
       }).join('');
       
       return `

@@ -7,24 +7,43 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;700&display=swap" rel="stylesheet">
   <style>
-    body { background: #f0f2f5; font-family: 'Sarabun', sans-serif; color: #1c1e21; }
-    .nav-custom { background: linear-gradient(135deg, #004d40 0%, #00796b 100%); color: white; border-bottom: 3px solid #ffc107; }
-    .card { border-radius: 15px; border: none; }
+    /* โทนสีขาว-ฟ้าสบายตา */
+    body { background: #f8f9fa; font-family: 'Sarabun', sans-serif; color: #333; }
+    
+    /* Navbar ขาว-ฟ้า */
+    .nav-custom { 
+        background: linear-gradient(135deg, #ffffff 0%, #e3f2fd 100%); 
+        color: #007bff; 
+        border-bottom: 2px solid #90caf9; 
+    }
+    .nav-custom .text-white { color: #0056b3 !important; }
+    
+    .card { border-radius: 15px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
     .main-app { display: none; }
-    .btn-primary { background-color: #00796b; border: none; }
-    .btn-primary:hover { background-color: #004d40; }
-    .table-responsive { border-radius: 10px; }
-    .thai-wrap { word-break: normal; overflow-wrap: break-word; line-height: 1.5; text-align: left; }
-    .file-item { transition: all 0.3s ease; border-left: 5px solid #00796b; }
-    .file-item:hover { background-color: #f8f9fa; }
-    .btn-remove { color: #dc3545; cursor: pointer; font-weight: bold; font-size: 0.8rem; }
-    .action-buttons { display: flex; gap: 5px; }
-    .btn-copy { background-color: #ffffff; color: #00796b; border: 1px solid #00796b; }
-    .btn-copy:hover { background-color: #e8f5e9; color: #004d40; }
-    /* เพิ่มต่อท้ายในส่วน <style> */
-    .row-missing { background-color: #ffeea8 !important; /* สีเหลืองนวลจางๆ */}
-    .text-missing { color: #d93025; /* สีแดงเข้มแบบ Google เพื่อให้ดู Soft ลงแต่ยังเด่น */ font-weight: bold; }
-  </style>
+    
+    /* ปุ่มสีฟ้าโทนเย็น */
+    .btn-primary { background-color: #4dabf7; border: none; }
+    .btn-primary:hover { background-color: #339af0; }
+    .btn-success { background-color: #74c0fc; border: none; }
+    .btn-success:hover { background-color: #4dabf7; }
+
+    .table-responsive { border-radius: 10px; background: white; }
+    .thai-wrap { word-break: normal; overflow-wrap: break-word; line-height: 1.5; }
+    
+    /* สไตล์กลุ่มงานแบบเรืองแสง (Glow Effect) */
+    .dept-glow {
+        border: none;
+        padding: 2px 8px;
+        border-radius: 20px;
+        font-weight: 400;
+        font-size: 0.7rem;
+        display: inline-block;
+        transition: all 0.3s ease;
+    }
+
+    .row-missing { background-color: #fff5f5 !important; }
+    .btn-copy { background-color: #fff; color: #4dabf7; border: 1px solid #74c0fc; }
+</style>
 </head>
 <body>
 
@@ -235,30 +254,26 @@ function logout() {
     const searchTerm = document.getElementById('searchInput').value.trim();
     const isSearching = searchTerm !== ""; 
 
+    // สีกรอบกลุ่มงาน (ใช้สำหรับทำ Glow)
     const deptColors = {
         "บริหารงานวิชาการ": "#ffde59",
         "บริหารแผนงานและงบประมาณ": "#ff5757",
         "บริหารงานบุคคล": "#0cc0df",
         "บริหารงานทั่วไป": "#8c52ff",
-        "ผู้อำนวยการ": "#add8e6",
+        "ผู้อำนวยการ": "#4dabf7", // ปรับฟ้าให้เข้ากับธีม
         "รองผู้อำนวยการ": "#d2b48c",
         "อื่นๆ": "#adb5bd"
     };
 
-    // 1. กรองข้อมูลที่มีในระบบ
     let filtered = dataRows.filter(col => {
       if (!col || col.length < 5) return false;
       const isUserAdmin = currentUser.role === 'Admin';
       const matchRole = isUserAdmin || (col[3].trim() === currentUser.role.trim());
       let matchYear = (selectedYear === "all") || (col[2].match(/^(\d+)-(\d{4})/)?.[2] === selectedYear);
-      let matchDept = false;
-      if (selectedDept === "all") { matchDept = true; }
-      else if (selectedDept === "ยังไม่ได้ลงระบบ") { matchDept = false; }
-      else { matchDept = (col[3].trim() === selectedDept); }
+      let matchDept = (selectedDept === "all") ? true : (selectedDept === "ยังไม่ได้ลงระบบ" ? false : col[3].trim() === selectedDept);
       return matchRole && matchYear && matchDept;
     });
 
-    // 2. รวมกลุ่มข้อมูลสำหรับ Admin (Badge)
     if (currentUser.role === 'Admin') {
       const groupedData = {};
       filtered.forEach(col => {
@@ -272,7 +287,7 @@ function logout() {
       filtered = Object.values(groupedData).map(item => [item.date, "", item.fileName, item.departments.join(", "), item.url]);
     }
 
-    // 3. ตรวจหาเลขที่หายไป (โชว์เมื่อเลือก "ทุกกลุ่มงาน" หรือ "ยังไม่ได้ลงระบบ")
+    // ส่วนตรวจหาเลขที่หายไป
     if (currentUser.role === 'Admin' && (selectedYear === "2569" || selectedYear === "all") && !isSearching) {
       if (selectedDept === "all" || selectedDept === "ยังไม่ได้ลงระบบ") {
         const missingRows = [];
@@ -285,10 +300,11 @@ function logout() {
             const maxNum = Math.max(...existingNumbers);
             for (let i = 1; i <= maxNum; i++) {
                 if (!existingNumbers.includes(i)) {
+                    // จุดที่ 1: แก้ให้เลขหนังสือเป็นสีแดงด้วย
                     missingRows.push([
                         "❌", 
                         "SYSTEM", 
-                        `${i}-2569 <span style="color: red; font-weight: bold;">[ยังไม่ได้ลงระบบ]</span>`, 
+                        `<span style="color: #d93025; font-weight: bold;">${i}-2569 [ยังไม่ได้ลงระบบ]</span>`, 
                         "ยังไม่มีข้อมูล", 
                         "#"
                     ]);
@@ -299,14 +315,11 @@ function logout() {
       }
     }
 
-    // 4. เรียงลำดับทั้งหมด (ใหม่ไปเก่า: 24 -> 23 -> 22)
     filtered.sort((a, b) => {
       const matchA = a[2].match(/^(\d+)-(\d+)/), matchB = b[2].match(/^(\d+)-(\d+)/);
       if (matchA && matchB) {
-        const numA = parseInt(matchA[1]), yearA = parseInt(matchA[2]);
-        const numB = parseInt(matchB[1]), yearB = parseInt(matchB[2]);
-        if (yearB !== yearA) return yearB - yearA;
-        return numB - numA;
+        if (parseInt(matchB[2]) !== parseInt(matchA[2])) return parseInt(matchB[2]) - parseInt(matchA[2]);
+        return parseInt(matchB[1]) - parseInt(matchA[1]);
       }
       return b[0].localeCompare(a[0]);
     });
@@ -316,22 +329,20 @@ function logout() {
       return;
     }
 
-    // 5. แสดงผลตาราง
     tableBody.innerHTML = filtered.map(col => {
       const isMissing = col[0] === "❌";
-      
-      // จุดที่ 1: ตัดเวลาออก แสดงแค่วันที่ (แยกด้วยเว้นวรรคหรือคอมม่า)
       const dateDisplay = isMissing ? "❌" : col[0].split(/[\s,]+/)[0];
 
-      // จุดที่ 2: ปรับ Badge ให้ตัวบาง (font-weight: 400)
+      // จุดที่ 3: ปรับ Badge เป็นแบบเรืองแสง (Glow) และตัวบาง
       const deptBadges = isMissing ? "" : col[3].split(', ').map(d => {
         const color = deptColors[d.trim()] || "#adb5bd"; 
-        return `<small class="badge border me-1" style="font-size: 0.7rem; font-weight: 400; background-color: ${color}; color: #000; border-color: rgba(0,0,0,0.1) !important;">${d}</small>`;
+        // สร้าง Effect เรืองแสงโดยใช้ rgba
+        return `<small class="dept-glow me-1" style="color: ${color}; background-color: ${color}15; box-shadow: 0 0 5px ${color}40;">${d}</small>`;
       }).join('');
       
       return `
       <tr class="${isMissing ? 'row-missing' : ''} align-middle">
-        <td class="text-center" style="font-size: ${isMissing ? '1.1rem' : '0.75rem'}; color: ${isMissing ? '#ff4d4d' : 'gray'};">
+        <td class="text-center" style="font-size: 0.75rem; color: ${isMissing ? '#ff4d4d' : 'gray'};">
           ${dateDisplay}
         </td>
         <td class="thai-wrap text-start">
@@ -341,7 +352,7 @@ function logout() {
         <td class="text-center">
           <div class="action-buttons justify-content-center">
             ${isMissing ? 
-                '<button class="btn btn-sm btn-outline-danger w-100" disabled style="font-size: 0.75rem;">ตามหนังสือฉบับนี้</button>' : 
+                '<button class="btn btn-sm btn-outline-danger w-100" disabled style="font-size: 0.7rem; border-style: dashed;">รอลงระบบ</button>' : 
                 `<a href="${col[4]}" target="_blank" class="btn btn-sm btn-primary shadow-sm flex-grow-1">เปิดดู</a>
                  <button onclick="copyLink('${col[4]}')" class="btn btn-sm btn-copy shadow-sm">คัดลอก</button>`
             }

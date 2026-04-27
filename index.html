@@ -321,7 +321,7 @@ function logout() {
       const isMissing = col[0] === "❌";
       
       // จุดที่ 1: ตัดเวลาออก แสดงแค่วันที่ (แยกด้วยเว้นวรรคหรือคอมม่า)
-      const dateDisplay = isMissing ? "❌" : col[0].split(/[\s,]+/)[0];
+      const dateDisplay = isMissing ? "❌" : col[0].split(/[T\s,]+/)[0];
 
       // จุดที่ 2: ปรับ Badge ให้ตัวบาง (font-weight: 400)
       const deptBadges = isMissing ? "" : col[3].split(', ').map(d => {

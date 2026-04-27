@@ -51,17 +51,19 @@
       <h5 class="text-success fw-bold mb-3">🚀 ส่งหนังสือใหม่</h5>
       <div class="row g-3">
         <div class="col-md-6">
-          <select id="deptSelect" class="form-select">
-             <option value="">-- เลือกกลุ่มงานปลายทาง --</option>
-             <option>บริหารงานทั่วไป</option>
-             <option>บริหารงานบุคคล</option>
-             <option>บริหารงานวิชาการ</option>
-             <option>บริหารแผนงานและงบประมาณ</option>
-             <option>รองผู้อำนวยการ</option>
-             <option>ผู้อำนวยการ</option>
-             <option>อื่นๆ</option>
-          </select>
-        </div>
+  <select id="deptSelect" class="form-select" onchange="toggleOtherInput()">
+     <option value="">-- เลือกกลุ่มงานปลายทาง --</option>
+     <option>บริหารงานทั่วไป</option>
+     <option>บริหารงานบุคคล</option>
+     <option>บริหารงานวิชาการ</option>
+     <option>บริหารแผนงานและงบประมาณ</option>
+     <option>รองผู้อำนวยการ</option>
+     <option>ผู้อำนวยการ</option>
+     <option>อื่นๆ</option>
+  </select>
+  <input list="staffList" id="otherDetail" class="form-control mt-2" placeholder="พิมพ์ชื่อเพื่อค้นหา..." style="display:none;">
+  <datalist id="staffList"></datalist>
+</div>
         <div class="col-md-6"><input type="file" id="fileInput" class="form-control" multiple></div>
         <div class="col-12">
           <div id="fileListContainer" class="mt-2" style="display:none;">
@@ -417,6 +419,27 @@ if(found) {
     } catch(e) { alert("เชื่อมต่อฐานข้อมูลไม่ได้"); }
   }
 
+  // ฟังก์ชันสำหรับดึงรายชื่อจาก GitHub
+async function loadStaffList() {
+    try {
+        // 1. ไปดึงไฟล์จาก GitHub (ใส่ ?t=... เพื่อให้ได้ข้อมูลล่าสุดเสมอ ไม่ติด Cache)
+        const response = await fetch(`https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/main/staff.csv?t=${new Date().getTime()}`);
+        const data = await response.text();
+        
+        // 2. แปลงข้อความยาวๆ ให้กลายเป็น "รายชื่อ" ทีละบรรทัด และตัดช่องว่างส่วนเกินทิ้ง
+        staffNames = data.split(/\r?\n/).filter(name => name.trim() !== "");
+        
+        // 3. นำรายชื่อที่ได้ไปใส่ไว้ใน <datalist id="staffList"> เพื่อให้ครูเลือกได้ตอนพิมพ์
+        const list = document.getElementById('staffList');
+        if (list) {
+            list.innerHTML = staffNames.map(name => `<option value="${name}">`).join('');
+            console.log("โหลดรายชื่อสำเร็จ:", staffNames.length, "คน");
+        }
+    } catch (e) {
+        console.error("❌ ไม่สามารถดึงรายชื่อได้:", e);
+    }
+}
+
   async function loadLogs() {
     const tableBody = document.getElementById('bookData');
     tableBody.innerHTML = '<tr><td colspan="3" class="text-center p-4">กำลังโหลดข้อมูล...</td></tr>';
@@ -440,10 +463,25 @@ if(found) {
   }
 
   async function handleUpload() {
-    const dept = document.getElementById('deptSelect').value;
-    if (selectedFilesArray.length === 0 || !dept) return alert("เลือกไฟล์และกลุ่มงานปลายทาง");
-    const btn = document.getElementById('uploadBtn'); btn.disabled = true;
+    // 1. ดึงค่าจาก Dropdown กลุ่มงาน
+    let dept = document.getElementById('deptSelect').value;
+    
+    // 2. ดึงค่าจากช่องพิมพ์ชื่อรายคน (Autocomplete)
+    const otherDetail = document.getElementById('otherDetail').value.trim();
+
+    // 3. ตรวจสอบ: ถ้าเลือก "อื่นๆ" และมีการระบุชื่อ ให้เอาชื่อมาต่อท้ายในวงเล็บ
+    if (dept === "อื่นๆ" && otherDetail !== "") {
+        dept = `อื่นๆ (${otherDetail})`;
+    }
+
+    // ตรวจสอบความเรียบร้อยก่อนส่ง
+    if (selectedFilesArray.length === 0 || !dept) return alert("❌ กรุณาเลือกไฟล์และระบุกลุ่มงานปลายทาง");
+
+    const btn = document.getElementById('uploadBtn'); 
+    btn.disabled = true;
     let uploadedFiles = []; 
+
+    // ... (จากตรงนี้ลงไปให้ใช้โค้ดเดิมของครูได้เลยครับ) ... 
 
     for (let file of selectedFilesArray) {
         btn.innerText = `กำลังส่ง: ${file.name.substring(0,10)}...`;
@@ -484,6 +522,7 @@ if(found) {
   }
   // ค้นหาช่วงล่างสุดของไฟล์ แล้วแทนที่ด้วยก้อนนี้ครับ
 window.addEventListener('load', () => {
+loadStaffList(); // 👈 เพิ่มบรรทัดนี้ลงไป เพื่อให้เริ่มโหลดรายชื่อทันทีที่เปิดเว็บ
     const p = new URLSearchParams(window.location.search);
     
     // 1. ถ้ามาด้วยลิงก์ทางลัด (?u=...&p=...) ให้ล้างค่าเก่าและล็อกอินใหม่ทันที

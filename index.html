@@ -320,8 +320,18 @@ function logout() {
     tableBody.innerHTML = filtered.map(col => {
       const isMissing = col[0] === "❌";
       
-      // จุดที่ 1: ตัดเวลาออก แสดงแค่วันที่ (แยกด้วยเว้นวรรคหรือคอมม่า)
-      const dateDisplay = isMissing ? "❌" : col[0].split(/[T\s,]+/)[0];
+      // ดึงค่าวันที่ดิบออกมา (ตัดเวลาออกก่อน)
+      let rawDate = isMissing ? "❌" : col[0].split(/[T\s,]+/)[0];
+      let dateDisplay = rawDate;
+
+      // ถ้าเป็นรูปแบบ ค.ศ. (มีขีดกลาง -) เช่น 2026-04-27 ให้แปลงเป็น พ.ศ.
+      if (!isMissing && rawDate.includes("-")) {
+          const d = rawDate.split("-"); 
+          // d[0] คือ ปี ค.ศ., d[1] คือ เดือน, d[2] คือ วัน
+          if (d.length === 3) {
+              dateDisplay = `${parseInt(d[2])}/${parseInt(d[1])}/${parseInt(d[0]) + 543}`;
+          }
+      }
 
       // จุดที่ 2: ปรับ Badge ให้ตัวบาง (font-weight: 400)
       const deptBadges = isMissing ? "" : col[3].split(', ').map(d => {

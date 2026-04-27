@@ -128,6 +128,7 @@
 
   let currentUser = {};
   let allLogs = [];
+  let staffNames = []; // เพิ่มบรรทัดนี้เพื่อเก็บรายชื่อเจ้าหน้าที่
   let selectedFilesArray = [];
   let currentYearBE = new Date().getFullYear() + 543;
 
@@ -437,6 +438,18 @@ async function loadStaffList() {
         }
     } catch (e) {
         console.error("❌ ไม่สามารถดึงรายชื่อได้:", e);
+    }
+}
+
+// ฟังก์ชันสำหรับ เปิด/ปิด กล่องพิมพ์ชื่อเมื่อเลือก "อื่นๆ"
+function toggleOtherInput() {
+    const dept = document.getElementById('deptSelect').value;
+    const otherInput = document.getElementById('otherDetail');
+    if (dept === "อื่นๆ") {
+        otherInput.style.display = "block"; // แสดงกล่องพิมพ์
+    } else {
+        otherInput.style.display = "none";  // ซ่อนกล่องพิมพ์
+        otherInput.value = "";              // ล้างค่าทิ้ง
     }
 }
 

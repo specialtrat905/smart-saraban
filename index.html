@@ -271,7 +271,6 @@ function logout() {
   }
 
   // --- 3. แสดงผลตาราง (ปรับปรุงการกรองปีและจัดกลุ่ม) ---
-  // --- 3. แสดงผลตาราง (ฉบับปรับปรุง: แยกชื่อผู้รับมาเป็นป้ายสีเขียวใต้ชื่อหนังสือ) ---
   function displayTable(dataRows) {
     const tableBody = document.getElementById('bookData');
     const selectedYear = document.getElementById('yearSelect').value;
@@ -279,7 +278,6 @@ function logout() {
     const searchTerm = document.getElementById('searchInput').value.trim();
     const isSearching = searchTerm !== ""; 
 
-    // สีประจำกลุ่มงาน
     const deptColors = {
         "บริหารงานวิชาการ": "#ffde59",
         "บริหารแผนงานและงบประมาณ": "#ff5757",
@@ -290,17 +288,20 @@ function logout() {
         "อื่นๆ": "#adb5bd"
     };
 
-    // 1. กรองข้อมูล
+    // 1. กรองข้อมูลที่มีในระบบ (คงเดิม)
     let filtered = dataRows.filter(col => {
       if (!col || col.length < 5) return false;
       const isUserAdmin = currentUser.role === 'Admin';
       const matchRole = isUserAdmin || (col[3].trim() === currentUser.role.trim());
       let matchYear = (selectedYear === "all") || (col[2].match(/^(\d+)-(\d{4})/)?.[2] === selectedYear);
-      let matchDept = (selectedDept === "all") ? true : (selectedDept === "ยังไม่ได้ลงระบบ" ? false : col[3].trim() === selectedDept);
+      let matchDept = false;
+      if (selectedDept === "all") { matchDept = true; }
+      else if (selectedDept === "ยังไม่ได้ลงระบบ") { matchDept = false; }
+      else { matchDept = (col[3].trim() === selectedDept); }
       return matchRole && matchYear && matchDept;
     });
 
-    // 2. รวมกลุ่มข้อมูลสำหรับ Admin
+    // 2. รวมกลุ่มข้อมูลสำหรับ Admin (Badge) (คงเดิม)
     if (currentUser.role === 'Admin') {
       const groupedData = {};
       filtered.forEach(col => {
@@ -314,12 +315,41 @@ function logout() {
       filtered = Object.values(groupedData).map(item => [item.date, "", item.fileName, item.departments.join(", "), item.url]);
     }
 
-    // 3. เรียงลำดับ (ใหม่ไปเก่า)
+    // 3. ตรวจหาเลขที่หายไป (คงเดิม - ส่วนนี้ที่ครูเน้นว่าห้ามลบ)
+    if (currentUser.role === 'Admin' && (selectedYear === "2569" || selectedYear === "all") && !isSearching) {
+      if (selectedDept === "all" || selectedDept === "ยังไม่ได้ลงระบบ") {
+        const missingRows = [];
+        const existingNumbers = dataRows.map(col => {
+            const m = col[2].match(/^(\d+)-2569/);
+            return m ? parseInt(m[1]) : null;
+        }).filter(n => n !== null);
+
+        if (existingNumbers.length > 0) {
+            const maxNum = Math.max(...existingNumbers);
+            for (let i = 1; i <= maxNum; i++) {
+                if (!existingNumbers.includes(i)) {
+                    missingRows.push([
+                        "❌", 
+                        "SYSTEM", 
+                        `${i}-2569 <span style="color: red; font-weight: bold;">[ยังไม่ได้ลงระบบ]</span>`, 
+                        "ยังไม่มีข้อมูล", 
+                        "#"
+                    ]);
+                }
+            }
+        }
+        filtered = filtered.concat(missingRows);
+      }
+    }
+
+    // 4. เรียงลำดับทั้งหมด (คงเดิม)
     filtered.sort((a, b) => {
       const matchA = a[2].match(/^(\d+)-(\d+)/), matchB = b[2].match(/^(\d+)-(\d+)/);
       if (matchA && matchB) {
-        if (parseInt(matchB[2]) !== parseInt(matchA[2])) return parseInt(matchB[2]) - parseInt(matchA[2]);
-        return parseInt(matchB[1]) - parseInt(matchA[1]);
+        const numA = parseInt(matchA[1]), yearA = parseInt(matchA[2]);
+        const numB = parseInt(matchB[1]), yearB = parseInt(matchB[2]);
+        if (yearB !== yearA) return yearB - yearA;
+        return numB - numA;
       }
       return b[0].localeCompare(a[0]);
     });
@@ -329,33 +359,35 @@ function logout() {
       return;
     }
 
-    // 4. สร้างเนื้อหาตาราง
+    // 5. แสดงผลตาราง (ปรับปรุงการแยกป้ายชื่อคนรับ)
     tableBody.innerHTML = filtered.map(col => {
       const isMissing = col[0] === "❌";
+      
       let rawDate = isMissing ? "❌" : col[0].split(/[T\s,]+/)[0];
       let dateDisplay = rawDate;
 
       if (!isMissing && rawDate.includes("-")) {
           const d = rawDate.split("-"); 
-          if (d.length === 3) dateDisplay = `${parseInt(d[2])}/${parseInt(d[1])}/${parseInt(d[0]) + 543}`;
+          if (d.length === 3) {
+              dateDisplay = `${parseInt(d[2])}/${parseInt(d[1])}/${parseInt(d[0]) + 543}`;
+          }
       }
 
-      // --- ส่วนการประมวลผลชื่อหนังสือและชื่อผู้รับ ---
+      // --- ส่วนที่เพิ่มเข้าไปใหม่: แยกชื่อผู้รับจาก [...] ---
       let fullFileName = col[2];
       let cleanFileName = fullFileName;
       let staffBadge = "";
 
-      // ค้นหาข้อความใน [ ] (ชื่อผู้รับ) จากชื่อไฟล์
+      // ค้นหาข้อความใน [ ] (ชื่อผู้รับ)
       const nameMatch = fullFileName.match(/\[(.*?)\]/);
       if (nameMatch) {
           const names = nameMatch[1];
-          // ตัดชื่อใน [ ] ออกเพื่อให้ชื่อหนังสือดูสะอาด
+          // ตัดส่วน [ ] ออกจากชื่อหนังสือเพื่อให้แสดงผลสะอาด
           cleanFileName = fullFileName.replace(/\[.*?\]/, "").trim();
-          // สร้างป้ายชื่อผู้รับเป็นสีเขียวเข้ม (#00796b) แบบเดียวกับธีมเว็บ
+          // สร้างป้ายชื่อผู้รับสีเขียวเข้ม (#00796b)
           staffBadge = `<small class="badge border ms-1" style="font-size: 0.7rem; font-weight: 400; background-color: #00796b; color: #fff; border-color: rgba(0,0,0,0.1) !important;">👤 ${names}</small>`;
       }
 
-      // สร้าง Badge กลุ่มงาน
       const deptBadges = isMissing ? "" : col[3].split(', ').map(d => {
         const color = deptColors[d.trim()] || "#adb5bd"; 
         return `<small class="badge border me-1" style="font-size: 0.7rem; font-weight: 400; background-color: ${color}; color: #000; border-color: rgba(0,0,0,0.1) !important;">${d}</small>`;
@@ -368,8 +400,7 @@ function logout() {
         </td>
         <td class="thai-wrap text-start">
            <span class="${isMissing ? '' : 'text-dark'} fw-bold d-block mb-1" style="font-size: 0.85rem;">${cleanFileName}</span>
-           
-           <div class="d-flex align-items-center flex-wrap">
+           <div class="d-flex justify-content-start flex-wrap">
               ${deptBadges}
               ${staffBadge}
            </div>
@@ -385,7 +416,7 @@ function logout() {
         </td>
       </tr>`;
     }).join('');
-  }
+}
 
   // --- 4. ระบบหลังบ้าน ---
   async function login() {

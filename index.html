@@ -389,7 +389,8 @@ function logout() {
           }
       }
 
-      const deptBadges = isMissing ? "" : col[3].split(', ').map(d => {
+      // ✅ แก้ไข: ถ้าไม่ใช่ Admin (กลุ่มงานเข้ามาดู) ไม่ต้องแสดงป้ายกลุ่มงาน
+      const deptBadges = (isMissing || currentUser.role !== 'Admin') ? "" : col[3].split(', ').map(d => {
         const color = deptColors[d.trim()] || "#adb5bd"; 
         return `<small class="badge border me-1" style="font-size: 0.7rem; font-weight: 400; background-color: ${color}; color: #fff; border-color: rgba(0,0,0,0.1) !important;">${d}</small>`;
       }).join('');

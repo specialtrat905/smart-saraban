@@ -494,42 +494,58 @@ if(found) {
   }
 
   async function handleUpload() {
-    // ดึงค่ากลุ่มงานหลัก
+    // 1. ดึงค่ากลุ่มงานหลัก
     let dept = document.getElementById('deptSelect').value;
     
-    // รวบรวมชื่อจากทุกช่องที่มีคลาส 'other-name-input'
+    // 2. รวบรวมชื่อจากทุกช่องที่มีคลาส 'other-name-input' (กรณีเลือกอื่นๆ)
     const nameInputs = document.querySelectorAll('.other-name-input');
     let names = [];
     nameInputs.forEach(input => {
         if (input.value.trim() !== "") names.push(input.value.trim());
     });
 
-    // ถ้าเลือกอื่นๆ ให้รวบรวมชื่อมาต่อกัน
+    // 3. ถ้าเลือกอื่นๆ ให้รวบรวมชื่อมาต่อกัน
     if (dept === "อื่นๆ" && names.length > 0) {
         dept = `อื่นๆ (${names.join(', ')})`;
     }
 
-    // --- จากตรงนี้เป็นโค้ดเดิมของครูทั้งหมด ห้ามลบหรือเปลี่ยน เพื่อรักษาการแจ้งเตือน LINE ไว้ ---
+    // 4. ตรวจสอบเงื่อนไข (ประกาศ btn แค่ครั้งเดียวตรงนี้)
     if (selectedFilesArray.length === 0 || !dept) return alert("เลือกไฟล์และกลุ่มงานปลายทาง");
+    
     const btn = document.getElementById('uploadBtn'); 
     btn.disabled = true;
-    // ... โค้ดที่เหลือเหมือนเดิมไปจนจบฟังก์ชัน ...
-    if (selectedFilesArray.length === 0 || !dept) return alert("เลือกไฟล์และกลุ่มงานปลายทาง");
-    const btn = document.getElementById('uploadBtn'); btn.disabled = true;
     let uploadedFiles = []; 
 
+    // 5. เริ่มกระบวนการอัปโหลด (ห้ามประกาศ const btn ซ้ำข้างล่างนี้)
     for (let file of selectedFilesArray) {
         btn.innerText = `กำลังส่ง: ${file.name.substring(0,10)}...`;
         try {
-            const fileData = await new Promise(resolve => { const r = new FileReader(); r.onload = e => resolve(e.target.result); r.readAsDataURL(file); });
-            const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ department: dept, sender: currentUser.name, fileName: file.name.replace(/,/g, ""), fileData: fileData }) });
+            const fileData = await new Promise(resolve => { 
+                const r = new FileReader(); 
+                r.onload = e => resolve(e.target.result); 
+                r.readAsDataURL(file); 
+            });
+            
+            const res = await fetch(SCRIPT_URL, { 
+                method: 'POST', 
+                body: JSON.stringify({ 
+                    department: dept, 
+                    sender: currentUser.name, 
+                    fileName: file.name.replace(/,/g, ""), 
+                    fileData: fileData 
+                }) 
+            });
+            
             const result = await res.json();
             if (result.success) {
                 uploadedFiles.push({ name: result.fileName, url: result.url });
             }
-        } catch (err) { console.error(err); }
+        } catch (err) { 
+            console.error(err); 
+        }
     }
 
+    // 6. ส่งแจ้งเตือน LINE
     if (uploadedFiles.length > 0) {
         btn.innerText = "กำลังแจ้งเตือน LINE...";
         try {
@@ -548,11 +564,15 @@ if(found) {
             }
         } catch (err) { 
             console.error(err);
-            alert("❌ ระบบแจ้งเตือน LINE ขัดข้อง (ตรวจสอบ Token หรือการเชื่อมต่อ)");
+            alert("❌ ระบบแจ้งเตือน LINE ขัดข้อง");
         }
     }
+
     alert(`สำเร็จ! ส่งหนังสือ ${uploadedFiles.length} ฉบับ เรียบร้อย`);
-    selectedFilesArray = []; renderFileList(); btn.disabled = false; btn.innerText = "อัปโหลดหนังสือและแจ้งเตือน LINE";
+    selectedFilesArray = []; 
+    renderFileList(); 
+    btn.disabled = false; 
+    btn.innerText = "อัปโหลดหนังสือและแจ้งเตือน LINE";
     loadLogs();
   }
   // ค้นหาช่วงล่างสุดของไฟล์ แล้วแทนที่ด้วยก้อนนี้ครับ

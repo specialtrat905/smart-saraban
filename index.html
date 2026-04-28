@@ -301,7 +301,7 @@ function logout() {
       return matchRole && matchYear && matchDept;
     });
 
-    // 2. รวมกลุ่มข้อมูลสำหรับ Admin (คงเดิม)
+    // 2. รวมกลุ่มข้อมูลสำหรับ Admin (Badge) (คงเดิม)
     if (currentUser.role === 'Admin') {
       const groupedData = {};
       filtered.forEach(col => {
@@ -315,7 +315,7 @@ function logout() {
       filtered = Object.values(groupedData).map(item => [item.date, "", item.fileName, item.departments.join(", "), item.url]);
     }
 
-    // 3. ตรวจหาเลขที่หายไป (คืนค่าสีแดงและรูปแบบเดิมของครู)
+    // 3. ตรวจหาเลขที่หายไป (ปรับปรุง: เลขหนังสือสีแดง และตัดข้อความส่วนเกิน)
     if (currentUser.role === 'Admin' && (selectedYear === "2569" || selectedYear === "all") && !isSearching) {
       if (selectedDept === "all" || selectedDept === "ยังไม่ได้ลงระบบ") {
         const missingRows = [];
@@ -331,7 +331,7 @@ function logout() {
                     missingRows.push([
                         "❌", 
                         "SYSTEM", 
-                        `${i}-2569 <span style="color: red; font-weight: bold;">[ยังไม่ได้ลงระบบ]</span>`, 
+                        `<span style="color: red; font-weight: bold;">${i}-2569</span>`, 
                         "ยังไม่มีข้อมูล", 
                         "#"
                     ]);
@@ -359,7 +359,7 @@ function logout() {
       return;
     }
 
-    // 5. แสดงผลตาราง (แก้ไขจุดที่เป็นปัญหา)
+    // 5. แสดงผลตาราง (ปรับปรุง: ตัดปุ่มออกสำหรับรายการที่หายไป)
     tableBody.innerHTML = filtered.map(col => {
       const isMissing = col[0] === "❌";
       
@@ -377,7 +377,6 @@ function logout() {
       let cleanFileName = fullFileName;
       let staffBadge = "";
 
-      // ✅ แก้ไข: ถ้าไม่ใช่รายการที่หายไป ค่อยทำการตัดชื่อใน [ ] มาทำป้ายสีเขียว
       if (!isMissing) {
           const nameMatch = fullFileName.match(/\[(.*?)\]/);
           if (nameMatch) {
@@ -407,7 +406,7 @@ function logout() {
         <td class="text-center">
           <div class="action-buttons justify-content-center">
             ${isMissing ? 
-                '<button class="btn btn-sm btn-outline-danger w-100" disabled style="font-size: 0.75rem;">ตามหนังสือฉบับนี้</button>' : 
+                '' : 
                 `<a href="${col[4]}" target="_blank" class="btn btn-sm btn-primary shadow-sm flex-grow-1">เปิดดู</a>
                  <button onclick="copyLink('${col[4]}')" class="btn btn-sm btn-copy shadow-sm">คัดลอก</button>`
             }

@@ -51,17 +51,27 @@
       <h5 class="text-success fw-bold mb-3">🚀 ส่งหนังสือใหม่</h5>
       <div class="row g-3">
         <div class="col-md-6">
-          <select id="deptSelect" class="form-select">
-             <option value="">-- เลือกกลุ่มงานปลายทาง --</option>
-             <option>บริหารงานทั่วไป</option>
-             <option>บริหารงานบุคคล</option>
-             <option>บริหารงานวิชาการ</option>
-             <option>บริหารแผนงานและงบประมาณ</option>
-             <option>รองผู้อำนวยการ</option>
-             <option>ผู้อำนวยการ</option>
-             <option>อื่นๆ</option>
-          </select>
-        </div>
+  <select id="deptSelect" class="form-select" onchange="toggleOtherInput()">
+     <option value="">-- เลือกกลุ่มงานปลายทาง --</option>
+     <option>บริหารงานทั่วไป</option>
+     <option>บริหารงานบุคคล</option>
+     <option>บริหารงานวิชาการ</option>
+     <option>บริหารแผนงานและงบประมาณ</option>
+     <option>รองผู้อำนวยการ</option>
+     <option>ผู้อำนวยการ</option>
+     <option>อื่นๆ</option>
+  </select>
+  <div id="otherNamesContainer" style="display:none;" class="mt-2">
+    <div id="nameInputsList">
+      <div class="input-group mb-2">
+        <input list="staffList" class="form-control other-name-input" placeholder="พิมพ์ชื่อเพื่อค้นหา...">
+        <button type="button" class="btn btn-outline-success" onclick="addNameField()">➕</button>
+      </div>
+    </div>
+    <small class="text-muted">* สามารถเพิ่มรายชื่อได้มากกว่า 1 คนโดยกดปุ่ม +</small>
+  </div>
+  <datalist id="staffList"></datalist>
+</div>
         <div class="col-md-6"><input type="file" id="fileInput" class="form-control" multiple></div>
         <div class="col-12">
           <div id="fileListContainer" class="mt-2" style="display:none;">
@@ -128,6 +138,50 @@
   let allLogs = [];
   let selectedFilesArray = [];
   let currentYearBE = new Date().getFullYear() + 543;
+  let staffNames = [];
+
+// 1. ฟังก์ชันดึงรายชื่อจาก GitHub staff.csv
+async function loadStaffList() {
+    try {
+        const response = await fetch(`https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/main/staff.csv?t=${new Date().getTime()}`);
+        const data = await response.text();
+        staffNames = data.split(/\r?\n/).filter(name => name.trim() !== "");
+        const list = document.getElementById('staffList');
+        if (list) {
+            list.innerHTML = staffNames.map(name => `<option value="${name}">`).join('');
+        }
+    } catch (e) { console.error("โหลดรายชื่อไม่สำเร็จ", e); }
+}
+
+// 2. ฟังก์ชันเพิ่มช่องกรอกชื่อใหม่
+function addNameField() {
+    const container = document.getElementById('nameInputsList');
+    const div = document.createElement('div');
+    div.className = 'input-group mb-2';
+    div.innerHTML = `
+        <input list="staffList" class="form-control other-name-input" placeholder="ระบุชื่อเพิ่มเติม...">
+        <button type="button" class="btn btn-outline-danger" onclick="this.parentElement.remove()">✕</button>
+    `;
+    container.appendChild(div);
+}
+
+// 3. ฟังก์ชันเปิด/ปิดกล่อง "อื่นๆ"
+function toggleOtherInput() {
+    const dept = document.getElementById('deptSelect').value;
+    const container = document.getElementById('otherNamesContainer');
+    if (dept === "อื่นๆ") {
+        container.style.display = "block";
+    } else {
+        container.style.display = "none";
+        // ล้างข้อมูลให้เหลือช่องเดียวเมื่อเปลี่ยนกลุ่มงาน
+        document.getElementById('nameInputsList').innerHTML = `
+            <div class="input-group mb-2">
+                <input list="staffList" class="form-control other-name-input" placeholder="พิมพ์ชื่อเพื่อค้นหา...">
+                <button type="button" class="btn btn-outline-success" onclick="addNameField()">➕</button>
+            </div>
+        `;
+    }
+}
 
   // เพิ่มไว้ด้านบนของส่วน <script>
 function checkSession() {
@@ -440,7 +494,26 @@ if(found) {
   }
 
   async function handleUpload() {
-    const dept = document.getElementById('deptSelect').value;
+    // ดึงค่ากลุ่มงานหลัก
+    let dept = document.getElementById('deptSelect').value;
+    
+    // รวบรวมชื่อจากทุกช่องที่มีคลาส 'other-name-input'
+    const nameInputs = document.querySelectorAll('.other-name-input');
+    let names = [];
+    nameInputs.forEach(input => {
+        if (input.value.trim() !== "") names.push(input.value.trim());
+    });
+
+    // ถ้าเลือกอื่นๆ ให้รวบรวมชื่อมาต่อกัน
+    if (dept === "อื่นๆ" && names.length > 0) {
+        dept = `อื่นๆ (${names.join(', ')})`;
+    }
+
+    // --- จากตรงนี้เป็นโค้ดเดิมของครูทั้งหมด ห้ามลบหรือเปลี่ยน เพื่อรักษาการแจ้งเตือน LINE ไว้ ---
+    if (selectedFilesArray.length === 0 || !dept) return alert("เลือกไฟล์และกลุ่มงานปลายทาง");
+    const btn = document.getElementById('uploadBtn'); 
+    btn.disabled = true;
+    // ... โค้ดที่เหลือเหมือนเดิมไปจนจบฟังก์ชัน ...
     if (selectedFilesArray.length === 0 || !dept) return alert("เลือกไฟล์และกลุ่มงานปลายทาง");
     const btn = document.getElementById('uploadBtn'); btn.disabled = true;
     let uploadedFiles = []; 
@@ -484,6 +557,7 @@ if(found) {
   }
   // ค้นหาช่วงล่างสุดของไฟล์ แล้วแทนที่ด้วยก้อนนี้ครับ
 window.addEventListener('load', () => {
+loadStaffList(); // 👈 เพิ่มบรรทัดนี้ เพื่อให้ระบบไปดึงชื่อจาก GitHub มารอไว้
     const p = new URLSearchParams(window.location.search);
     
     // 1. ถ้ามาด้วยลิงก์ทางลัด (?u=...&p=...) ให้ล้างค่าเก่าและล็อกอินใหม่ทันที

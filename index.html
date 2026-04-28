@@ -315,7 +315,7 @@ function logout() {
       filtered = Object.values(groupedData).map(item => [item.date, "", item.fileName, item.departments.join(", "), item.url]);
     }
 
-    // 3. ตรวจหาเลขที่หายไป (คงเดิม - ส่วนนี้ที่ครูเน้นว่าห้ามลบ)
+    // 3. ตรวจหาเลขที่หายไป (คืนค่าสีแดง/เหลืองเดิมของครู)
     if (currentUser.role === 'Admin' && (selectedYear === "2569" || selectedYear === "all") && !isSearching) {
       if (selectedDept === "all" || selectedDept === "ยังไม่ได้ลงระบบ") {
         const missingRows = [];
@@ -359,7 +359,7 @@ function logout() {
       return;
     }
 
-    // 5. แสดงผลตาราง (ปรับปรุงการแยกป้ายชื่อคนรับ)
+    // 5. แสดงผลตาราง (ปรับปรุง: เอาไอคอนออก เหลือแค่ชื่อ)
     tableBody.innerHTML = filtered.map(col => {
       const isMissing = col[0] === "❌";
       
@@ -373,19 +373,17 @@ function logout() {
           }
       }
 
-      // --- ส่วนที่เพิ่มเข้าไปใหม่: แยกชื่อผู้รับจาก [...] ---
+      // --- แยกรายชื่อผู้รับจากวงเล็บ [ ] เพื่อมาทำเป็นป้ายชื่อ ---
       let fullFileName = col[2];
       let cleanFileName = fullFileName;
       let staffBadge = "";
 
-      // ค้นหาข้อความใน [ ] (ชื่อผู้รับ)
       const nameMatch = fullFileName.match(/\[(.*?)\]/);
       if (nameMatch) {
           const names = nameMatch[1];
-          // ตัดส่วน [ ] ออกจากชื่อหนังสือเพื่อให้แสดงผลสะอาด
           cleanFileName = fullFileName.replace(/\[.*?\]/, "").trim();
-          // สร้างป้ายชื่อผู้รับสีเขียวเข้ม (#00796b)
-          staffBadge = `<small class="badge border ms-1" style="font-size: 0.7rem; font-weight: 400; background-color: #00796b; color: #fff; border-color: rgba(0,0,0,0.1) !important;">👤 ${names}</small>`;
+          // ป้ายชื่อผู้รับสีเขียวเข้ม (ไม่มีไอคอน 👤 ตามสั่งครับ)
+          staffBadge = `<small class="badge border ms-1" style="font-size: 0.7rem; font-weight: 400; background-color: #00796b; color: #fff; border-color: rgba(0,0,0,0.1) !important;">${names}</small>`;
       }
 
       const deptBadges = isMissing ? "" : col[3].split(', ').map(d => {

@@ -288,7 +288,7 @@ function logout() {
         "อื่นๆ": "#adb5bd"
     };
 
-    // 1. กรองข้อมูลที่มีในระบบ (คงเดิม)
+    // 1. กรองข้อมูลที่มีในระบบ
     let filtered = dataRows.filter(col => {
       if (!col || col.length < 5) return false;
       const isUserAdmin = currentUser.role === 'Admin';
@@ -301,7 +301,7 @@ function logout() {
       return matchRole && matchYear && matchDept;
     });
 
-    // 2. รวมกลุ่มข้อมูลสำหรับ Admin (Badge) (คงเดิม)
+    // 2. รวมกลุ่มข้อมูลสำหรับ Admin
     if (currentUser.role === 'Admin') {
       const groupedData = {};
       filtered.forEach(col => {
@@ -315,7 +315,7 @@ function logout() {
       filtered = Object.values(groupedData).map(item => [item.date, "", item.fileName, item.departments.join(", "), item.url]);
     }
 
-    // 3. ตรวจหาเลขที่หายไป (ปรับปรุง: เลขหนังสือสีแดง และตัดข้อความส่วนเกิน)
+    // 3. ตรวจหาเลขที่หายไป (แสดงเลขสีแดงตัวหนาตามที่ครูต้องการ)
     if (currentUser.role === 'Admin' && (selectedYear === "2569" || selectedYear === "all") && !isSearching) {
       if (selectedDept === "all" || selectedDept === "ยังไม่ได้ลงระบบ") {
         const missingRows = [];
@@ -342,14 +342,20 @@ function logout() {
       }
     }
 
-    // 4. เรียงลำดับ (คงเดิม)
+    // 4. เรียงลำดับ (แก้ไขจุดนี้เพื่อให้ "แทรก" กลับเข้าลำดับเดิมได้ถูกต้อง)
     filtered.sort((a, b) => {
-      const matchA = a[2].match(/^(\d+)-(\d+)/), matchB = b[2].match(/^(\d+)-(\d+)/);
+      // ล้างโค้ด HTML ออกก่อนเพื่อให้ Regex หาตัวเลขเจอทั้งรายการปกติและรายการสีแดง
+      const textA = a[2].replace(/<[^>]*>?/gm, '');
+      const textB = b[2].replace(/<[^>]*>?/gm, '');
+      
+      const matchA = textA.match(/^(\d+)-(\d+)/);
+      const matchB = textB.match(/^(\d+)-(\d+)/);
+
       if (matchA && matchB) {
         const numA = parseInt(matchA[1]), yearA = parseInt(matchA[2]);
         const numB = parseInt(matchB[1]), yearB = parseInt(matchB[2]);
         if (yearB !== yearA) return yearB - yearA;
-        return numB - numA;
+        return numB - numA; // เรียงจากเลขมากไปน้อย
       }
       return b[0].localeCompare(a[0]);
     });
@@ -359,18 +365,15 @@ function logout() {
       return;
     }
 
-    // 5. แสดงผลตาราง (ปรับปรุง: ตัดปุ่มออกสำหรับรายการที่หายไป)
+    // 5. แสดงผลตาราง
     tableBody.innerHTML = filtered.map(col => {
       const isMissing = col[0] === "❌";
-      
       let rawDate = isMissing ? "❌" : col[0].split(/[T\s,]+/)[0];
       let dateDisplay = rawDate;
 
       if (!isMissing && rawDate.includes("-")) {
           const d = rawDate.split("-"); 
-          if (d.length === 3) {
-              dateDisplay = `${parseInt(d[2])}/${parseInt(d[1])}/${parseInt(d[0]) + 543}`;
-          }
+          if (d.length === 3) dateDisplay = `${parseInt(d[2])}/${parseInt(d[1])}/${parseInt(d[0]) + 543}`;
       }
 
       let fullFileName = col[2];
@@ -405,11 +408,8 @@ function logout() {
         </td>
         <td class="text-center">
           <div class="action-buttons justify-content-center">
-            ${isMissing ? 
-                '' : 
-                `<a href="${col[4]}" target="_blank" class="btn btn-sm btn-primary shadow-sm flex-grow-1">เปิดดู</a>
-                 <button onclick="copyLink('${col[4]}')" class="btn btn-sm btn-copy shadow-sm">คัดลอก</button>`
-            }
+            ${isMissing ? '' : `<a href="${col[4]}" target="_blank" class="btn btn-sm btn-primary shadow-sm flex-grow-1">เปิดดู</a>
+            <button onclick="copyLink('${col[4]}')" class="btn btn-sm btn-copy shadow-sm">คัดลอก</button>`}
           </div>
         </td>
       </tr>`;

@@ -507,32 +507,39 @@ if(found) {
     // สร้างข้อความชื่อผู้รับเพื่อไปต่อท้ายชื่อไฟล์
     const receiverSuffix = names.length > 0 ? ` [${names.join(', ')}]` : "";
 
-    const btn = document.getElementById('uploadBtn'); 
-    // --- 🚀 เริ่มส่วนระบบดักจับ (Validation) ---
+    // --- 🛡️ เริ่มส่วนระบบดักจับการส่งซ้ำ (Validation) ---
     for (let file of selectedFilesArray) {
-        // ดึงเลขที่หนังสือออกมา (เช่น 310-2569) เพื่อไปเช็คซ้ำ
+        // 1. ดึงเลขที่หนังสือจากชื่อไฟล์ (เช่น 310-2569)
         const docMatch = file.name.match(/^(\d+-\d+)/);
         if (docMatch) {
             const docNum = docMatch[1];
             
-            // ตรวจสอบใน allLogs ว่ามีเลขนี้อยู่แล้วหรือไม่
+            // 2. ตรวจสอบในฐานข้อมูล (allLogs)
             const isDuplicate = allLogs.some(log => {
-                // ล้างโค้ด HTML ออกก่อนเผื่อกรณีเป็นรายการสีแดง
-                const existingName = log[2].replace(/<[^>]*>?/gm, '');
-                return existingName.startsWith(docNum);
+                const existingTitle = log[2].replace(/<[^>]*>?/gm, ''); // ล้างโค้ด HTML
+                const existingDept = log[3].trim(); // กลุ่มงานในระบบ
+                
+                // เช็คเลขหนังสือตรงกัน และ กลุ่มงานตรงกัน
+                const matchNum = existingTitle.startsWith(docNum);
+                const matchDept = existingDept === dept;
+
+                // กรณีกลุ่ม "อื่นๆ" ต้องเช็ครายชื่อผู้รับที่พ่วงในชื่อหนังสือด้วย
+                if (matchNum && matchDept && dept === "อื่นๆ") {
+                    return existingTitle.includes(`[${names.join(', ')}]`);
+                }
+                return matchNum && matchDept;
             });
 
             if (isDuplicate) {
-                // ถ้าพบว่าซ้ำ ให้ถามความสมัครใจก่อน
-                const proceed = confirm(`⚠️ พบเลขที่หนังสือ "${docNum}" ในระบบแล้ว\nคุณต้องการอัปโหลดซ้ำเพื่อเพิ่มรายการใหม่ใช่หรือไม่?`);
-                if (!proceed) {
-                    btn.disabled = false;
-                    return; // หยุดการทำงานทั้งหมดถ้าผู้ใช้กด Cancel
-                }
+                // ถ้าซ้ำทั้งเลขหนังสือและกลุ่มงาน/คนรับ ให้แจ้งเตือน
+                const proceed = confirm(`⚠️ พบว่าเลขที่ "${docNum}" เคยส่งให้กลุ่มงานนี้แล้ว\nคุณต้องการส่งซ้ำเพื่อเพิ่มรายการใหม่ใช่หรือไม่?`);
+                if (!proceed) return; // หยุดการทำงานถ้ากด Cancel
             }
         }
     }
     // --- 🏁 จบส่วนระบบดักจับ ---
+
+    const btn = document.getElementById('uploadBtn'); 
     btn.disabled = true;
     let uploadedFiles = []; 
 
@@ -579,7 +586,7 @@ if(found) {
     alert(`สำเร็จ! ส่งหนังสือ ${uploadedFiles.length} ฉบับ เรียบร้อย`);
     selectedFilesArray = []; renderFileList(); btn.disabled = false; btn.innerText = "อัปโหลดหนังสือและแจ้งเตือน LINE";
     loadLogs();
-  }
+}
   // ค้นหาช่วงล่างสุดของไฟล์ แล้วแทนที่ด้วยก้อนนี้ครับ
 window.addEventListener('load', () => {
 loadStaffList(); // 👈 เพิ่มบรรทัดนี้ เพื่อให้ระบบไปดึงชื่อจาก GitHub มารอไว้

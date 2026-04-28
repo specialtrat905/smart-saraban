@@ -508,6 +508,31 @@ if(found) {
     const receiverSuffix = names.length > 0 ? ` [${names.join(', ')}]` : "";
 
     const btn = document.getElementById('uploadBtn'); 
+    // --- 🚀 เริ่มส่วนระบบดักจับ (Validation) ---
+    for (let file of selectedFilesArray) {
+        // ดึงเลขที่หนังสือออกมา (เช่น 310-2569) เพื่อไปเช็คซ้ำ
+        const docMatch = file.name.match(/^(\d+-\d+)/);
+        if (docMatch) {
+            const docNum = docMatch[1];
+            
+            // ตรวจสอบใน allLogs ว่ามีเลขนี้อยู่แล้วหรือไม่
+            const isDuplicate = allLogs.some(log => {
+                // ล้างโค้ด HTML ออกก่อนเผื่อกรณีเป็นรายการสีแดง
+                const existingName = log[2].replace(/<[^>]*>?/gm, '');
+                return existingName.startsWith(docNum);
+            });
+
+            if (isDuplicate) {
+                // ถ้าพบว่าซ้ำ ให้ถามความสมัครใจก่อน
+                const proceed = confirm(`⚠️ พบเลขที่หนังสือ "${docNum}" ในระบบแล้ว\nคุณต้องการอัปโหลดซ้ำเพื่อเพิ่มรายการใหม่ใช่หรือไม่?`);
+                if (!proceed) {
+                    btn.disabled = false;
+                    return; // หยุดการทำงานทั้งหมดถ้าผู้ใช้กด Cancel
+                }
+            }
+        }
+    }
+    // --- 🏁 จบส่วนระบบดักจับ ---
     btn.disabled = true;
     let uploadedFiles = []; 
 

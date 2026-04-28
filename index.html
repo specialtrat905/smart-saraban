@@ -301,7 +301,7 @@ function logout() {
       return matchRole && matchYear && matchDept;
     });
 
-    // 2. รวมกลุ่มข้อมูลสำหรับ Admin (Badge) (คงเดิม)
+    // 2. รวมกลุ่มข้อมูลสำหรับ Admin (คงเดิม)
     if (currentUser.role === 'Admin') {
       const groupedData = {};
       filtered.forEach(col => {
@@ -315,7 +315,7 @@ function logout() {
       filtered = Object.values(groupedData).map(item => [item.date, "", item.fileName, item.departments.join(", "), item.url]);
     }
 
-    // 3. ตรวจหาเลขที่หายไป (คืนค่าสีแดง/เหลืองเดิมของครู)
+    // 3. ตรวจหาเลขที่หายไป (คืนค่าสีแดงและรูปแบบเดิมของครู)
     if (currentUser.role === 'Admin' && (selectedYear === "2569" || selectedYear === "all") && !isSearching) {
       if (selectedDept === "all" || selectedDept === "ยังไม่ได้ลงระบบ") {
         const missingRows = [];
@@ -342,7 +342,7 @@ function logout() {
       }
     }
 
-    // 4. เรียงลำดับทั้งหมด (คงเดิม)
+    // 4. เรียงลำดับ (คงเดิม)
     filtered.sort((a, b) => {
       const matchA = a[2].match(/^(\d+)-(\d+)/), matchB = b[2].match(/^(\d+)-(\d+)/);
       if (matchA && matchB) {
@@ -359,7 +359,7 @@ function logout() {
       return;
     }
 
-    // 5. แสดงผลตาราง (ปรับปรุง: เอาไอคอนออก เหลือแค่ชื่อ)
+    // 5. แสดงผลตาราง (แก้ไขจุดที่เป็นปัญหา)
     tableBody.innerHTML = filtered.map(col => {
       const isMissing = col[0] === "❌";
       
@@ -373,17 +373,18 @@ function logout() {
           }
       }
 
-      // --- แยกรายชื่อผู้รับจากวงเล็บ [ ] เพื่อมาทำเป็นป้ายชื่อ ---
       let fullFileName = col[2];
       let cleanFileName = fullFileName;
       let staffBadge = "";
 
-      const nameMatch = fullFileName.match(/\[(.*?)\]/);
-      if (nameMatch) {
-          const names = nameMatch[1];
-          cleanFileName = fullFileName.replace(/\[.*?\]/, "").trim();
-          // ป้ายชื่อผู้รับสีเขียวเข้ม (ไม่มีไอคอน 👤 ตามสั่งครับ)
-          staffBadge = `<small class="badge border ms-1" style="font-size: 0.7rem; font-weight: 400; background-color: #00796b; color: #fff; border-color: rgba(0,0,0,0.1) !important;">${names}</small>`;
+      // ✅ แก้ไข: ถ้าไม่ใช่รายการที่หายไป ค่อยทำการตัดชื่อใน [ ] มาทำป้ายสีเขียว
+      if (!isMissing) {
+          const nameMatch = fullFileName.match(/\[(.*?)\]/);
+          if (nameMatch) {
+              const names = nameMatch[1];
+              cleanFileName = fullFileName.replace(/\[.*?\]/, "").trim();
+              staffBadge = `<small class="badge border ms-1" style="font-size: 0.7rem; font-weight: 400; background-color: #00796b; color: #fff; border-color: rgba(0,0,0,0.1) !important;">${names}</small>`;
+          }
       }
 
       const deptBadges = isMissing ? "" : col[3].split(', ').map(d => {

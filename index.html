@@ -64,11 +64,11 @@
   <div id="otherNamesContainer" style="display:none;" class="mt-2">
     <div id="nameInputsList">
       <div class="input-group mb-2">
-        <input list="staffList" class="form-control other-name-input" placeholder="พิมพ์ชื่อเพื่อค้นหา...">
+        <input list="staffList" class="form-control other-name-input" placeholder="พิมพ์ชื่อผู้รับคนที่ 1...">
         <button type="button" class="btn btn-outline-success" onclick="addNameField()">➕</button>
       </div>
     </div>
-    <small class="text-muted">* สามารถเพิ่มรายชื่อได้มากกว่า 1 คนโดยกดปุ่ม +</small>
+    <small class="text-muted">* สามารถเพิ่มรายชื่อได้โดยกดปุ่ม +</small>
   </div>
   <datalist id="staffList"></datalist>
 </div>
@@ -158,28 +158,17 @@ function addNameField() {
     const container = document.getElementById('nameInputsList');
     const div = document.createElement('div');
     div.className = 'input-group mb-2';
-    div.innerHTML = `
-        <input list="staffList" class="form-control other-name-input" placeholder="ระบุชื่อเพิ่มเติม...">
-        <button type="button" class="btn btn-outline-danger" onclick="this.parentElement.remove()">✕</button>
-    `;
+    div.innerHTML = `<input list="staffList" class="form-control other-name-input" placeholder="ระบุชื่อเพิ่มเติม..."><button type="button" class="btn btn-outline-danger" onclick="this.parentElement.remove()">✕</button>`;
     container.appendChild(div);
 }
 
-// 3. ฟังก์ชันเปิด/ปิดกล่อง "อื่นๆ"
 function toggleOtherInput() {
     const dept = document.getElementById('deptSelect').value;
     const container = document.getElementById('otherNamesContainer');
-    if (dept === "อื่นๆ") {
-        container.style.display = "block";
-    } else {
+    if (dept === "อื่นๆ") { container.style.display = "block"; } 
+    else {
         container.style.display = "none";
-        // ล้างข้อมูลให้เหลือช่องเดียวเมื่อเปลี่ยนกลุ่มงาน
-        document.getElementById('nameInputsList').innerHTML = `
-            <div class="input-group mb-2">
-                <input list="staffList" class="form-control other-name-input" placeholder="พิมพ์ชื่อเพื่อค้นหา...">
-                <button type="button" class="btn btn-outline-success" onclick="addNameField()">➕</button>
-            </div>
-        `;
+        document.getElementById('nameInputsList').innerHTML = `<div class="input-group mb-2"><input list="staffList" class="form-control other-name-input" placeholder="พิมพ์ชื่อผู้รับคนที่ 1..."><button type="button" class="btn btn-outline-success" onclick="addNameField()">➕</button></div>`;
     }
 }
 
@@ -494,62 +483,50 @@ if(found) {
   }
 
   async function handleUpload() {
-    // 1. ดึงค่ากลุ่มงานหลัก
-    let dept = document.getElementById('deptSelect').value;
-    
-    // 2. รวบรวมชื่อจากทุกช่องที่มีคลาส 'other-name-input' (กรณีเลือกอื่นๆ)
+    const dept = document.getElementById('deptSelect').value;
+    if (selectedFilesArray.length === 0 || !dept) return alert("เลือกไฟล์และกลุ่มงานปลายทาง");
+
+    // รวบรวมรายชื่อผู้รับ (ถ้ามี)
     const nameInputs = document.querySelectorAll('.other-name-input');
     let names = [];
-    nameInputs.forEach(input => {
-        if (input.value.trim() !== "") names.push(input.value.trim());
-    });
-
-    // 3. ถ้าเลือกอื่นๆ ให้รวบรวมชื่อมาต่อกัน
-    if (dept === "อื่นๆ" && names.length > 0) {
-        dept = `อื่นๆ (${names.join(', ')})`;
-    }
-
-    // 4. ตรวจสอบเงื่อนไข (ประกาศ btn แค่ครั้งเดียวตรงนี้)
-    if (selectedFilesArray.length === 0 || !dept) return alert("เลือกไฟล์และกลุ่มงานปลายทาง");
+    nameInputs.forEach(input => { if (input.value.trim() !== "") names.push(input.value.trim()); });
     
+    // สร้างข้อความชื่อผู้รับเพื่อไปต่อท้ายชื่อไฟล์
+    const receiverSuffix = names.length > 0 ? ` [ถึง: ${names.join(', ')}]` : "";
+
     const btn = document.getElementById('uploadBtn'); 
     btn.disabled = true;
     let uploadedFiles = []; 
 
-    // 5. เริ่มกระบวนการอัปโหลด (ห้ามประกาศ const btn ซ้ำข้างล่างนี้)
     for (let file of selectedFilesArray) {
         btn.innerText = `กำลังส่ง: ${file.name.substring(0,10)}...`;
         try {
-            const fileData = await new Promise(resolve => { 
-                const r = new FileReader(); 
-                r.onload = e => resolve(e.target.result); 
-                r.readAsDataURL(file); 
-            });
+            const fileData = await new Promise(resolve => { const r = new FileReader(); r.onload = e => resolve(e.target.result); r.readAsDataURL(file); });
             
+            // ปรับชื่อไฟล์ใหม่โดยใส่ชื่อผู้รับเข้าไปก่อนนามสกุล .pdf
+            let originalName = file.name.replace(/,/g, "");
+            let newFileName = originalName.toLowerCase().endsWith(".pdf") 
+                ? originalName.slice(0, -4) + receiverSuffix + ".pdf" 
+                : originalName + receiverSuffix;
+
             const res = await fetch(SCRIPT_URL, { 
                 method: 'POST', 
                 body: JSON.stringify({ 
-                    department: dept, 
+                    department: dept, // ส่งชื่อกลุ่มงานปกติ (เช่น "อื่นๆ") เพื่อไม่ให้สคริปต์พัง
                     sender: currentUser.name, 
-                    fileName: file.name.replace(/,/g, ""), 
+                    fileName: newFileName, // ส่งชื่อไฟล์ที่พ่วงชื่อคนรับไปแล้ว
                     fileData: fileData 
                 }) 
             });
-            
             const result = await res.json();
-            if (result.success) {
-                uploadedFiles.push({ name: result.fileName, url: result.url });
-            }
-        } catch (err) { 
-            console.error(err); 
-        }
+            if (result.success) uploadedFiles.push({ name: result.fileName, url: result.url });
+        } catch (err) { console.error(err); }
     }
 
-    // 6. ส่งแจ้งเตือน LINE
     if (uploadedFiles.length > 0) {
         btn.innerText = "กำลังแจ้งเตือน LINE...";
         try {
-            const lineRes = await fetch(SCRIPT_URL, {
+            await fetch(SCRIPT_URL, {
                 method: 'POST',
                 body: JSON.stringify({
                     action: "sendBatchNotification", 
@@ -558,21 +535,11 @@ if(found) {
                     fileList: uploadedFiles
                 })
             });
-            const lineResult = await lineRes.json();
-            if (lineResult.message && lineResult.message.includes("failed")) {
-                alert("⚠️ ไฟล์อัปโหลดสำเร็จ แต่แจ้งเตือน LINE ผิดพลาด: " + lineResult.message);
-            }
-        } catch (err) { 
-            console.error(err);
-            alert("❌ ระบบแจ้งเตือน LINE ขัดข้อง");
-        }
+        } catch (err) { console.error(err); }
     }
 
     alert(`สำเร็จ! ส่งหนังสือ ${uploadedFiles.length} ฉบับ เรียบร้อย`);
-    selectedFilesArray = []; 
-    renderFileList(); 
-    btn.disabled = false; 
-    btn.innerText = "อัปโหลดหนังสือและแจ้งเตือน LINE";
+    selectedFilesArray = []; renderFileList(); btn.disabled = false; btn.innerText = "อัปโหลดหนังสือและแจ้งเตือน LINE";
     loadLogs();
   }
   // ค้นหาช่วงล่างสุดของไฟล์ แล้วแทนที่ด้วยก้อนนี้ครับ

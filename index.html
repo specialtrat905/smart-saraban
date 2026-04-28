@@ -492,7 +492,7 @@ if(found) {
     nameInputs.forEach(input => { if (input.value.trim() !== "") names.push(input.value.trim()); });
     
     // สร้างข้อความชื่อผู้รับเพื่อไปต่อท้ายชื่อไฟล์
-    const receiverSuffix = names.length > 0 ? ` [ถึง: ${names.join(', ')}]` : "";
+    const receiverSuffix = names.length > 0 ? ` [${names.join(', ')}]` : "";
 
     const btn = document.getElementById('uploadBtn'); 
     btn.disabled = true;

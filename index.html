@@ -474,19 +474,49 @@ if(found) {
     } catch(e) { alert("เชื่อมต่อฐานข้อมูลไม่ได้"); }
   }
 
-  async function loadLogs() {
+  async function loadLogs(retryCount = 0) {
     const tableBody = document.getElementById('bookData');
-    tableBody.innerHTML = '<tr><td colspan="3" class="text-center p-4">กำลังโหลดข้อมูล...</td></tr>';
+    
+    // แสดงข้อความตามรอบการโหลด เพื่อให้ผู้ใช้งานทราบสถานะ
+    if (retryCount === 0) {
+      tableBody.innerHTML = '<tr><td colspan="3" class="text-center p-4">กำลังโหลดข้อมูล...</td></tr>';
+    } else {
+      console.log(`[Retry] กำลังพยายามเชื่อมต่อเซิร์ฟเวอร์ Google ใหม่ รอบที่ ${retryCount}...`);
+    }
+    
     try {
-      // เปลี่ยนมาดึงจาก SCRIPT_URL (ซึ่งจะไปเรียก doGet ใน Apps Script)
       const response = await fetch(`${SCRIPT_URL}?t=${new Date().getTime()}`);
-      allLogs = await response.json(); // ข้อมูลจากชีตจะเป็น Array มาให้เลย
       
+      // 1. ตรวจสอบสถานะการตอบกลับของเซิร์ฟเวอร์เบื้องต้น
+      if (!response.ok) {
+        throw new Error(`HTTP Status ${response.status}`);
+      }
+      
+      // 2. ดึงข้อมูลออกมาเป็นข้อความดิบ (Text) เพื่อตรวจสอบโครงสร้างก่อนแปลงเป็น JSON
+      const textData = await response.text();
+      
+      // 3. ตรวจสอบว่าค่าที่ส่งกลับมาติด Error HTML ของ Google หรือไม่
+      if (textData.trim().startsWith("<!DOCTYPE") || textData.trim().startsWith("<html")) {
+        throw new SyntaxError("Google Infrastructure Timeout (Returned HTML Page)");
+      }
+      
+      // 4. หากข้อมูลถูกต้อง ทำการแปลงเป็นอ็อบเจกต์และแสดงผลตารางตามปกติ
+      allLogs = JSON.parse(textData);
       updateYearOptions(allLogs);
       displayTable(allLogs);
+      
     } catch(e) { 
-      console.error("Load Error:", e);
-      tableBody.innerHTML = '<tr><td colspan="3">โหลดข้อมูลไม่สำเร็จ</td></tr>'; 
+      console.warn(`Load Logs Attempt ${retryCount + 1} Failed:`, e.message);
+      
+      // 🛡️ ตรรกะระบบลองใหม่อัตโนมัติ: หากพัง ให้รอ 1.5 วินาทีแล้วลองใหม่ สูงสุด 3 รอบ
+      if (retryCount < 2) {
+        setTimeout(() => {
+          loadLogs(retryCount + 1);
+        }, 1500); // เว้นจังหวะความถี่ 1.5 วินาทีเพื่อหลีกเลี่ยงการโดนบล็อกคิว
+      } else {
+        // หากพยายามครบ 3 รอบแล้วยังไม่ได้ ถึงจะแสดงข้อความแจ้งเตือนผู้ใช้งานจริง
+        tableBody.innerHTML = '<tr><td colspan="3" class="text-center p-4 text-danger">⚠️ โครงสร้างสัญญาณ Google Sheets ตอบสนองช้าชั่วคราว กรุณากดรีเฟรชหน้าจอใหม่อีกครั้ง</td></tr>'; 
+      }
     }
   }
 

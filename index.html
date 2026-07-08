@@ -143,9 +143,10 @@
 // 1. ฟังก์ชันดึงรายชื่อจาก GitHub staff.csv
 async function loadStaffList() {
     try {
-        const response = await fetch(`https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/main/staff.csv?t=${new Date().getTime()}`);
-        const data = await response.text();
-        staffNames = data.split(/\r?\n/).filter(name => name.trim() !== "");
+        // ยิงไปดึงข้อมูลจาก Google Sheets แทน โดยส่งพารามิเตอร์ ?type=staff
+        const response = await fetch(`${SCRIPT_URL}?type=staff&t=${new Date().getTime()}`);
+        staffNames = await response.json(); // รับค่ากลับมาเป็นรูปแบบ JSON Array ทันที
+        
         const list = document.getElementById('staffList');
         if (list) {
             list.innerHTML = staffNames.map(name => `<option value="${name}">`).join('');

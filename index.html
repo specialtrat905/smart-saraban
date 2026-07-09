@@ -270,14 +270,9 @@ function logout() {
     }
   }
 
-  // --- 3. แสดงผลตาราง (ปรับปรุงการกรองปีและจัดกลุ่ม) ---
+  // --- 3. แสดงผลตาราง (เวอร์ชันเสถียรสูงสุด: เรนเดอร์ข้อมูลสำเร็จรูปจากหลังบ้านทันที) ---
   function displayTable(dataRows) {
     const tableBody = document.getElementById('bookData');
-    const selectedYear = document.getElementById('yearSelect').value;
-    const selectedDept = document.getElementById('deptFilter').value; 
-    const searchTerm = document.getElementById('searchInput').value.trim();
-    const isSearching = searchTerm !== ""; 
-
     const deptColors = {
         "บริหารงานวิชาการ": "#ffde59",
         "บริหารแผนงานและงบประมาณ": "#ff5757",
@@ -288,74 +283,15 @@ function logout() {
         "อื่นๆ": "#adb5bd"
     };
 
-    // 1. นำข้อมูลจากคลาวด์มาใช้งานโดยตรง (เนื่องจากฝั่งหลังบ้านทำการคัดกรองสิทธิ์และคิวมาให้เสร็จสรรพแล้ว)
-let filtered = JSON.parse(JSON.stringify(dataRows));
-
-    // 2. รวมกลุ่มข้อมูลสำหรับ Admin
-    if (currentUser.role === 'Admin') {
-      const groupedData = {};
-      filtered.forEach(col => {
-        const fileName = col[2];
-        if (!groupedData[fileName]) {
-          groupedData[fileName] = { date: col[0], fileName: col[2], departments: [col[3].trim()], url: col[4] };
-        } else if (!groupedData[fileName].departments.includes(col[3].trim())) {
-          groupedData[fileName].departments.push(col[3].trim());
-        }
-      });
-      filtered = Object.values(groupedData).map(item => [item.date, "", item.fileName, item.departments.join(", "), item.url]);
-    }
-
-    // 3. ตรวจหาเลขที่หายไป (แสดงเลขสีแดงตัวหนาตามที่ครูต้องการ)
-    if (currentUser.role === 'Admin' && (selectedYear === "2569" || selectedYear === "all") && !isSearching) {
-      if (selectedDept === "all" || selectedDept === "ยังไม่ได้ลงระบบ") {
-        const missingRows = [];
-        const existingNumbers = dataRows.map(col => {
-            const m = col[2].match(/^(\d+)-2569/);
-            return m ? parseInt(m[1]) : null;
-        }).filter(n => n !== null);
-
-        if (existingNumbers.length > 0) {
-            const maxNum = Math.max(...existingNumbers);
-            for (let i = 1; i <= maxNum; i++) {
-                if (!existingNumbers.includes(i)) {
-                    missingRows.push([
-                        "❌", 
-                        "SYSTEM", 
-                        `<span style="color: red; font-weight: bold;">${i}-2569</span>`, 
-                        "ยังไม่มีข้อมูล", 
-                        "#"
-                    ]);
-                }
-            }
-        }
-        filtered = filtered.concat(missingRows);
-      }
-    }
-
-    // 4. เรียงลำดับ (แก้ไขจุดนี้เพื่อให้ "แทรก" กลับเข้าลำดับเดิมได้ถูกต้อง)
-    filtered.sort((a, b) => {
-      // ล้างโค้ด HTML ออกก่อนเพื่อให้ Regex หาตัวเลขเจอทั้งรายการปกติและรายการสีแดง
-      const textA = a[2].replace(/<[^>]*>?/gm, '');
-      const textB = b[2].replace(/<[^>]*>?/gm, '');
-      
-      const matchA = textA.match(/^(\d+)-(\d+)/);
-      const matchB = textB.match(/^(\d+)-(\d+)/);
-
-      if (matchA && matchB) {
-        const numA = parseInt(matchA[1]), yearA = parseInt(matchA[2]);
-        const numB = parseInt(matchB[1]), yearB = parseInt(matchB[2]);
-        if (yearB !== yearA) return yearB - yearA;
-        return numB - numA; // เรียงจากเลขมากไปน้อย
-      }
-      return b[0].localeCompare(a[0]);
-    });
+    // นำข้อมูลที่ฝั่ง Apps Script ประมวลผลกลุ่ม Admin และเลขตัวแดงมาให้แล้ว ไปใช้งานตรงๆ
+    let filtered = JSON.parse(JSON.stringify(dataRows));
 
     if(filtered.length === 0) {
       tableBody.innerHTML = '<tr><td colspan="3" class="text-center p-4 text-muted">ไม่พบข้อมูล</td></tr>';
       return;
     }
 
-    // 5. แสดงผลตาราง
+    // ลูปประกอบร่างแท็ก HTML แสดงผลตารางหนังสือรับ
     tableBody.innerHTML = filtered.map(col => {
       const isMissing = col[0] === "❌";
       let rawDate = isMissing ? "❌" : col[0].split(/[T\s,]+/)[0];
@@ -379,7 +315,7 @@ let filtered = JSON.parse(JSON.stringify(dataRows));
           }
       }
 
-      // ✅ แก้ไข: ถ้าไม่ใช่ Admin (กลุ่มงานเข้ามาดู) ไม่ต้องแสดงป้ายกลุ่มงาน
+      // แสดงสิทธิ์ badges เฉพาะบัญชีผู้ดูแลระบบธุรการกลาง (Admin)
       const deptBadges = (isMissing || currentUser.role !== 'Admin') ? "" : col[3].split(', ').map(d => {
         const color = deptColors[d.trim()] || "#adb5bd"; 
         return `<small class="badge border me-1" style="font-size: 0.7rem; font-weight: 400; background-color: ${color}; color: #fff; border-color: rgba(0,0,0,0.1) !important;">${d}</small>`;
@@ -405,7 +341,7 @@ let filtered = JSON.parse(JSON.stringify(dataRows));
         </td>
       </tr>`;
     }).join('');
-}
+  }
 
   // --- 4. ระบบหลังบ้าน ---
   async function login() {

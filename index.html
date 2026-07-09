@@ -110,7 +110,7 @@
         <div class="col-12 col-md">
           <div class="input-group shadow-sm">
             <span class="input-group-text bg-white border-end-0">🔍</span>
-            <input type="text" id="searchInput" class="form-control border-start-0" placeholder="พิมพ์ชื่อหนังสือแล้วกด Enter..." onkeypress="handleSearchKeyPress(event)">
+            <input type="text" id="searchInput" class="form-control border-start-0" placeholder="พิมพ์ชื่อหนังสือเพื่อค้นหาอัตโนมัติ..." oninput="handleSearchInput()">
           </div>
         </div>
       </div>
@@ -314,6 +314,16 @@ function logout() {
               cleanFileName = fullFileName.replace(/\[.*?\]/, "").trim();
               staffBadge = `<small class="badge border ms-1" style="font-size: 0.7rem; font-weight: 400; background-color: #adb5bd; color: #fff; border-color: rgba(0,0,0,0.1) !important;">${names}</small>`;
           }
+
+          // ✨ เพิ่มส่วนนี้: ตรรกะการไฮไลท์ข้อความเน้นคำค้นหาสีเหลืองนวล (Keyword Highlighting)
+          const searchTerm = document.getElementById('searchInput').value.trim();
+          if (searchTerm) {
+              // ล้างเครื่องหมายพิเศษของ Regex เพื่อป้องกันการพังกรณีผู้ใช้เผลอพิมพ์อักขระแปลกปลอม
+              const escapedSearch = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+              const regex = new RegExp(`(${escapedSearch})`, 'gi');
+              // แทนที่คำค้นหาด้วยการห่อหุ้มแท็กสไตล์แถบสีพื้นหลังสีเหลือง
+              cleanFileName = cleanFileName.replace(regex, `<span style="background-color: #fff59d; padding: 2px 2px; border-radius: 3px; font-weight: bold; color: #000;">$1</span>`);
+          }
       }
 
       // แสดงสิทธิ์ badges เฉพาะบัญชีผู้ดูแลระบบธุรการกลาง (Admin)
@@ -414,11 +424,15 @@ function logout() {
     loadLogs(false);
   }
 
-  // 🔍 ดักจับเหตุการณ์กดยืนยันคำในช่องค้นหา (ปุ่ม Enter) เพื่อสั่งสแกนจากหลังบ้าน
-  function handleSearchKeyPress(event) {
-    if (event.key === 'Enter') {
+  // ⏱️ ตัวแปรควบคุมเวลาการพิมพ์ค้นหาอัตโนมัติ
+  let searchTimeout = null;
+
+  // 🔍 ฟังก์ชันดักจับการพิมพ์: หากหยุดพิมพ์ครบ 1 วินาที (1000ms) ระบบจะยิงค้นหาหลังบ้านทันที
+  function handleSearchInput() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
       resetAndReloadLogs();
-    }
+    }, 1000);
   }
 
   // 🚀 ฟังก์ชันดาวน์โหลดข้อมูลอิงตามสิทธิ์และจัดสรรพารามิเตอร์คัดกรองจากต้นทาง
@@ -427,16 +441,21 @@ function logout() {
     isLoading = true;
 
     const tableBody = document.getElementById('bookData');
+    
+    // 🌀 ส่วนการแสดงสถานะเอฟเฟกต์วงกลมกำลังโหลด
     if (!isAppend && retryCount === 0) {
-      tableBody.innerHTML = '<tr><td colspan="3" class="text-center p-4">กำลังโหลดข้อมูล...</td></tr>';
+      tableBody.innerHTML = '<tr><td colspan="3" class="text-center p-4"><div class="spinner-border text-success spinner-border-sm me-2" role="status"></div> กำลังโหลดข้อมูล...</td></tr>';
+    } else if (isAppend && retryCount === 0) {
+      // กรณีเลื่อนหน้าจอลงมาด้านล่างสุด ให้สร้างแถววงกลมหมุนแทรกไว้ท้ายตารางชั่วคราว
+      const loadingRow = document.createElement('tr');
+      loadingRow.id = 'infinite-scroll-loading';
+      loadingRow.innerHTML = `<td colspan="3" class="text-center p-3 bg-light"><div class="spinner-border text-success spinner-border-sm me-2" role="status"></div> <small class="text-muted fw-bold">กำลังโหลดข้อมูลปีเก่าเพิ่มเติม...</small></td>`;
+      tableBody.appendChild(loadingRow);
     }
 
     const selectedYear = document.getElementById('yearSelect').value;
-    // ป้องกันความปลอดภัย: หากไม่ใช่ Admin ระบบจะล็อกส่งชื่อกลุ่มงานตนเองไปบังคับคัดออกตั้งแต่หลังบ้านทันที
     const selectedDept = (currentUser.role === 'Admin') ? document.getElementById('deptFilter').value : currentUser.role;
     const searchTerm = document.getElementById('searchInput').value.trim();
-
-    // ดึงข้อมูลอิงตามปีที่กำลังรันในสกรอลล์ไหลต่อเนื่อง
     const targetYear = (selectedYear === "all") ? currentScrollYear : selectedYear;
 
     try {
@@ -452,24 +471,27 @@ function logout() {
       
       const newRows = JSON.parse(textData);
       
+      // 🔓 ลบแถววงกลมหมุนชั่วคราวออกเมื่อได้รับข้อมูลจากเซิร์ฟเวอร์เรียบร้อยแล้ว
+      const oldLoadingRow = document.getElementById('infinite-scroll-loading');
+      if (oldLoadingRow) oldLoadingRow.remove();
+
       if (isAppend) {
         allLogs = allLogs.concat(newRows);
       } else {
         allLogs = newRows;
       }
 
-      // 🔄 ตรรกะไหลข้ามปีอัตโนมัติ (กรณีสั่งดูปีทั้งหมด และแถวข้อมูลของปีนั้นๆ หมดก๊อกแล้ว)
       if (newRows.length < 100 && selectedYear === "all" && currentScrollYear > 2568) {
-        currentScrollYear--; // ลดลงไปดึงแท็บปีเก่าถัดไป
-        currentOffset = 0;   // รีเซ็ตออฟเซ็ตเริ่มต้นใหม่ของแท็บนั้นๆ
+        currentScrollYear--; 
+        currentOffset = 0;   
         isLoading = false;
         if (newRows.length === 0) {
-          return loadLogs(true); // สั่งยิงคำขอต่อเนื่องทันทีอย่างไร้รอยต่อ
+          return loadLogs(true); 
         }
       } else if (newRows.length < 100) {
-        isExhausted = true; // สิ้นสุดบัญชีแถวข้อมูลในเงื่อนไขค้นหานั้นๆ จริงๆ
+        isExhausted = true; 
       } else {
-        currentOffset += newRows.length; // ขยับลำดับคิวเตรียมสแตนด์บายรอบถัดไป
+        currentOffset += newRows.length; 
       }
 
       displayTable(allLogs);
@@ -478,10 +500,15 @@ function logout() {
     } catch(e) {
       console.warn("Load Logs Failed, Retrying...", e.message);
       isLoading = false;
+      
+      // ลบแถววงกลมหมุนออกหากเกิดข้อผิดพลาดคลาวด์พังชั่วคราว
+      const oldLoadingRow = document.getElementById('infinite-scroll-loading');
+      if (oldLoadingRow) oldLoadingRow.remove();
+
       if (retryCount < 2) {
         setTimeout(() => loadLogs(isAppend, retryCount + 1), 1500);
       } else if (!isAppend) {
-        tableBody.innerHTML = '<tr><td colspan="3" class="text-center p-4 text-danger">⚠️ สัญญาณหน่วง กรุณากด Enter ในช่องค้นหาอีกครั้ง</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="3" class="text-center p-4 text-danger">⚠️ สัญญาณหน่วง กรุณาพิมพ์ตัวอักษรใหม่อีกครั้งเพื่อค้นหา</td></tr>';
       }
     }
   }

@@ -90,11 +90,11 @@
         </div>
 
         <div class="col-6 col-md-2">
-          <select id="yearSelect" class="form-select border-success shadow-sm" onchange="displayTable(allLogs)"></select>
+          <select id="yearSelect" class="form-select border-success shadow-sm" onchange="resetAndReloadLogs()"></select>
         </div>
 
         <div class="col-6 col-md-3" id="deptFilterContainer" style="display:none;">
-          <select id="deptFilter" class="form-select border-success shadow-sm" onchange="displayTable(allLogs)">
+          <select id="deptFilter" class="form-select border-success shadow-sm" onchange="resetAndReloadLogs()">
             <option value="all">🏢 ทุกกลุ่มงาน</option>
             <option>บริหารงานทั่วไป</option>
             <option>บริหารงานบุคคล</option>
@@ -110,7 +110,7 @@
         <div class="col-12 col-md">
           <div class="input-group shadow-sm">
             <span class="input-group-text bg-white border-end-0">🔍</span>
-            <input type="text" id="searchInput" class="form-control border-start-0" placeholder="พิมพ์ชื่อหนังสือเพื่อค้นหา..." onkeyup="filterTable()">
+            <input type="text" id="searchInput" class="form-control border-start-0" placeholder="พิมพ์ชื่อหนังสือแล้วกด Enter..." onkeypress="handleSearchKeyPress(event)">
           </div>
         </div>
       </div>
@@ -139,6 +139,12 @@
   let selectedFilesArray = [];
   let currentYearBE = new Date().getFullYear() + 543;
   let staffNames = [];
+
+  // 🔄 ตัวแปรควบคุมสถานะ Infinite Scroll หน้าบ้าน
+let currentOffset = 0;
+let currentScrollYear = currentYearBE;
+let isExhausted = false;
+let isLoading = false;
 
 // 1. ฟังก์ชันดึงรายชื่อจาก GitHub staff.csv
 async function loadStaffList() {
@@ -200,7 +206,7 @@ function checkSession() {
             }
             // ---------------------------------------------------------
 
-            loadLogs(); 
+            resetAndReloadLogs(); 
         } else {
             // ❌ ถ้าเกิน 2 ชม. แล้ว ให้เตะออกไปหน้าล็อกอิน
             logout();
@@ -245,29 +251,22 @@ function logout() {
     });
   }
 
-  // --- 2. ระบบกรองปี (ปรับปรุงใหม่ตามที่คุยกัน) ---
-  function updateYearOptions(logs) {
+  // --- 2. ระบบกำหนดตัวเลือกปี พ.ศ. อัตโนมัติ ---
+  function updateYearOptions() {
     const yearSelect = document.getElementById('yearSelect');
-    
-    // ดึงปีจากเลขที่หนังสือเท่านั้น (รูปแบบ เลขที่-ปี)
-    let years = [...new Set(logs.map(col => {
-      const match = col[2].match(/^(\d+)-(\d{4})/); 
-      return match ? match[2] : null;
-    }))].filter(y => y !== null).sort((a, b) => b - a);
-
-    if (!years.includes(currentYearBE.toString())) years.unshift(currentYearBE.toString());
-
-    // เพิ่มตัวเลือก "📂 ดูทั้งหมด (ทุกปี)"
     let options = `<option value="all">📂 ดูทั้งหมด (ทุกปี)</option>`;
-    options += years.map(y => `<option value="${y}">ปี พ.ศ. ${y}</option>`).join('');
     
+    // วนลูปสร้างตัวเลือกปี พ.ศ. ตั้งแต่ปีปัจจุบัน+1 ถอยหลังไปจนถึงปี 2568 ทันที
+    for (let y = currentYearBE + 1; y >= 2568; y--) {
+      options += `<option value="${y}">ปี พ.ศ. ${y}</option>`;
+    }
     yearSelect.innerHTML = options;
 
-    // เงื่อนไขการเลือกค่าเริ่มต้น
+    // เงื่อนไขสิทธิ์การแสดงตัวเลือกเริ่มต้นตอนล็อกอิน
     if (currentUser.role === 'Admin') {
-      yearSelect.value = "all"; // Admin เห็นทั้งหมด
+      yearSelect.value = "all"; // Admin ดูทั้งหมด
     } else {
-      yearSelect.value = currentYearBE.toString(); // กลุ่มงานเห็นปีปัจจุบัน
+      yearSelect.value = currentYearBE.toString(); // กลุ่มงานเจาะจงปีปัจจุบัน
     }
   }
 
@@ -289,18 +288,8 @@ function logout() {
         "อื่นๆ": "#adb5bd"
     };
 
-    // 1. กรองข้อมูลที่มีในระบบ
-    let filtered = dataRows.filter(col => {
-      if (!col || col.length < 5) return false;
-      const isUserAdmin = currentUser.role === 'Admin';
-      const matchRole = isUserAdmin || (col[3].trim() === currentUser.role.trim());
-      let matchYear = (selectedYear === "all") || (col[2].match(/^(\d+)-(\d{4})/)?.[2] === selectedYear);
-      let matchDept = false;
-      if (selectedDept === "all") { matchDept = true; }
-      else if (selectedDept === "ยังไม่ได้ลงระบบ") { matchDept = false; }
-      else { matchDept = (col[3].trim() === selectedDept); }
-      return matchRole && matchYear && matchDept;
-    });
+    // 1. นำข้อมูลจากคลาวด์มาใช้งานโดยตรง (เนื่องจากฝั่งหลังบ้านทำการคัดกรองสิทธิ์และคิวมาให้เสร็จสรรพแล้ว)
+let filtered = JSON.parse(JSON.stringify(dataRows));
 
     // 2. รวมกลุ่มข้อมูลสำหรับ Admin
     if (currentUser.role === 'Admin') {
@@ -431,100 +420,127 @@ function logout() {
         return col[0] === u && col[1] === p;
       });
 
-      if(found) {
+      if (found) {
         const data = found.split(',').map(i => i.trim());
         currentUser = { user: data[0], role: data[2], name: data[3] };
-    // 1. สั่งให้เครื่องจำชื่อผู้ใช้และเวลาที่ล็อกอิน (เอาไว้เช็ก 2 ชม.)
-        localStorage.setItem('sarabanUser', JSON.stringify(currentUser));
-        localStorage.setItem('loginTime', new Date().getTime());
 
-    // 2. เช็กสิทธิ์: ถ้าเป็น Admin ให้โชว์ปุ่มออกจากระบบ
-    // ค้นหาในฟังก์ชัน login() ช่วงที่ตรวจสอบพบผู้ใช้งาน (if(found))
-if(found) {
-    const data = found.split(',').map(i => i.trim());
-    currentUser = { user: data[0], role: data[2], name: data[3] };
+        // จัดสรรสิทธิ์จำ Session บัญชี
+        if (currentUser.role === 'Admin') {
+            localStorage.setItem('sarabanUser', JSON.stringify(currentUser));
+            localStorage.setItem('loginTime', new Date().getTime());
+            document.getElementById('logoutBtn').style.display = 'block';
+            document.getElementById('adminView').style.display = 'block';
+            document.getElementById('deptFilterContainer').style.display = 'block';
+        } else {
+            localStorage.removeItem('sarabanUser');
+            localStorage.removeItem('loginTime');
+            document.getElementById('logoutBtn').style.display = 'none';
+        }
 
-    // --- ปรับปรุงจุดนี้ครับ: ให้จำเฉพาะ Admin ---
-    if (currentUser.role === 'Admin') {
-        localStorage.setItem('sarabanUser', JSON.stringify(currentUser));
-        localStorage.setItem('loginTime', new Date().getTime());
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+        document.getElementById('userDisplay').innerText = currentUser.name;
+        document.getElementById('roleDisplay').innerText = currentUser.role;
         
-        // แสดงเมนูและปุ่มออกจากระบบสำหรับ Admin
-        document.getElementById('logoutBtn').style.display = 'block';
-        document.getElementById('adminView').style.display = 'block';
-        document.getElementById('deptFilterContainer').style.display = 'block';
-    } else {
-        // ถ้าไม่ใช่ Admin ให้ล้างค่าที่อาจค้างอยู่ในเครื่องทิ้ง (เพื่อความปลอดภัย)
-        localStorage.removeItem('sarabanUser');
-        localStorage.removeItem('loginTime');
+        // บังคับเคลียร์คิวและสั่งโหลดข้อมูลหนังสือเพียงรอบเดียวอย่างเป็นระเบียบ
+        resetAndReloadLogs();
         
-        // ซ่อนปุ่มออกจากระบบสำหรับกลุ่มงาน
-        document.getElementById('logoutBtn').style.display = 'none';
-    }
-    // ---------------------------------------
-
-    document.getElementById('loginPage').style.display = 'none';
-    document.getElementById('mainApp').style.display = 'block';
-    document.getElementById('userDisplay').innerText = currentUser.name;
-    document.getElementById('roleDisplay').innerText = currentUser.role;
-    loadLogs();
-}
-        loadLogs();
-      } else { document.getElementById('loginErr').innerText = "รหัสผ่านไม่ถูกต้อง"; }
+      } else { 
+        document.getElementById('loginErr').innerText = "รหัสผ่านไม่ถูกต้อง"; 
+      }
     } catch(e) { alert("เชื่อมต่อฐานข้อมูลไม่ได้"); }
   }
 
-  async function loadLogs(retryCount = 0) {
-    const tableBody = document.getElementById('bookData');
-    
-    // แสดงข้อความตามรอบการโหลด เพื่อให้ผู้ใช้งานทราบสถานะ
-    if (retryCount === 0) {
-      tableBody.innerHTML = '<tr><td colspan="3" class="text-center p-4">กำลังโหลดข้อมูล...</td></tr>';
-    } else {
-      console.log(`[Retry] กำลังพยายามเชื่อมต่อเซิร์ฟเวอร์ Google ใหม่ รอบที่ ${retryCount}...`);
+  // 🔄 ฟังก์ชันล้างรอบคิวเพื่อสแตนด์บายดึงข้อมูลใหม่เมื่อเปลี่ยน Dropdown หรือสั่งค้นหา
+  function resetAndReloadLogs() {
+    currentOffset = 0;
+    isExhausted = false;
+    allLogs = [];
+    const selectedYear = document.getElementById('yearSelect').value;
+    currentScrollYear = (selectedYear === "all") ? currentYearBE : parseInt(selectedYear);
+    loadLogs(false);
+  }
+
+  // 🔍 ดักจับเหตุการณ์กดยืนยันคำในช่องค้นหา (ปุ่ม Enter) เพื่อสั่งสแกนจากหลังบ้าน
+  function handleSearchKeyPress(event) {
+    if (event.key === 'Enter') {
+      resetAndReloadLogs();
     }
-    
+  }
+
+  // 🚀 ฟังก์ชันดาวน์โหลดข้อมูลอิงตามสิทธิ์และจัดสรรพารามิเตอร์คัดกรองจากต้นทาง
+  async function loadLogs(isAppend = false, retryCount = 0) {
+    if (isLoading) return;
+    isLoading = true;
+
+    const tableBody = document.getElementById('bookData');
+    if (!isAppend && retryCount === 0) {
+      tableBody.innerHTML = '<tr><td colspan="3" class="text-center p-4">กำลังโหลดข้อมูล...</td></tr>';
+    }
+
+    const selectedYear = document.getElementById('yearSelect').value;
+    // ป้องกันความปลอดภัย: หากไม่ใช่ Admin ระบบจะล็อกส่งชื่อกลุ่มงานตนเองไปบังคับคัดออกตั้งแต่หลังบ้านทันที
+    const selectedDept = (currentUser.role === 'Admin') ? document.getElementById('deptFilter').value : currentUser.role;
+    const searchTerm = document.getElementById('searchInput').value.trim();
+
+    // ดึงข้อมูลอิงตามปีที่กำลังรันในสกรอลล์ไหลต่อเนื่อง
+    const targetYear = (selectedYear === "all") ? currentScrollYear : selectedYear;
+
     try {
-      const response = await fetch(`${SCRIPT_URL}?t=${new Date().getTime()}`);
+      const url = `${SCRIPT_URL}?year=${targetYear}&dept=${selectedDept}&search=${encodeURIComponent(searchTerm)}&offset=${currentOffset}&limit=100&t=${new Date().getTime()}`;
+      const response = await fetch(url);
       
-      // 1. ตรวจสอบสถานะการตอบกลับของเซิร์ฟเวอร์เบื้องต้น
-      if (!response.ok) {
-        throw new Error(`HTTP Status ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`HTTP Status ${response.status}`);
       
-      // 2. ดึงข้อมูลออกมาเป็นข้อความดิบ (Text) เพื่อตรวจสอบโครงสร้างก่อนแปลงเป็น JSON
       const textData = await response.text();
-      
-      // 3. ตรวจสอบว่าค่าที่ส่งกลับมาติด Error HTML ของ Google หรือไม่
       if (textData.trim().startsWith("<!DOCTYPE") || textData.trim().startsWith("<html")) {
-        throw new SyntaxError("Google Infrastructure Timeout (Returned HTML Page)");
+        throw new SyntaxError("Google Infrastructure Timeout");
       }
       
-      // 4. หากข้อมูลถูกต้อง ทำการแปลงเป็นอ็อบเจกต์และแสดงผลตารางตามปกติ
-      allLogs = JSON.parse(textData);
-      updateYearOptions(allLogs);
-      displayTable(allLogs);
+      const newRows = JSON.parse(textData);
       
-    } catch(e) { 
-      console.warn(`Load Logs Attempt ${retryCount + 1} Failed:`, e.message);
-      
-      // 🛡️ ตรรกะระบบลองใหม่อัตโนมัติ: หากพัง ให้รอ 1.5 วินาทีแล้วลองใหม่ สูงสุด 3 รอบ
-      if (retryCount < 2) {
-        setTimeout(() => {
-          loadLogs(retryCount + 1);
-        }, 1500); // เว้นจังหวะความถี่ 1.5 วินาทีเพื่อหลีกเลี่ยงการโดนบล็อกคิว
+      if (isAppend) {
+        allLogs = allLogs.concat(newRows);
       } else {
-        // หากพยายามครบ 3 รอบแล้วยังไม่ได้ ถึงจะแสดงข้อความแจ้งเตือนผู้ใช้งานจริง
-        tableBody.innerHTML = '<tr><td colspan="3" class="text-center p-4 text-danger">⚠️ โครงสร้างสัญญาณ Google Sheets ตอบสนองช้าชั่วคราว กรุณากดรีเฟรชหน้าจอใหม่อีกครั้ง</td></tr>'; 
+        allLogs = newRows;
+      }
+
+      // 🔄 ตรรกะไหลข้ามปีอัตโนมัติ (กรณีสั่งดูปีทั้งหมด และแถวข้อมูลของปีนั้นๆ หมดก๊อกแล้ว)
+      if (newRows.length < 100 && selectedYear === "all" && currentScrollYear > 2568) {
+        currentScrollYear--; // ลดลงไปดึงแท็บปีเก่าถัดไป
+        currentOffset = 0;   // รีเซ็ตออฟเซ็ตเริ่มต้นใหม่ของแท็บนั้นๆ
+        isLoading = false;
+        if (newRows.length === 0) {
+          return loadLogs(true); // สั่งยิงคำขอต่อเนื่องทันทีอย่างไร้รอยต่อ
+        }
+      } else if (newRows.length < 100) {
+        isExhausted = true; // สิ้นสุดบัญชีแถวข้อมูลในเงื่อนไขค้นหานั้นๆ จริงๆ
+      } else {
+        currentOffset += newRows.length; // ขยับลำดับคิวเตรียมสแตนด์บายรอบถัดไป
+      }
+
+      displayTable(allLogs);
+      isLoading = false;
+      
+    } catch(e) {
+      console.warn("Load Logs Failed, Retrying...", e.message);
+      isLoading = false;
+      if (retryCount < 2) {
+        setTimeout(() => loadLogs(isAppend, retryCount + 1), 1500);
+      } else if (!isAppend) {
+        tableBody.innerHTML = '<tr><td colspan="3" class="text-center p-4 text-danger">⚠️ สัญญาณหน่วง กรุณากด Enter ในช่องค้นหาอีกครั้ง</td></tr>';
       }
     }
   }
 
-  function filterTable() {
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-    const filteredData = allLogs.filter(col => col[2].toLowerCase().includes(searchTerm));
-    displayTable(filteredData);
-  }
+  // 🖱️ ตรวจจับเมื่อผู้ใช้ทำการเลื่อนหน้าจอลงมาจนใกล้สุดขอบตาราง ให้ดึงข้อมูลต่อยอดอัตโนมัติ
+  window.addEventListener('scroll', () => {
+    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 150) {
+      if (!isLoading && !isExhausted) {
+        loadLogs(true);
+      }
+    }
+  });
 
   async function handleUpload() {
     const dept = document.getElementById('deptSelect').value;

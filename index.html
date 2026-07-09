@@ -129,10 +129,10 @@
       </div>
     </div> </div> </div> 
 <script>
-  // --- การตั้งค่า ---
+  // --- 1. การตั้งค่าสิทธิ์พื้นฐานองค์กร ---
   const GH_OWNER = "specialtrat905";
   const GH_REPO = "smart-saraban";
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyK5Tmz9IE6r6jXaO8QFbssTotDLTBOHS8LtT2JNJI1U_-eO23FoipUUyGbweCk2m2_jQ/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzJm9dVW1nZw3AwJiZr3__V4eCZXCRstWylvacgT8l1zApG5Jp4469AzJjE_wCzw7o3Ig/exec";
 
   let currentUser = {};
   let allLogs = [];
@@ -140,39 +140,39 @@
   let currentYearBE = new Date().getFullYear() + 543;
   let staffNames = [];
 
-  // 🔄 ตัวแปรควบคุมสถานะ Infinite Scroll หน้าบ้าน
-let currentOffset = 0;
-let currentScrollYear = currentYearBE;
-let isExhausted = false;
-let isLoading = false;
+  // 🔄 ตัวแปรควบคุมลำดับและสเตทสำหรับระบบ Infinite Scroll
+  let currentOffset = 0;
+  let currentScrollYear = currentYearBE;
+  let isExhausted = false;
+  let isLoading = false;
 
-// ✨ เพิ่ม: คลังจัดเก็บผลลัพธ์ข้อมูลการเสิร์ชความเร็วสูง (Client-side Query Cache)
+  // ⏱️ ตัวแปรควบคุมหน่วยหน่วงเวลาสำหรับช่องพิมพ์ค้นหาอัตโนมัติ (Debounce)
+  let searchTimeout = null;
+
+  // 💾 คลังจัดเก็บสถิติและผลลัพธ์ข้อมูลการเสิร์ชความเร็วสูง (Client-side Query Cache)
   let dataCache = {};
 
-// 1. ฟังก์ชันดึงรายชื่อจาก GitHub staff.csv
-async function loadStaffList() {
+  // --- 2. ระบบสแกนบุคลากรผ่านเซิร์ฟเวอร์คลาวด์ ---
+  async function loadStaffList() {
     try {
-        // ยิงไปดึงข้อมูลจาก Google Sheets แทน โดยส่งพารามิเตอร์ ?type=staff
         const response = await fetch(`${SCRIPT_URL}?type=staff&t=${new Date().getTime()}`);
-        staffNames = await response.json(); // รับค่ากลับมาเป็นรูปแบบ JSON Array ทันที
-        
+        staffNames = await response.json(); 
         const list = document.getElementById('staffList');
         if (list) {
             list.innerHTML = staffNames.map(name => `<option value="${name}">`).join('');
         }
     } catch (e) { console.error("โหลดรายชื่อไม่สำเร็จ", e); }
-}
+  }
 
-// 2. ฟังก์ชันเพิ่มช่องกรอกชื่อใหม่
-function addNameField() {
+  function addNameField() {
     const container = document.getElementById('nameInputsList');
     const div = document.createElement('div');
     div.className = 'input-group mb-2';
     div.innerHTML = `<input list="staffList" class="form-control other-name-input" placeholder="ระบุชื่อเพิ่มเติม..."><button type="button" class="btn btn-outline-danger" onclick="this.parentElement.remove()">✕</button>`;
     container.appendChild(div);
-}
+  }
 
-function toggleOtherInput() {
+  function toggleOtherInput() {
     const dept = document.getElementById('deptSelect').value;
     const container = document.getElementById('otherNamesContainer');
     if (dept === "อื่นๆ") { container.style.display = "block"; } 
@@ -180,51 +180,47 @@ function toggleOtherInput() {
         container.style.display = "none";
         document.getElementById('nameInputsList').innerHTML = `<div class="input-group mb-2"><input list="staffList" class="form-control other-name-input" placeholder="พิมพ์ชื่อผู้รับคนที่ 1..."><button type="button" class="btn btn-outline-success" onclick="addNameField()">➕</button></div>`;
     }
-}
+  }
 
-  // เพิ่มไว้ด้านบนของส่วน <script>
-function checkSession() {
+  // --- 3. ระบบรักษาความปลอดภัยและจัดการสิทธิ์การเข้าใช้งาน ---
+  function checkSession() {
     const savedUser = localStorage.getItem('sarabanUser');
     const loginTime = localStorage.getItem('loginTime');
     
     if (savedUser && loginTime) {
         const now = new Date().getTime();
-        const twoHours = 2 * 60 * 60 * 1000; // 2 ชั่วโมง
+        const twoHours = 2 * 60 * 60 * 1000; 
         
         if (now - loginTime < twoHours) {
-            // ✅ กรณีที่ยังไม่หมดเวลา 2 ชม. ให้ล็อกอินอัตโนมัติ
             currentUser = JSON.parse(savedUser);
             document.getElementById('loginPage').style.display = 'none';
             document.getElementById('mainApp').style.display = 'block';
             document.getElementById('userDisplay').innerText = currentUser.name;
             document.getElementById('roleDisplay').innerText = currentUser.role;
 
-            // --- ส่วนที่ต้องเน้น: เช็คสิทธิ์เพื่อโชว์/ซ่อนปุ่ม ตอนรีเฟรชหน้าจอ ---
             if(currentUser.role === 'Admin') {
-                document.getElementById('logoutBtn').style.display = 'block'; // โชว์ปุ่มถ้าเป็น Admin
+                document.getElementById('logoutBtn').style.display = 'block'; 
                 document.getElementById('adminView').style.display = 'block';
                 document.getElementById('deptFilterContainer').style.display = 'block';
             } else {
-                document.getElementById('logoutBtn').style.display = 'none';  // ซ่อนปุ่มถ้าเป็นกลุ่มงาน
+                document.getElementById('logoutBtn').style.display = 'none';  
             }
-            // ---------------------------------------------------------
 
-            updateYearOptions(); // ✨ แทรกเพิ่มบรรทัดนี้ เพื่อให้สร้าง Dropdown ปี พ.ศ. ตอนล็อกอินอัตโนมัติ
+            updateYearOptions();
             resetAndReloadLogs(); 
         } else {
-            // ❌ ถ้าเกิน 2 ชม. แล้ว ให้เตะออกไปหน้าล็อกอิน
             logout();
         }
     }
-}
+  }
 
-function logout() {
+  function logout() {
     localStorage.removeItem('sarabanUser');
     localStorage.removeItem('loginTime');
     location.reload();
-}
+  }
 
-  // --- 1. จัดการไฟล์อัปโหลด ---
+  // --- 4. ระบบจัดการไฟล์นำเข้าเอกสารสารบรรณ ---
   document.getElementById('fileInput').addEventListener('change', function(e) {
     const files = Array.from(e.target.files);
     files.forEach(file => {
@@ -255,26 +251,24 @@ function logout() {
     });
   }
 
-  // --- 2. ระบบกำหนดตัวเลือกปี พ.ศ. อัตโนมัติ ---
+  // --- 5. ระบบคำนวณและสร้าง Dropdown ปี พ.ศ. อัตโนมัติ ---
   function updateYearOptions() {
     const yearSelect = document.getElementById('yearSelect');
     let options = `<option value="all">📂 ดูทั้งหมด (ทุกปี)</option>`;
     
-    // วนลูปสร้างตัวเลือกปี พ.ศ. ตั้งแต่ปีปัจจุบัน+1 ถอยหลังไปจนถึงปี 2568 ทันที
     for (let y = currentYearBE + 1; y >= 2568; y--) {
       options += `<option value="${y}">ปี พ.ศ. ${y}</option>`;
     }
     yearSelect.innerHTML = options;
 
-    // เงื่อนไขสิทธิ์การแสดงตัวเลือกเริ่มต้นตอนล็อกอิน
     if (currentUser.role === 'Admin') {
-      yearSelect.value = "all"; // Admin ดูทั้งหมด
+      yearSelect.value = "all"; 
     } else {
-      yearSelect.value = currentYearBE.toString(); // กลุ่มงานเจาะจงปีปัจจุบัน
+      yearSelect.value = currentYearBE.toString(); 
     }
   }
 
-  // --- 3. แสดงผลตาราง (เวอร์ชันเสถียรสูงสุด: เรนเดอร์ข้อมูลสำเร็จรูปจากหลังบ้านทันที) ---
+  // --- 6. ฟังก์ชันเรนเดอร์เนื้อหาตารางและการไฮไลท์คำค้นหา ---
   function displayTable(dataRows) {
     const tableBody = document.getElementById('bookData');
     const deptColors = {
@@ -287,7 +281,6 @@ function logout() {
         "อื่นๆ": "#adb5bd"
     };
 
-    // นำข้อมูลที่ฝั่ง Apps Script ประมวลผลกลุ่ม Admin และเลขตัวแดงมาให้แล้ว ไปใช้งานตรงๆ
     let filtered = JSON.parse(JSON.stringify(dataRows));
 
     if(filtered.length === 0) {
@@ -295,7 +288,6 @@ function logout() {
       return;
     }
 
-    // 5. แสดงผลตาราง (ปรับปรุงเสริมป้ายปิดท้ายฐานข้อมูล)
     let tableHTML = filtered.map(col => {
       const isMissing = col[0] === "❌";
       let rawDate = isMissing ? "❌" : col[0].split(/[T\s,]+/)[0];
@@ -352,7 +344,7 @@ function logout() {
       </tr>`;
     }).join('');
 
-    // 🎯 ตรรกะข้อ 1: หากดึงข้อมูลจนเกลี้ยงฐานข้อมูลแล้ว ให้แทรกแถวปิดท้ายรายการ
+    // ✨ ตรรกะแสดงสถานะเมื่อเลื่อนหน้าจนเกลี้ยงฐานข้อมูล
     if (isExhausted && filtered.length > 0) {
       tableHTML += `<tr><td colspan="3" class="text-center p-3 text-muted fw-bold" style="font-size: 0.8rem; background-color: #f8f9fa; border-top: 1px solid #dee2e6;">-- สิ้นสุดฐานข้อมูล --</td></tr>`;
     }
@@ -360,36 +352,19 @@ function logout() {
     tableBody.innerHTML = tableHTML;
   }
 
-  // --- 4. ระบบหลังบ้าน ---
-  // --- 4. ระบบหลังบ้าน (เวอร์ชันเสถียรป้องกัน Rate Limit 429) ---
+  // --- 7. ระบบตรวจสอบสิทธิ์ล็อกอินผ่าน Google ชีตปิด (แก้ปัญหาตัวแดง 429) ---
   async function login() {
     const u = document.getElementById('user').value.trim();
     const p = document.getElementById('pass').value.trim();
     try {
-      // ⏱️ สร้างถังเวลาปัดเศษทุกๆ 5 นาที (300,000 มิลลิวินาที) เพื่อให้ CDN ของ GitHub ช่วยแคชข้อมูล
-      const timeBucket = Math.floor(new Date().getTime() / (5 * 60 * 1000));
-      const response = await fetch(`https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/main/users.csv?t=${timeBucket}`);
-      
-      // ดักจับกรณีโดนจำกัดสิทธิ์ความถี่ชั่วคราว
-      if (response.status === 429) {
-         document.getElementById('loginErr').innerText = "⚠️ เซิร์ฟเวอร์หนาแน่นชั่วคราว กรุณารอ 10 วินาทีแล้วกดเข้าสู่ระบบอีกครั้ง";
-         return;
-      }
-
+      const response = await fetch(`${SCRIPT_URL}?type=login&u=${encodeURIComponent(u)}&p=${encodeURIComponent(p)}&t=${new Date().getTime()}`);
       if (!response.ok) throw new Error(`HTTP Status ${response.status}`);
+      
+      const result = await response.json();
 
-      const csvData = await response.text();
-      const rows = csvData.split(/\r?\n/).filter(r => r.trim() !== "");
-      let found = rows.find(row => {
-        const col = row.split(',').map(i => i.trim());
-        return col[0] === u && col[1] === p;
-      });
+      if (result.success) {
+        currentUser = { user: result.user, role: result.role, name: result.name };
 
-      if (found) {
-        const data = found.split(',').map(i => i.trim());
-        currentUser = { user: data[0], role: data[2], name: data[3] };
-
-        // จัดสรรสิทธิ์จำ Session บัญชี
         if (currentUser.role === 'Admin') {
             localStorage.setItem('sarabanUser', JSON.stringify(currentUser));
             localStorage.setItem('loginTime', new Date().getTime());
@@ -408,20 +383,19 @@ function logout() {
         document.getElementById('roleDisplay').innerText = currentUser.role;
         
         updateYearOptions();
-        // บังคับเคลียร์คิวและสั่งโหลดข้อมูลหนังสือเพียงรอบเดียวอย่างเป็นระเบียบ
         resetAndReloadLogs();
-        
       } else { 
-        document.getElementById('loginErr').innerText = "รหัสผ่านไม่ถูกต้อง"; 
+        document.getElementById('loginErr').innerText = result.message || "รหัสผ่านไม่ถูกต้อง"; 
       }
     } catch(e) { 
       console.error("Login Fetch Error:", e);
-      document.getElementById('loginErr').innerText = "เชื่อมต่อฐานข้อมูลผู้ใช้ไม่ได้ชั่วคราว"; 
+      document.getElementById('loginErr').innerText = "ระบบล็อกอินขัดข้อง กรุณาติดต่อผู้ดูแลระบบ"; 
     }
   }
 
-  // 🔄 ฟังก์ชันล้างรอบคิวเพื่อสแตนด์บายดึงข้อมูลใหม่เมื่อเปลี่ยน Dropdown หรือสั่งค้นหา
+  // --- 8. ฟังก์ชันจัดคิวและดาวน์โหลดข้อมูลสลับหน้าความเสถียรสูง ---
   function resetAndReloadLogs() {
+    isLoading = false; // 🔓 บังคับปลดล็อกคิวค้างเพื่อแก้ไขอาการปุ่มเปลี่ยนปีค้าง
     currentOffset = 0;
     isExhausted = false;
     allLogs = [];
@@ -430,29 +404,22 @@ function logout() {
     loadLogs(false);
   }
 
-  // ⏱️ ตัวแปรควบคุมเวลาการพิมพ์ค้นหาอัตโนมัติ
-  let searchTimeout = null;
-
-  // 🔍 ฟังก์ชันดักจับการพิมพ์: หากหยุดพิมพ์ครบ 1 วินาที (1000ms) ระบบจะยิงค้นหาหลังบ้านทันที
   function handleSearchInput() {
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
       resetAndReloadLogs();
-    }, 1000);
+    }, 1000); // ⏱️ ตั้งหน่วงเวลา 1 วินาทีเมื่อหยุดพิมพ์เพื่อเริ่มค้นหา
   }
 
-  // 🚀 ฟังก์ชันดาวน์โหลดข้อมูลอิงตามสิทธิ์และจัดสรรพารามิเตอร์คัดกรองจากต้นทาง
-  // 🚀 ฟังก์ชันดาวน์โหลดข้อมูลอิงตามสิทธิ์และจัดสรรพารามิเตอร์คัดกรองจากต้นทาง
   async function loadLogs(isAppend = false, retryCount = 0) {
     const selectedYear = document.getElementById('yearSelect').value;
     const selectedDept = (currentUser.role === 'Admin') ? document.getElementById('deptFilter').value : currentUser.role;
     const searchTerm = document.getElementById('searchInput').value.trim();
     const targetYear = (selectedYear === "all") ? currentScrollYear : selectedYear;
 
-    // สร้างคีย์หน่วยความจำล็อกตามพารามิเตอร์เงื่อนไขการค้นหา
     const cacheKey = `${targetYear}_${selectedDept}_${searchTerm}_${currentOffset}`;
 
-    // 🎯 ตรรกะข้อ 2: ถ้าระบบเคยโหลดคำค้นหาคำนี้หรือหน้านี้ไว้แล้ว ให้ดึงออกมาทำงานทันทีใน 0ms ไม่ต้องยิงเน็ตใหม่
+    // 🎯 ระบบดึงความจำสำรองความเร็วสูง (0ms Cache Response)
     if (!isAppend && retryCount === 0 && dataCache[cacheKey]) {
       const cached = dataCache[cacheKey];
       allLogs = cached.rows;
@@ -469,8 +436,7 @@ function logout() {
     const tableBody = document.getElementById('bookData');
     
     if (!isAppend && retryCount === 0) {
-      // 🌀 ปรับปรุง UX: ไม่ล้างตารางจนขาวโพลน แต่ปรับตารางเดิมให้จางลงบอกสถานะกำลังอัปเดตเบื้องหลัง
-      tableBody.style.opacity = "0.5";
+      tableBody.style.opacity = "0.5"; // UX สลับนุ่มนวล: ปรับจางตารางเดิมเมื่อสั่งอัปเดตคำค้นหา
     } else if (isAppend && retryCount === 0) {
       const loadingRow = document.createElement('tr');
       loadingRow.id = 'infinite-scroll-loading';
@@ -513,10 +479,9 @@ function logout() {
         currentOffset += newRows.length; 
       }
 
-      // คืนค่าความสว่างตารางปกติเมื่อประมวลผลเสร็จสิ้น
       tableBody.style.opacity = "1";
 
-      // 💾 บันทึกสถิติผลลัพธ์ลงในคลังความจำสำรองหน้าบ้าน
+      // 💾 บันทึกสถิติคำเสิร์ชลงแรมแคชเครื่อง
       dataCache[cacheKey] = {
         rows: JSON.parse(JSON.stringify(allLogs)),
         isExhausted: isExhausted,
@@ -531,7 +496,6 @@ function logout() {
       console.warn("Load Logs Failed, Retrying...", e.message);
       isLoading = false;
       tableBody.style.opacity = "1";
-      
       const oldLoadingRow = document.getElementById('infinite-scroll-loading');
       if (oldLoadingRow) oldLoadingRow.remove();
 
@@ -543,7 +507,7 @@ function logout() {
     }
   }
 
-  // 🖱️ ตรวจจับเมื่อผู้ใช้ทำการเลื่อนหน้าจอลงมาจนใกล้สุดขอบตาราง ให้ดึงข้อมูลต่อยอดอัตโนมัติ
+  // 🖱️ ตรวจจับเมื่อเลื่อนหน้าจอลงใกล้ถึงขอบตารางล่างสุด ให้ไหลหน้าข้อมูลต่อเนื่อง
   window.addEventListener('scroll', () => {
     if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 150) {
       if (!isLoading && !isExhausted) {
@@ -552,49 +516,36 @@ function logout() {
     }
   });
 
+  // --- 9. ระบบอัปโหลดและล้างหน่วยความจำแคชภาพรวมเมื่อส่งสำเร็จ ---
   async function handleUpload() {
     const dept = document.getElementById('deptSelect').value;
     if (selectedFilesArray.length === 0 || !dept) return alert("เลือกไฟล์และกลุ่มงานปลายทาง");
 
-    // รวบรวมรายชื่อผู้รับ (ถ้ามี)
     const nameInputs = document.querySelectorAll('.other-name-input');
     let names = [];
     nameInputs.forEach(input => { if (input.value.trim() !== "") names.push(input.value.trim()); });
-    
-    // สร้างข้อความชื่อผู้รับเพื่อไปต่อท้ายชื่อไฟล์
     const receiverSuffix = names.length > 0 ? ` [${names.join(', ')}]` : "";
 
-    // --- 🛡️ เริ่มส่วนระบบดักจับการส่งซ้ำ (Validation) ---
     for (let file of selectedFilesArray) {
-        // 1. ดึงเลขที่หนังสือจากชื่อไฟล์ (เช่น 310-2569)
         const docMatch = file.name.match(/^(\d+-\d+)/);
         if (docMatch) {
             const docNum = docMatch[1];
-            
-            // 2. ตรวจสอบในฐานข้อมูล (allLogs)
             const isDuplicate = allLogs.some(log => {
-                const existingTitle = log[2].replace(/<[^>]*>?/gm, ''); // ล้างโค้ด HTML
-                const existingDept = log[3].trim(); // กลุ่มงานในระบบ
-                
-                // เช็คเลขหนังสือตรงกัน และ กลุ่มงานตรงกัน
+                const existingTitle = log[2].replace(/<[^>]*>?/gm, ''); 
+                const existingDept = log[3].trim(); 
                 const matchNum = existingTitle.startsWith(docNum);
                 const matchDept = existingDept === dept;
-
-                // กรณีกลุ่ม "อื่นๆ" ต้องเช็ครายชื่อผู้รับที่พ่วงในชื่อหนังสือด้วย
                 if (matchNum && matchDept && dept === "อื่นๆ") {
                     return existingTitle.includes(`[${names.join(', ')}]`);
                 }
                 return matchNum && matchDept;
             });
-
             if (isDuplicate) {
-                // ถ้าซ้ำทั้งเลขหนังสือและกลุ่มงาน/คนรับ ให้แจ้งเตือน
                 const proceed = confirm(`⚠️ พบว่าเลขที่ "${docNum}" เคยส่งให้กลุ่มงานนี้แล้ว\nคุณต้องการส่งซ้ำเพื่อเพิ่มรายการใหม่ใช่หรือไม่?`);
-                if (!proceed) return; // หยุดการทำงานถ้ากด Cancel
+                if (!proceed) return; 
             }
         }
     }
-    // --- 🏁 จบส่วนระบบดักจับ ---
 
     const btn = document.getElementById('uploadBtn'); 
     btn.disabled = true;
@@ -604,8 +555,6 @@ function logout() {
         btn.innerText = `กำลังส่ง: ${file.name.substring(0,10)}...`;
         try {
             const fileData = await new Promise(resolve => { const r = new FileReader(); r.onload = e => resolve(e.target.result); r.readAsDataURL(file); });
-            
-            // ปรับชื่อไฟล์ใหม่โดยใส่ชื่อผู้รับเข้าไปก่อนนามสกุล .pdf
             let originalName = file.name.replace(/,/g, "");
             let newFileName = originalName.toLowerCase().endsWith(".pdf") 
                 ? originalName.slice(0, -4) + receiverSuffix + ".pdf" 
@@ -614,9 +563,9 @@ function logout() {
             const res = await fetch(SCRIPT_URL, { 
                 method: 'POST', 
                 body: JSON.stringify({ 
-                    department: dept, // ส่งชื่อกลุ่มงานปกติ (เช่น "อื่นๆ") เพื่อไม่ให้สคริปต์พัง
+                    department: dept, 
                     sender: currentUser.name, 
-                    fileName: newFileName, // ส่งชื่อไฟล์ที่พ่วงชื่อคนรับไปแล้ว
+                    fileName: newFileName, 
                     fileData: fileData 
                 }) 
             });
@@ -642,26 +591,39 @@ function logout() {
 
     alert(`สำเร็จ! ส่งหนังสือ ${uploadedFiles.length} ฉบับ เรียบร้อย`);
     selectedFilesArray = []; renderFileList(); btn.disabled = false; btn.innerText = "อัปโหลดหนังสือและแจ้งเตือน LINE";
-    dataCache = {}; // 🧼 ล้างคลังความจำสำรองหน้าบ้านทั้งหมด เพื่อบังคับให้ดึงข้อมูลอัปเดตล่าสุดจากหลังบ้าน
-resetAndReloadLogs(); // รีเซ็ตตัวแปรนับรอบออฟเซ็ตใหม่เป็นศูนย์
-}
-  // ค้นหาช่วงล่างสุดของไฟล์ แล้วแทนที่ด้วยก้อนนี้ครับ
-window.addEventListener('load', () => {
-loadStaffList(); // 👈 เพิ่มบรรทัดนี้ เพื่อให้ระบบไปดึงชื่อจาก GitHub มารอไว้
-    const p = new URLSearchParams(window.location.search);
     
-    // 1. ถ้ามาด้วยลิงก์ทางลัด (?u=...&p=...) ให้ล้างค่าเก่าและล็อกอินใหม่ทันที
+    // 🧼 ล้าง Cache และบังคับเริ่มต้นคิวข้อมูลใหม่จากหลังบ้านทันทีหลังส่งงานสำเร็จ
+    dataCache = {}; 
+    resetAndReloadLogs();
+  }
+
+  // --- 10. ฟังก์ชันติดตั้งความจำและควบคุมการดึงพารามิเตอร์ลิงก์ทางลัดเมื่อโหลดเสร็จ ---
+  window.addEventListener('load', () => {
+    loadStaffList(); 
+    
+    // 🧠 ตรรกะผูก Event อัจฉริยะ: ควบคุมช่องค้นหาและ Dropdown อัตโนมัติ ป้องกันปัญหาทางโค้ด HTML ผิดเพี้ยน
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.oninput = handleSearchInput;
+        searchInput.onkeypress = null; // ปลดล็อกการดักปุ่ม Enter แบบดั้งเดิมออกทิ้ง
+        searchInput.placeholder = "พิมพ์ชื่อหนังสือเพื่อค้นหาอัตโนมัติ...";
+    }
+    const yearSelect = document.getElementById('yearSelect');
+    if (yearSelect) yearSelect.onchange = resetAndReloadLogs;
+    
+    const deptFilter = document.getElementById('deptFilter');
+    if (deptFilter) deptFilter.onchange = resetAndReloadLogs;
+
+    const p = new URLSearchParams(window.location.search);
     if (p.get('u') && p.get('p')) {
-        localStorage.clear(); // ล้างค่าเผื่อมี Admin เคยล็อกอินค้างไว้
+        localStorage.clear(); 
         document.getElementById('user').value = p.get('u');
         document.getElementById('pass').value = p.get('p');
         setTimeout(login, 500);
-    } 
-    // 2. ถ้าไม่ได้มาด้วยลิงก์ ถึงจะไปเช็คว่ามีบัญชี Admin จำค้างไว้ไหม
-    else {
+    } else {
         checkSession();
     }
-});
+  });
 </script>
 </body>
 </html>

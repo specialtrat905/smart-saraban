@@ -146,6 +146,9 @@ let currentScrollYear = currentYearBE;
 let isExhausted = false;
 let isLoading = false;
 
+// ✨ เพิ่ม: คลังจัดเก็บผลลัพธ์ข้อมูลการเสิร์ชความเร็วสูง (Client-side Query Cache)
+  let dataCache = {};
+
 // 1. ฟังก์ชันดึงรายชื่อจาก GitHub staff.csv
 async function loadStaffList() {
     try {
@@ -292,8 +295,8 @@ function logout() {
       return;
     }
 
-    // ลูปประกอบร่างแท็ก HTML แสดงผลตารางหนังสือรับ
-    tableBody.innerHTML = filtered.map(col => {
+    // 5. แสดงผลตาราง (ปรับปรุงเสริมป้ายปิดท้ายฐานข้อมูล)
+    let tableHTML = filtered.map(col => {
       const isMissing = col[0] === "❌";
       let rawDate = isMissing ? "❌" : col[0].split(/[T\s,]+/)[0];
       let dateDisplay = rawDate;
@@ -315,18 +318,14 @@ function logout() {
               staffBadge = `<small class="badge border ms-1" style="font-size: 0.7rem; font-weight: 400; background-color: #adb5bd; color: #fff; border-color: rgba(0,0,0,0.1) !important;">${names}</small>`;
           }
 
-          // ✨ เพิ่มส่วนนี้: ตรรกะการไฮไลท์ข้อความเน้นคำค้นหาสีเหลืองนวล (Keyword Highlighting)
           const searchTerm = document.getElementById('searchInput').value.trim();
           if (searchTerm) {
-              // ล้างเครื่องหมายพิเศษของ Regex เพื่อป้องกันการพังกรณีผู้ใช้เผลอพิมพ์อักขระแปลกปลอม
               const escapedSearch = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
               const regex = new RegExp(`(${escapedSearch})`, 'gi');
-              // แทนที่คำค้นหาด้วยการห่อหุ้มแท็กสไตล์แถบสีพื้นหลังสีเหลือง
               cleanFileName = cleanFileName.replace(regex, `<span style="background-color: #fff59d; padding: 2px 2px; border-radius: 3px; font-weight: bold; color: #000;">$1</span>`);
           }
       }
 
-      // แสดงสิทธิ์ badges เฉพาะบัญชีผู้ดูแลระบบธุรการกลาง (Admin)
       const deptBadges = (isMissing || currentUser.role !== 'Admin') ? "" : col[3].split(', ').map(d => {
         const color = deptColors[d.trim()] || "#adb5bd"; 
         return `<small class="badge border me-1" style="font-size: 0.7rem; font-weight: 400; background-color: ${color}; color: #fff; border-color: rgba(0,0,0,0.1) !important;">${d}</small>`;
@@ -352,6 +351,13 @@ function logout() {
         </td>
       </tr>`;
     }).join('');
+
+    // 🎯 ตรรกะข้อ 1: หากดึงข้อมูลจนเกลี้ยงฐานข้อมูลแล้ว ให้แทรกแถวปิดท้ายรายการ
+    if (isExhausted && filtered.length > 0) {
+      tableHTML += `<tr><td colspan="3" class="text-center p-3 text-muted fw-bold" style="font-size: 0.8rem; background-color: #f8f9fa; border-top: 1px solid #dee2e6;">-- สิ้นสุดฐานข้อมูล --</td></tr>`;
+    }
+
+    tableBody.innerHTML = tableHTML;
   }
 
   // --- 4. ระบบหลังบ้าน ---
@@ -436,27 +442,41 @@ function logout() {
   }
 
   // 🚀 ฟังก์ชันดาวน์โหลดข้อมูลอิงตามสิทธิ์และจัดสรรพารามิเตอร์คัดกรองจากต้นทาง
+  // 🚀 ฟังก์ชันดาวน์โหลดข้อมูลอิงตามสิทธิ์และจัดสรรพารามิเตอร์คัดกรองจากต้นทาง
   async function loadLogs(isAppend = false, retryCount = 0) {
+    const selectedYear = document.getElementById('yearSelect').value;
+    const selectedDept = (currentUser.role === 'Admin') ? document.getElementById('deptFilter').value : currentUser.role;
+    const searchTerm = document.getElementById('searchInput').value.trim();
+    const targetYear = (selectedYear === "all") ? currentScrollYear : selectedYear;
+
+    // สร้างคีย์หน่วยความจำล็อกตามพารามิเตอร์เงื่อนไขการค้นหา
+    const cacheKey = `${targetYear}_${selectedDept}_${searchTerm}_${currentOffset}`;
+
+    // 🎯 ตรรกะข้อ 2: ถ้าระบบเคยโหลดคำค้นหาคำนี้หรือหน้านี้ไว้แล้ว ให้ดึงออกมาทำงานทันทีใน 0ms ไม่ต้องยิงเน็ตใหม่
+    if (!isAppend && retryCount === 0 && dataCache[cacheKey]) {
+      const cached = dataCache[cacheKey];
+      allLogs = cached.rows;
+      isExhausted = cached.isExhausted;
+      currentScrollYear = cached.currentScrollYear;
+      currentOffset = cached.currentOffset;
+      displayTable(allLogs);
+      return;
+    }
+
     if (isLoading) return;
     isLoading = true;
 
     const tableBody = document.getElementById('bookData');
     
-    // 🌀 ส่วนการแสดงสถานะเอฟเฟกต์วงกลมกำลังโหลด
     if (!isAppend && retryCount === 0) {
-      tableBody.innerHTML = '<tr><td colspan="3" class="text-center p-4"><div class="spinner-border text-success spinner-border-sm me-2" role="status"></div> กำลังโหลดข้อมูล...</td></tr>';
+      // 🌀 ปรับปรุง UX: ไม่ล้างตารางจนขาวโพลน แต่ปรับตารางเดิมให้จางลงบอกสถานะกำลังอัปเดตเบื้องหลัง
+      tableBody.style.opacity = "0.5";
     } else if (isAppend && retryCount === 0) {
-      // กรณีเลื่อนหน้าจอลงมาด้านล่างสุด ให้สร้างแถววงกลมหมุนแทรกไว้ท้ายตารางชั่วคราว
       const loadingRow = document.createElement('tr');
       loadingRow.id = 'infinite-scroll-loading';
       loadingRow.innerHTML = `<td colspan="3" class="text-center p-3 bg-light"><div class="spinner-border text-success spinner-border-sm me-2" role="status"></div> <small class="text-muted fw-bold">กำลังโหลดข้อมูลปีเก่าเพิ่มเติม...</small></td>`;
       tableBody.appendChild(loadingRow);
     }
-
-    const selectedYear = document.getElementById('yearSelect').value;
-    const selectedDept = (currentUser.role === 'Admin') ? document.getElementById('deptFilter').value : currentUser.role;
-    const searchTerm = document.getElementById('searchInput').value.trim();
-    const targetYear = (selectedYear === "all") ? currentScrollYear : selectedYear;
 
     try {
       const url = `${SCRIPT_URL}?year=${targetYear}&dept=${selectedDept}&search=${encodeURIComponent(searchTerm)}&offset=${currentOffset}&limit=100&t=${new Date().getTime()}`;
@@ -471,7 +491,6 @@ function logout() {
       
       const newRows = JSON.parse(textData);
       
-      // 🔓 ลบแถววงกลมหมุนชั่วคราวออกเมื่อได้รับข้อมูลจากเซิร์ฟเวอร์เรียบร้อยแล้ว
       const oldLoadingRow = document.getElementById('infinite-scroll-loading');
       if (oldLoadingRow) oldLoadingRow.remove();
 
@@ -494,14 +513,25 @@ function logout() {
         currentOffset += newRows.length; 
       }
 
+      // คืนค่าความสว่างตารางปกติเมื่อประมวลผลเสร็จสิ้น
+      tableBody.style.opacity = "1";
+
+      // 💾 บันทึกสถิติผลลัพธ์ลงในคลังความจำสำรองหน้าบ้าน
+      dataCache[cacheKey] = {
+        rows: JSON.parse(JSON.stringify(allLogs)),
+        isExhausted: isExhausted,
+        currentScrollYear: currentScrollYear,
+        currentOffset: currentOffset
+      };
+
       displayTable(allLogs);
       isLoading = false;
       
     } catch(e) {
       console.warn("Load Logs Failed, Retrying...", e.message);
       isLoading = false;
+      tableBody.style.opacity = "1";
       
-      // ลบแถววงกลมหมุนออกหากเกิดข้อผิดพลาดคลาวด์พังชั่วคราว
       const oldLoadingRow = document.getElementById('infinite-scroll-loading');
       if (oldLoadingRow) oldLoadingRow.remove();
 

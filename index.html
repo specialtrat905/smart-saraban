@@ -132,7 +132,7 @@
   // --- การตั้งค่า ---
   const GH_OWNER = "specialtrat905";
   const GH_REPO = "smart-saraban";
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzJm9dVW1nZw3AwJiZr3__V4eCZXCRstWylvacgT8l1zApG5Jp4469AzJjE_wCzw7o3Ig/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyK5Tmz9IE6r6jXaO8QFbssTotDLTBOHS8LtT2JNJI1U_-eO23FoipUUyGbweCk2m2_jQ/exec";
 
   let currentUser = {};
   let allLogs = [];
@@ -206,6 +206,7 @@ function checkSession() {
             }
             // ---------------------------------------------------------
 
+            updateYearOptions(); // ✨ แทรกเพิ่มบรรทัดนี้ เพื่อให้สร้าง Dropdown ปี พ.ศ. ตอนล็อกอินอัตโนมัติ
             resetAndReloadLogs(); 
         } else {
             // ❌ ถ้าเกิน 2 ชม. แล้ว ให้เตะออกไปหน้าล็อกอิน
@@ -378,6 +379,7 @@ function logout() {
         document.getElementById('userDisplay').innerText = currentUser.name;
         document.getElementById('roleDisplay').innerText = currentUser.role;
         
+        updateYearOptions(); // ✨ แทรกเพิ่มบรรทัดนี้ เพื่อให้สร้าง Dropdown ปี พ.ศ. ตอนกรอกรหัสผ่านเข้าใช้งาน
         // บังคับเคลียร์คิวและสั่งโหลดข้อมูลหนังสือเพียงรอบเดียวอย่างเป็นระเบียบ
         resetAndReloadLogs();
         

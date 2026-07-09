@@ -642,7 +642,8 @@ function logout() {
 
     alert(`สำเร็จ! ส่งหนังสือ ${uploadedFiles.length} ฉบับ เรียบร้อย`);
     selectedFilesArray = []; renderFileList(); btn.disabled = false; btn.innerText = "อัปโหลดหนังสือและแจ้งเตือน LINE";
-    loadLogs();
+    dataCache = {}; // 🧼 ล้างคลังความจำสำรองหน้าบ้านทั้งหมด เพื่อบังคับให้ดึงข้อมูลอัปเดตล่าสุดจากหลังบ้าน
+resetAndReloadLogs(); // รีเซ็ตตัวแปรนับรอบออฟเซ็ตใหม่เป็นศูนย์
 }
   // ค้นหาช่วงล่างสุดของไฟล์ แล้วแทนที่ด้วยก้อนนี้ครับ
 window.addEventListener('load', () => {

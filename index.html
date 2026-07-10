@@ -290,9 +290,25 @@
       let rawDate = isMissing ? "❌" : col[0].split(/[T\s,]+/)[0];
       let dateDisplay = rawDate;
 
-      if (!isMissing && rawDate.includes("-")) {
-          const d = rawDate.split("-"); 
-          if (d.length === 3) dateDisplay = `${parseInt(d[2])}/${parseInt(d[1])}/${parseInt(d[0]) + 543}`;
+      // 🎯 ระบบ Dual-Format Parser แปลงโครงสร้างปี ค.ศ. เป็น พ.ศ. รองรับประเภทข้อมูล Text และ Date Object
+      if (!isMissing) {
+          if (rawDate.includes("-")) {
+              // 1. รองรับรูปแบบ yyyy-mm-dd (คั่นด้วยเครื่องหมายขีดกลาง จาก Date Object ใน Google Sheets)
+              const d = rawDate.split("-"); 
+              if (d.length === 3) {
+                  let year = parseInt(d[0]);
+                  if (year < 2500) year += 543; // 🛡️ Defensive Check: ป้องกันการบวกปีซ้ำซ้อน
+                  dateDisplay = `${parseInt(d[2])}/${parseInt(d[1])}/${year}`;
+              }
+          } else if (rawDate.includes("/")) {
+              // 2. รองรับรูปแบบ d/M/yyyy หรือ dd/mm/yyyy (คั่นด้วยเครื่องหมายทับ จาก Text ที่มีเครื่องหมาย ' นำหน้า)
+              const d = rawDate.split("/");
+              if (d.length === 3) {
+                  let year = parseInt(d[2]);
+                  if (year < 2500) year += 543; // 🛡️ Defensive Check: ป้องกันการบวกปีซ้ำซ้อน
+                  dateDisplay = `${parseInt(d[0])}/${parseInt(d[1])}/${year}`;
+              }
+          }
       }
 
       let fullFileName = col[2];

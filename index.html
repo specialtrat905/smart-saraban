@@ -261,11 +261,8 @@
     }
     yearSelect.innerHTML = options;
 
-    if (currentUser.role === 'Admin') {
-      yearSelect.value = "all"; 
-    } else {
-      yearSelect.value = currentYearBE.toString(); 
-    }
+    // ✨ แก้ไขจุดนี้: บังคับให้ทั้ง Admin และ User ทั่วไป มีค่าเริ่มต้นชี้ไปที่ปีปัจจุบัน (2569) ทั้งหมด
+    yearSelect.value = currentYearBE.toString(); 
   }
 
   // --- 6. ฟังก์ชันเรนเดอร์เนื้อหาตารางและการไฮไลท์คำค้นหา ---
@@ -411,7 +408,7 @@
     }, 1000); // ⏱️ ตั้งหน่วงเวลา 1 วินาทีเมื่อหยุดพิมพ์เพื่อเริ่มค้นหา
   }
 
-  // 🚀 ฟังก์ชันดาวน์โหลดข้อมูลอิงตามสิทธิ์และจัดสรรพารามิเตอร์คัดกรองจากต้นทาง (เวอร์ชันเสริมตัวหมุนเสิร์ชบนตาราง)
+  // 🚀 ฟังก์ชันดาวน์โหลดข้อมูลอิงตามสิทธิ์และจัดสรรพารามิเตอร์คัดกรองจากต้นทาง
   async function loadLogs(isAppend = false, retryCount = 0) {
     const selectedYear = document.getElementById('yearSelect').value;
     const selectedDept = (currentUser.role === 'Admin') ? document.getElementById('deptFilter').value : currentUser.role;
@@ -420,7 +417,6 @@
 
     const cacheKey = `${targetYear}_${selectedDept}_${searchTerm}_${currentOffset}`;
 
-    // ระบบดึงความจำสำรองความเร็วสูง (0ms Cache Response)
     if (!isAppend && retryCount === 0 && dataCache[cacheKey]) {
       const cached = dataCache[cacheKey];
       allLogs = cached.rows;
@@ -436,24 +432,9 @@
 
     const tableBody = document.getElementById('bookData');
     
-    // 🌀 ส่วนจัดการตัวหมุนเอฟเฟกต์ตอนกดค้นหา/อัปเดตข้อมูลภาพรวมใหม่
     if (!isAppend && retryCount === 0) {
-      tableBody.style.opacity = "0.5"; // หรี่จอลง 50% แบบเดิมที่ครูชอบ
-      
-      // ✨ เพิ่มเติม: แทรกแถววงกลมหมุนสวยๆ ไว้ที่แถวบนสุดของตารางทันทีโดยไม่ล้างข้อมูลเก่า
-      const oldSearchSpinner = document.getElementById('search-loading-spinner');
-      if (!oldSearchSpinner) {
-        tableBody.insertAdjacentHTML('afterbegin', `
-          <tr id="search-loading-spinner">
-            <td colspan="3" class="text-center p-3" style="background-color: rgba(255, 255, 255, 0.85);">
-              <div class="spinner-border text-success spinner-border-sm me-2" role="status"></div>
-              <small class="text-success fw-bold">กำลังค้นหาและอัปเดตรายการ...</small>
-            </td>
-          </tr>
-        `);
-      }
+      tableBody.style.opacity = "0.5";
     } else if (isAppend && retryCount === 0) {
-      // กรณีเลื่อนหน้าจอลงล่างสุด (Infinite Scroll) ให้ขึ้นตัวหมุนต่อท้ายตารางตามเดิม
       const loadingRow = document.createElement('tr');
       loadingRow.id = 'infinite-scroll-loading';
       loadingRow.innerHTML = `<td colspan="3" class="text-center p-3 bg-light"><div class="spinner-border text-success spinner-border-sm me-2" role="status"></div> <small class="text-muted fw-bold">กำลังโหลดข้อมูลปีเก่าเพิ่มเติม...</small></td>`;
@@ -461,7 +442,8 @@
     }
 
     try {
-      const url = `${SCRIPT_URL}?year=${targetYear}&dept=${selectedDept}&search=${encodeURIComponent(searchTerm)}&offset=${currentOffset}&limit=100&t=${new Date().getTime()}`;
+      // 🎯 ปรับปรุงจุดที่ A: เปลี่ยนช่วงท้ายลิงก์จาก limit=100 เป็น limit=200 เพื่อดึงข้อมูลได้จุใจขึ้น
+      const url = `${SCRIPT_URL}?year=${targetYear}&dept=${selectedDept}&search=${encodeURIComponent(searchTerm)}&offset=${currentOffset}&limit=200&t=${new Date().getTime()}`;
       const response = await fetch(url);
       
       if (!response.ok) throw new Error(`HTTP Status ${response.status}`);
@@ -473,13 +455,8 @@
       
       const newRows = JSON.parse(textData);
       
-      // 🔓 สั่งลบแถวตัวหมุน Infinite Scroll ด้านล่างสุด (ถ้ามี)
       const oldLoadingRow = document.getElementById('infinite-scroll-loading');
       if (oldLoadingRow) oldLoadingRow.remove();
-
-      // ✨ สั่งลบแถวตัวหมุนค้นหาอัตโนมัติด้านบนสุดออกทันทีเมื่อข้อมูลมาถึง
-      const oldSearchSpinner = document.getElementById('search-loading-spinner');
-      if (oldSearchSpinner) oldSearchSpinner.remove();
 
       if (isAppend) {
         allLogs = allLogs.concat(newRows);
@@ -487,22 +464,21 @@
         allLogs = newRows;
       }
 
-      if (newRows.length < 100 && selectedYear === "all" && currentScrollYear > 2568) {
+      // 🎯 ปรับปรุงจุดที่ B: ขยับเกณฑ์ตัวเลขเป็น 200 แถว และนำตัวดักความยาวเลขศูนย์ออก 
+      // เพื่อให้ระบบวิ่งไปควบรวมดึงข้อมูลปีเก่า (2568) มาเติมต่อท้ายให้ผู้ใช้เห็นทันทีอย่างไร้รอยต่อ
+      if (newRows.length < 200 && selectedYear === "all" && currentScrollYear > 2568) {
         currentScrollYear--; 
         currentOffset = 0;   
         isLoading = false;
-        if (newRows.length === 0) {
-          return loadLogs(true); 
-        }
-      } else if (newRows.length < 100) {
+        return loadLogs(true); // 🔄 ยิงคำขอต่อเนื่องไปเอาปีเก่ามาเติมตารางให้เต็มทันที ป้องกันอาการหยุดชะงัก
+      } else if (newRows.length < 200) {
         isExhausted = true; 
       } else {
         currentOffset += newRows.length; 
       }
 
-      tableBody.style.opacity = "1"; // คืนค่าความสว่างตารางปกติ
+      tableBody.style.opacity = "1";
 
-      // บันทึกสถิติคำเสิร์ชลงแรมแคชเครื่อง
       dataCache[cacheKey] = {
         rows: JSON.parse(JSON.stringify(allLogs)),
         isExhausted: isExhausted,
@@ -517,13 +493,8 @@
       console.warn("Load Logs Failed, Retrying...", e.message);
       isLoading = false;
       tableBody.style.opacity = "1";
-      
-      // เคลียร์ตัวหมุนออกหากเชื่อมต่อขัดข้อง
       const oldLoadingRow = document.getElementById('infinite-scroll-loading');
       if (oldLoadingRow) oldLoadingRow.remove();
-
-      const oldSearchSpinner = document.getElementById('search-loading-spinner');
-      if (oldSearchSpinner) oldSearchSpinner.remove();
 
       if (retryCount < 2) {
         setTimeout(() => loadLogs(isAppend, retryCount + 1), 1500);

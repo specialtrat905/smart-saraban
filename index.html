@@ -464,7 +464,7 @@
 
     try {
       // 🎯 ปรับปรุงจุดที่ A: เปลี่ยนช่วงท้ายลิงก์จาก limit=100 เป็น limit=200 เพื่อดึงข้อมูลได้จุใจขึ้น
-      const url = `${SCRIPT_URL}?year=${targetYear}&dept=${selectedDept}&search=${encodeURIComponent(searchTerm)}&offset=${currentOffset}&limit=200&t=${new Date().getTime()}`;
+      const url = `${SCRIPT_URL}?year=${targetYear}&dept=${encodeURIComponent(selectedDept)}&search=${encodeURIComponent(searchTerm)}&offset=${currentOffset}&limit=200&t=${new Date().getTime()}`;
       const response = await fetch(url);
       
       if (!response.ok) throw new Error(`HTTP Status ${response.status}`);

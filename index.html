@@ -454,7 +454,20 @@
     const tableBody = document.getElementById('bookData');
     
     if (!isAppend && retryCount === 0) {
-      tableBody.style.opacity = "0.5";
+      tableBody.style.opacity = "0.5"; // UX สลับนุ่มนวล: ปรับจางตารางเดิมเมื่อสั่งอัปเดตคำค้นหา
+      
+      // แทรกแถววงกลมหมุนสวยๆ ไว้ที่แถวบนสุดของตารางทันทีโดยไม่ล้างข้อมูลเก่า
+      const oldSearchSpinner = document.getElementById('search-loading-spinner');
+      if (!oldSearchSpinner) {
+        tableBody.insertAdjacentHTML('afterbegin', `
+          <tr id="search-loading-spinner">
+            <td colspan="3" class="text-center p-3" style="background-color: rgba(255, 255, 255, 0.85);">
+              <div class="spinner-border text-success spinner-border-sm me-2" role="status"></div>
+              <small class="text-success fw-bold">กำลังค้นหาและอัปเดตรายการ...</small>
+            </td>
+          </tr>
+        `);
+      }
     } else if (isAppend && retryCount === 0) {
       const loadingRow = document.createElement('tr');
       loadingRow.id = 'infinite-scroll-loading';

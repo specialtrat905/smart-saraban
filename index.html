@@ -286,7 +286,7 @@
     yearSelect.value = currentYearBE.toString(); 
   }
 
-  // --- 6. ฟังก์ชันเรนเดอร์เนื้อหาตารางและการไฮไลท์คำค้นหา ---
+  // 6. ฟังก์ชันเรนเดอร์เนื้อหาตารางและการไฮไลท์คำค้นหา (เวอร์ชันแยกบรรทัดกลุ่มงาน + แสดงผลพอดีจอมือถือ)
   function displayTable(dataRows) {
     const tableBody = document.getElementById('bookData');
     const deptColors = {
@@ -314,19 +314,17 @@
       // 🎯 ระบบ Dual-Format Parser แปลงโครงสร้างปี ค.ศ. เป็น พ.ศ. รองรับประเภทข้อมูล Text และ Date Object
       if (!isMissing) {
           if (rawDate.includes("-")) {
-              // 1. รองรับรูปแบบ yyyy-mm-dd (คั่นด้วยเครื่องหมายขีดกลาง จาก Date Object ใน Google Sheets)
               const d = rawDate.split("-"); 
               if (d.length === 3) {
                   let year = parseInt(d[0]);
-                  if (year < 2500) year += 543; // 🛡️ Defensive Check: ป้องกันการบวกปีซ้ำซ้อน
+                  if (year < 2500) year += 543;
                   dateDisplay = `${parseInt(d[2])}/${parseInt(d[1])}/${year}`;
               }
           } else if (rawDate.includes("/")) {
-              // 2. รองรับรูปแบบ d/M/yyyy หรือ dd/mm/yyyy (คั่นด้วยเครื่องหมายทับ จาก Text ที่มีเครื่องหมาย ' นำหน้า)
               const d = rawDate.split("/");
               if (d.length === 3) {
                   let year = parseInt(d[2]);
-                  if (year < 2500) year += 543; // 🛡️ Defensive Check: ป้องกันการบวกปีซ้ำซ้อน
+                  if (year < 2500) year += 543;
                   dateDisplay = `${parseInt(d[0])}/${parseInt(d[1])}/${year}`;
               }
           }
@@ -335,9 +333,15 @@
       let fullFileName = col[2];
       let cleanFileName = fullFileName;
       
-      // 🎯 ปรับปรุง: แปลงตัวเลขไทย (๐-๙) ทั้งหมดในชื่อหนังสือให้แสดงผลเป็นเลขอารบิก (0-9) อัตโนมัติบนหน้าจอตาราง
+      // แปลงตัวเลขไทย (๐-๙) ทั้งหมดในชื่อหนังสือให้แสดงผลเป็นเลขอารบิก (0-9)
       const thaiNums = {'๐':'0','๑':'1','๒':'2','๓':'3','๔':'4','๕':'5','๖':'6','๗':'7','๘':'8','๙':'9'};
       cleanFileName = cleanFileName.replace(/[๐-๙]/g, m => thaiNums[m]);
+
+      // 🎯 หากมีหลายกลุ่มงาน สั่งแยกแสดงผลคนละบรรทัด (<div class="mb-1">) เพื่อความสวยงามและอ่านง่าย
+      const deptBadges = (isMissing || currentUser.role !== 'Admin') ? "" : col[3].split(', ').map(d => {
+        const color = deptColors[d.trim()] || "#adb5bd"; 
+        return `<div class="mb-1"><small class="badge border" style="font-size: 0.7rem; font-weight: 400; background-color: ${color}; color: #fff; border-color: rgba(0,0,0,0.1) !important; white-space: normal; text-align: left;">${d.trim()}</small></div>`;
+      }).join('');
 
       let staffBadge = "";
 
@@ -346,7 +350,7 @@
           if (nameMatch) {
               const names = nameMatch[1];
               cleanFileName = fullFileName.replace(/\[.*?\]/, "").trim();
-              staffBadge = `<small class="badge border ms-1" style="font-size: 0.7rem; font-weight: 400; background-color: #adb5bd; color: #fff; border-color: rgba(0,0,0,0.1) !important;">${names}</small>`;
+              staffBadge = `<div class="mb-1"><small class="badge border" style="font-size: 0.7rem; font-weight: 400; background-color: #adb5bd; color: #fff; border-color: rgba(0,0,0,0.1) !important; white-space: normal; text-align: left;">${names}</small></div>`;
           }
 
           const searchTerm = document.getElementById('searchInput').value.trim();
@@ -357,10 +361,7 @@
           }
       }
 
-      const deptBadges = (isMissing || currentUser.role !== 'Admin') ? "" : col[3].split(', ').map(d => {
-        const color = deptColors[d.trim()] || "#adb5bd"; 
-        return `<small class="badge border me-1" style="font-size: 0.7rem; font-weight: 400; background-color: ${color}; color: #fff; border-color: rgba(0,0,0,0.1) !important;">${d}</small>`;
-      }).join('');
+      const deptBadgesContainer = (deptBadges || staffBadge) ? `<div class="d-flex flex-column align-items-start mt-1">${deptBadges}${staffBadge}</div>` : "";
       
       return `
       <tr class="${isMissing ? 'row-missing' : ''} align-middle">
@@ -369,10 +370,7 @@
         </td>
         <td class="thai-wrap text-start">
            <span class="${isMissing ? '' : 'text-dark'} fw-bold d-block mb-1" style="font-size: 0.85rem;">${cleanFileName}</span>
-           <div class="d-flex justify-content-start flex-wrap">
-              ${deptBadges}
-              ${staffBadge}
-           </div>
+           ${deptBadgesContainer}
         </td>
         <td class="text-center">
           <div class="action-buttons justify-content-center">
@@ -383,7 +381,6 @@
       </tr>`;
     }).join('');
 
-    // ✨ ตรรกะแสดงสถานะเมื่อเลื่อนหน้าจนเกลี้ยงฐานข้อมูล
     if (isExhausted && filtered.length > 0) {
       tableHTML += `<tr><td colspan="3" class="text-center p-3 text-muted fw-bold" style="font-size: 0.8rem; background-color: #f8f9fa; border-top: 1px solid #dee2e6;">-- สิ้นสุดฐานข้อมูล --</td></tr>`;
     }

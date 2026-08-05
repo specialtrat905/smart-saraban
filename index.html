@@ -8,6 +8,15 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;700&display=swap" rel="stylesheet">
   <style>
+    /* 📱 ปรับแต่งตารางสำหรับแสดงผลบนมือถือให้พอดี 1 หน้าจอ */
+    .table { table-layout: fixed; width: 100%; }
+    .thai-wrap { word-break: break-word; overflow-wrap: break-word; white-space: normal; line-height: 1.4; text-align: left; }
+    
+    @media (max-width: 576px) {
+      .table th, .table td { padding: 0.5rem 0.2rem !important; }
+      .action-buttons { flex-direction: column; gap: 4px; } /* บนมือถือปรับปุ่มเป็นแนวตั้งเรียงต่อกัน */
+      .action-buttons .btn { width: 100%; font-size: 0.75rem; padding: 0.25rem 0.2rem; }
+    }
     /* ✨ เพิ่มเอฟเฟกต์ปุ่มกดแบบ Interactive (ปุ่มยุบตัวเวลาคลิกเหมือนกดจริง) */
     .btn-interactive {
       transition: all 0.15s ease-in-out !important;
@@ -131,8 +140,8 @@
         <table class="table table-hover align-middle" style="font-size: 0.9rem;">
           <thead class="table-light">
             <tr class="text-center align-middle">
-              <th style="width: 20%;">วันที่</th>
-              <th style="width: 55%;">ชื่อหนังสือ / ฝ่าย</th>
+              <th style="width: 18%;">วันที่</th>
+              <th style="width: 57%;">ชื่อหนังสือ / ฝ่าย</th>
               <th style="width: 25%;">จัดการ</th>
             </tr>
           </thead>

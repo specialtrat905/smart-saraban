@@ -456,7 +456,7 @@
     }, 1000); // ⏱️ ตั้งหน่วงเวลา 1 วินาทีเมื่อหยุดพิมพ์เพื่อเริ่มค้นหา
   }
 
-  // 🚀 ฟังก์ชันดาวน์โหลดข้อมูลอิงตามสิทธิ์และจัดสรรพารามิเตอร์คัดกรองจากต้นทาง
+  // 🚀 ฟังก์ชันดาวน์โหลดข้อมูลอิงตามสิทธิ์และจัดสรรพารามิเตอร์คัดกรองจากต้นทาง (เวอร์ชันสมบูรณ์)
   async function loadLogs(isAppend = false, retryCount = 0) {
     const selectedYear = document.getElementById('yearSelect').value;
     const selectedDept = (currentUser.role === 'Admin') ? document.getElementById('deptFilter').value : currentUser.role;
@@ -519,6 +519,10 @@
       const oldLoadingRow = document.getElementById('infinite-scroll-loading');
       if (oldLoadingRow) oldLoadingRow.remove();
 
+      // ✨ เพิ่มเติม: ลบแถวตัวหมุนค้นหาเมื่อดึงข้อมูลสำเร็จ
+      const oldSearchSpinner = document.getElementById('search-loading-spinner');
+      if (oldSearchSpinner) oldSearchSpinner.remove();
+
       if (isAppend) {
         allLogs = allLogs.concat(newRows);
       } else {
@@ -556,6 +560,10 @@
       tableBody.style.opacity = "1";
       const oldLoadingRow = document.getElementById('infinite-scroll-loading');
       if (oldLoadingRow) oldLoadingRow.remove();
+
+      // ✨ เพิ่มเติม: ลบแถวตัวหมุนค้นหาออกหากเกิดข้อผิดพลาดในการโหลด
+      const oldSearchSpinner = document.getElementById('search-loading-spinner');
+      if (oldSearchSpinner) oldSearchSpinner.remove();
 
       if (retryCount < 2) {
         setTimeout(() => loadLogs(isAppend, retryCount + 1), 1500);

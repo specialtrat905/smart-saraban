@@ -8,6 +8,14 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;700&display=swap" rel="stylesheet">
   <style>
+    /* ✨ เพิ่มเอฟเฟกต์ปุ่มกดแบบ Interactive (ปุ่มยุบตัวเวลาคลิกเหมือนกดจริง) */
+    .btn-interactive {
+      transition: all 0.15s ease-in-out !important;
+    }
+    .btn-interactive:active {
+      transform: scale(0.95) !important; /* ยุบขนาดลง 5% เวลาถูกกด */
+      box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.2) !important; /* เพิ่มมิติเงาลึก */
+    }
     body { background: #f0f2f5; font-family: 'Sarabun', sans-serif; color: #1c1e21; }
     .nav-custom { background: linear-gradient(135deg, #004d40 0%, #00796b 100%); color: white; border-bottom: 3px solid #ffc107; }
     .card { border-radius: 15px; border: none; }
@@ -34,7 +42,10 @@
     <h3 class="fw-bold text-success mb-4">Smart Saraban</h3>
     <input type="text" id="user" class="form-control mb-3" placeholder="ชื่อผู้ใช้">
     <input type="password" id="pass" class="form-control mb-3" placeholder="รหัสผ่าน">
-    <button onclick="login()" class="btn btn-success w-100 py-2 fw-bold shadow-sm">เข้าสู่ระบบ</button>
+    <!--  เปลี่ยนจากแท็กปุ่มเดิม มาเป็นรูปแบบนี้ครับ -->
+<button id="loginBtn" onclick="login()" class="btn btn-success w-100 py-2 fw-bold shadow-sm btn-interactive">
+  เข้าสู่ระบบ
+</button>
     <div id="loginErr" class="text-danger mt-3 small"></div>
   </div>
 </div>
@@ -373,46 +384,58 @@
 
   // --- 7. ระบบตรวจสอบสิทธิ์ล็อกอินผ่าน Google ชีตปิด (แก้ปัญหาตัวแดง 429) ---
   // 🔐 ฟังก์ชันเข้าสู่ระบบความเร็วสูง 0ms (Local Auth - ปลอดภัย เสถียรที่สุด 100%)
+  // 🔐 ฟังก์ชันเข้าสู่ระบบความเร็วสูง + เอฟเฟกต์ตอบโต้ปุ่มกด (Interactive UX)
   function login() {
     const u = document.getElementById('user').value.trim();
     const p = document.getElementById('pass').value.trim();
+    const btn = document.getElementById('loginBtn');
     
-    // บัญชีกลุ่มงานประจำศูนย์ฯ ตราด
-    const usersDB = [
-      { user: "admin", pass: "1234", role: "Admin", name: "งานธุรการกลาง" },
-      { user: "aad",   pass: "1234", role: "บริหารงานวิชาการ", name: "บริหารงานวิชาการ" },
-      { user: "hrm",   pass: "1234", role: "บริหารงานบุคคล", name: "บริหารงานบุคคล" },
-      { user: "gad",   pass: "1234", role: "บริหารงานทั่วไป", name: "บริหารงานทั่วไป" },
-      { user: "pdb",   pass: "1234", role: "บริหารแผนงานและงบประมาณ", name: "บริหารแผนงานและงบประมาณ" }
-    ];
+    // 1. ตอบสนองทันทีที่คลิก: ล็อกปุ่มกดป้องกันกดซ้ำ + เปลี่ยนข้อความโชว์ตัวหมุน
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status"></span> กำลังเข้าสู่ระบบ...`;
 
-    const result = usersDB.find(item => item.user === u && item.pass === p);
+    // 2. หน่วงเวลาเล็กน้อย 200 มิลลิวินาที เพื่อให้สายตาผู้ใช้รับรู้ว่าระบบตอบรับการกดแล้ว
+    setTimeout(() => {
+      const usersDB = [
+        { user: "admin", pass: "1234", role: "Admin", name: "งานธุรการกลาง" },
+        { user: "aad",   pass: "1234", role: "บริหารงานวิชาการ", name: "บริหารงานวิชาการ" },
+        { user: "hrm",   pass: "1234", role: "บริหารงานบุคคล", name: "บริหารงานบุคคล" },
+        { user: "gad",   pass: "1234", role: "บริหารงานทั่วไป", name: "บริหารงานทั่วไป" },
+        { user: "pdb",   pass: "1234", role: "บริหารแผนงานและงบประมาณ", name: "บริหารแผนงานและงบประมาณ" }
+      ];
 
-    if (result) {
-      currentUser = { user: result.user, role: result.role, name: result.name };
+      const result = usersDB.find(item => item.user === u && item.pass === p);
 
-      if (currentUser.role === 'Admin') {
-          localStorage.setItem('sarabanUser', JSON.stringify(currentUser));
-          localStorage.setItem('loginTime', new Date().getTime());
-          document.getElementById('logoutBtn').style.display = 'block';
-          document.getElementById('adminView').style.display = 'block';
-          document.getElementById('deptFilterContainer').style.display = 'block';
+      if (result) {
+        currentUser = { user: result.user, role: result.role, name: result.name };
+
+        if (currentUser.role === 'Admin') {
+            localStorage.setItem('sarabanUser', JSON.stringify(currentUser));
+            localStorage.setItem('loginTime', new Date().getTime());
+            document.getElementById('logoutBtn').style.display = 'block';
+            document.getElementById('adminView').style.display = 'block';
+            document.getElementById('deptFilterContainer').style.display = 'block';
+        } else {
+            localStorage.removeItem('sarabanUser');
+            localStorage.removeItem('loginTime');
+            document.getElementById('logoutBtn').style.display = 'none';
+        }
+
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+        document.getElementById('userDisplay').innerText = currentUser.name;
+        document.getElementById('roleDisplay').innerText = currentUser.role;
+        
+        updateYearOptions();
+        resetAndReloadLogs();
       } else {
-          localStorage.removeItem('sarabanUser');
-          localStorage.removeItem('loginTime');
-          document.getElementById('logoutBtn').style.display = 'none';
+        document.getElementById('loginErr').innerText = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
       }
 
-      document.getElementById('loginPage').style.display = 'none';
-      document.getElementById('mainApp').style.display = 'block';
-      document.getElementById('userDisplay').innerText = currentUser.name;
-      document.getElementById('roleDisplay').innerText = currentUser.role;
-      
-      updateYearOptions();
-      resetAndReloadLogs();
-    } else {
-      document.getElementById('loginErr').innerText = "ระบบล็อกอินขัดข้อง กรุณาติดต่อผู้ดูแลระบบ";
-    }
+      // คืนค่าปุ่มกดให้กลับมาสแตนด์บายปกติกรณีใส่รหัสผิด
+      btn.disabled = false;
+      btn.innerHTML = `เข้าสู่ระบบ`;
+    }, 200);
   }
 
   // --- 8. ฟังก์ชันจัดคิวและดาวน์โหลดข้อมูลสลับหน้าความเสถียรสูง ---

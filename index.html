@@ -153,7 +153,7 @@
   // --- 1. การตั้งค่าสิทธิ์พื้นฐานองค์กร ---
   const GH_OWNER = "specialtrat905";
   const GH_REPO = "smart-saraban";
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxGCFJfhSRMosqC5vlSVmeAYLjYtQMMRpGVEKAqP3oQqZqfELPi69lnvy38pP1GeUBCqA/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwNwnkc80MQjI8TvMQnE6jvzQy-3ql6GOmKqIZMNNU7f_cZF3aDHli1VoQBA4BnfMHVuA/exec";
 
   let currentUser = {};
   let allLogs = [];
@@ -627,7 +627,8 @@
         btn.innerText = `กำลังส่ง: ${file.name.substring(0,10)}...`;
         try {
             const fileData = await new Promise(resolve => { const r = new FileReader(); r.onload = e => resolve(e.target.result); r.readAsDataURL(file); });
-            let originalName = file.name.replace(/,/g, "");
+            //  โค้ดใหม่ที่คงเครื่องหมาย , ไว้ตามต้นฉบับ
+let originalName = file.name;
             let newFileName = originalName.toLowerCase().endsWith(".pdf") 
                 ? originalName.slice(0, -4) + receiverSuffix + ".pdf" 
                 : originalName + receiverSuffix;

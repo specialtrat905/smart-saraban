@@ -7,6 +7,7 @@
   <title>ระบบสารบรรณ Hybrid - ศกศ.ตราด</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <style>
     /* 📱 ปรับแต่งตารางสำหรับแสดงผลบนมือถือให้พอดี 1 หน้าจอ */
     .table { table-layout: fixed; width: 100%; }
@@ -128,11 +129,15 @@
           </select>
         </div>
 
-        <div class="col-12 col-md">
+        <div class="col-12 col-md d-flex gap-2">
           <div class="input-group shadow-sm">
             <span class="input-group-text bg-white border-end-0">🔍</span>
             <input type="text" id="searchInput" class="form-control border-start-0" placeholder="พิมพ์ชื่อหนังสือเพื่อค้นหาอัตโนมัติ..." oninput="handleSearchInput()">
           </div>
+          <!-- ปุ่มแก้ไขฐานข้อมูล (แสดงเฉพาะ Admin) -->
+          <button id="editDbBtn" class="btn btn-outline-danger shadow-sm text-nowrap" style="display:none;" onclick="handleEditDbBtnClick()">
+            ⚙️ แก้ไขฐานข้อมูล
+          </button>
         </div>
       </div>
 
@@ -148,7 +153,57 @@
           <tbody id="bookData"></tbody>
         </table>
       </div>
-    </div> </div> </div> 
+    </div> <!-- ปิด card ตาราง -->
+
+    <!-- 🟢 Modal 1: ยืนยันการอัปโหลดหนังสือ -->
+    <div class="modal fade" id="uploadConfirmModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+          <div class="modal-header bg-success text-white">
+            <h5 class="modal-title fw-bold">📄 ยืนยันการส่งหนังสือ</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body p-4">
+            <div class="mb-3">
+              <span class="text-muted small">กลุ่มงานปลายทาง:</span>
+              <div id="modalTargetDept" class="fw-bold text-dark fs-6 mt-1"></div>
+            </div>
+            <div class="mb-2">
+              <span class="text-muted small">รายการหนังสือที่จะส่ง (<span id="modalFileCount" class="fw-bold text-success"></span> ฉบับ):</span>
+              <ul id="modalFileList" class="list-group mt-2" style="max-height: 200px; overflow-y: auto;"></ul>
+            </div>
+          </div>
+          <div class="modal-footer bg-light">
+            <button type="button" class="btn btn-danger px-4" data-bs-dismiss="modal">❌ ยกเลิก</button>
+            <button type="button" class="btn btn-success px-4 fw-bold" onclick="executeUpload()">✅ ยืนยันการส่ง</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 🔴 Modal 2: ยืนยันการลบหนังสือออกจากฐานข้อมูล -->
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+          <div class="modal-header bg-danger text-white">
+            <h5 class="modal-title fw-bold">🗑️ ยืนยันการลบข้อมูลหนังสือ</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body p-4">
+            <p class="text-danger fw-bold mb-2">⚠️ คำเตือน: ระบบจะลบไฟล์ใน Google Drive และลบแถวใน Google Sheet ของทุกกลุ่มงานที่เกี่ยวข้องอย่างถาวร</p>
+            <span class="text-muted small">รายการหนังสือที่จะลบ (<span id="deleteModalCount" class="fw-bold text-danger"></span> ฉบับ):</span>
+            <ul id="deleteModalFileList" class="list-group mt-2" style="max-height: 200px; overflow-y: auto;"></ul>
+          </div>
+          <div class="modal-footer bg-light">
+            <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">ยกเลิก</button>
+            <button type="button" id="confirmDeleteBtn" class="btn btn-danger px-4 fw-bold" onclick="executeDelete()">🗑️ ยืนยันการลบถาวร</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div> <!-- ปิด container -->
+</div> <!-- ปิด mainApp -->
+
 <script>
   // --- 1. การตั้งค่าสิทธิ์พื้นฐานองค์กร ---
   const GH_OWNER = "specialtrat905";
@@ -160,6 +215,11 @@
   let selectedFilesArray = [];
   let currentYearBE = new Date().getFullYear() + 543;
   let staffNames = [];
+  // ⚙️ ตัวแปรควบคุมโหมดแก้ไขฐานข้อมูลและการลบ
+  let isEditDbMode = false;
+  let selectedBooksToDelete = [];
+  let uploadModalInstance = null;
+  let deleteModalInstance = null;
 
   // 🔄 ตัวแปรควบคุมลำดับและสเตทสำหรับระบบ Infinite Scroll
   let currentOffset = 0;
@@ -223,8 +283,10 @@
                 document.getElementById('logoutBtn').style.display = 'block'; 
                 document.getElementById('adminView').style.display = 'block';
                 document.getElementById('deptFilterContainer').style.display = 'block';
+                document.getElementById('editDbBtn').style.display = 'block'; // แสดงปุ่มแก้ไขฐานข้อมูล
             } else {
                 document.getElementById('logoutBtn').style.display = 'none';  
+                document.getElementById('editDbBtn').style.display = 'none';
             }
 
             updateYearOptions();
@@ -286,7 +348,7 @@
     yearSelect.value = currentYearBE.toString(); 
   }
 
-  // 6. ฟังก์ชันเรนเดอร์เนื้อหาตารางและการไฮไลท์คำค้นหา (เวอร์ชันแยกบรรทัดกลุ่มงาน + แสดงผลพอดีจอมือถือ)
+  // 6. ฟังก์ชันเรนเดอร์เนื้อหาตาราง (รองรับโหมดแก้ไขฐานข้อมูล & Checkbox)
   function displayTable(dataRows) {
     const tableBody = document.getElementById('bookData');
     const deptColors = {
@@ -306,12 +368,11 @@
       return;
     }
 
-    let tableHTML = filtered.map(col => {
+    let tableHTML = filtered.map((col, index) => {
       const isMissing = col[0] === "❌";
       let rawDate = isMissing ? "❌" : col[0].split(/[T\s,]+/)[0];
       let dateDisplay = rawDate;
 
-      // 🎯 ระบบ Dual-Format Parser แปลงโครงสร้างปี ค.ศ. เป็น พ.ศ. รองรับประเภทข้อมูล Text และ Date Object
       if (!isMissing) {
           if (rawDate.includes("-")) {
               const d = rawDate.split("-"); 
@@ -333,11 +394,9 @@
       let fullFileName = col[2];
       let cleanFileName = fullFileName;
       
-      // แปลงตัวเลขไทย (๐-๙) ทั้งหมดในชื่อหนังสือให้แสดงผลเป็นเลขอารบิก (0-9)
       const thaiNums = {'๐':'0','๑':'1','๒':'2','๓':'3','๔':'4','๕':'5','๖':'6','๗':'7','๘':'8','๙':'9'};
       cleanFileName = cleanFileName.replace(/[๐-๙]/g, m => thaiNums[m]);
 
-      // 🎯 หากมีหลายกลุ่มงาน สั่งแยกแสดงผลคนละบรรทัด (<div class="mb-1">) เพื่อความสวยงามและอ่านง่าย
       const deptBadges = (isMissing || currentUser.role !== 'Admin') ? "" : col[3].split(', ').map(d => {
         const color = deptColors[d.trim()] || "#adb5bd"; 
         return `<div class="mb-1"><small class="badge border" style="font-size: 0.7rem; font-weight: 400; background-color: ${color}; color: #fff; border-color: rgba(0,0,0,0.1) !important; white-space: normal; text-align: left;">${d.trim()}</small></div>`;
@@ -363,6 +422,27 @@
 
       const deptBadgesContainer = (deptBadges || staffBadge) ? `<div class="d-flex flex-column align-items-start mt-1">${deptBadges}${staffBadge}</div>` : "";
       
+      // 🎯 ส่วนจัดการปุ่ม หรือ Checkbox เมื่ออยู่ในโหมดแก้ไขฐานข้อมูล
+      let actionColumnHTML = "";
+      if (isMissing) {
+        actionColumnHTML = "";
+      } else if (isEditDbMode && currentUser.role === 'Admin') {
+        const isChecked = selectedBooksToDelete.some(b => b.fileName === col[2]);
+        actionColumnHTML = `
+          <div class="form-check d-flex justify-content-center align-items-center">
+            <input class="form-check-input border-danger" type="checkbox" style="width: 1.4rem; height: 1.4rem; cursor: pointer;" 
+              ${isChecked ? 'checked' : ''} onchange="toggleSelectBookForDelete('${encodeURIComponent(col[2])}', this.checked)">
+          </div>
+        `;
+      } else {
+        actionColumnHTML = `
+          <div class="action-buttons justify-content-center">
+            <a href="${col[4]}" target="_blank" class="btn btn-sm btn-primary shadow-sm flex-grow-1">เปิดดู</a>
+            <button onclick="copyLink('${col[4]}')" class="btn btn-sm btn-copy shadow-sm">คัดลอก</button>
+          </div>
+        `;
+      }
+
       return `
       <tr class="${isMissing ? 'row-missing' : ''} align-middle">
         <td class="text-center" style="font-size: ${isMissing ? '1.1rem' : '0.75rem'}; color: ${isMissing ? '#ff4d4d' : 'gray'};">
@@ -373,10 +453,7 @@
            ${deptBadgesContainer}
         </td>
         <td class="text-center">
-          <div class="action-buttons justify-content-center">
-            ${isMissing ? '' : `<a href="${col[4]}" target="_blank" class="btn btn-sm btn-primary shadow-sm flex-grow-1">เปิดดู</a>
-            <button onclick="copyLink('${col[4]}')" class="btn btn-sm btn-copy shadow-sm">คัดลอก</button>`}
-          </div>
+          ${actionColumnHTML}
         </td>
       </tr>`;
     }).join('');
@@ -588,36 +665,40 @@
     }
   });
 
-  // --- 9. ระบบอัปโหลดและล้างหน่วยความจำแคชภาพรวมเมื่อส่งสำเร็จ ---
-  async function handleUpload() {
+  // --- 9. ระบบอัปโหลดพร้อมหน้าต่างยืนยัน (Confirmation Modal) ---
+  function handleUpload() {
     const dept = document.getElementById('deptSelect').value;
-    if (selectedFilesArray.length === 0 || !dept) return alert("เลือกไฟล์และกลุ่มงานปลายทาง");
+    if (selectedFilesArray.length === 0 || !dept) return alert("กรุณาเลือกไฟล์และกลุ่มงานปลายทาง");
 
     const nameInputs = document.querySelectorAll('.other-name-input');
     let names = [];
     nameInputs.forEach(input => { if (input.value.trim() !== "") names.push(input.value.trim()); });
     const receiverSuffix = names.length > 0 ? ` [${names.join(', ')}]` : "";
 
-    for (let file of selectedFilesArray) {
-        const docMatch = file.name.match(/^(\d+-\d+)/);
-        if (docMatch) {
-            const docNum = docMatch[1];
-            const isDuplicate = allLogs.some(log => {
-                const existingTitle = log[2].replace(/<[^>]*>?/gm, ''); 
-                const existingDept = log[3].trim(); 
-                const matchNum = existingTitle.startsWith(docNum);
-                const matchDept = existingDept === dept;
-                if (matchNum && matchDept && dept === "อื่นๆ") {
-                    return existingTitle.includes(`[${names.join(', ')}]`);
-                }
-                return matchNum && matchDept;
-            });
-            if (isDuplicate) {
-                const proceed = confirm(`⚠️ พบว่าเลขที่ "${docNum}" เคยส่งให้กลุ่มงานนี้แล้ว\nคุณต้องการส่งซ้ำเพื่อเพิ่มรายการใหม่ใช่หรือไม่?`);
-                if (!proceed) return; 
-            }
-        }
+    // ใส่ข้อมูลลงใน Modal ยืนยัน
+    document.getElementById('modalTargetDept').innerHTML = dept + (receiverSuffix ? ` <span class="badge bg-secondary">${receiverSuffix}</span>` : "");
+    document.getElementById('modalFileCount').innerText = selectedFilesArray.length;
+    document.getElementById('modalFileList').innerHTML = selectedFilesArray.map((f, i) => `
+      <li class="list-group-item list-group-item-action py-2 small">
+        <span class="badge bg-success me-2">${i+1}</span>${f.name}
+      </li>
+    `).join('');
+
+    if (!uploadModalInstance) {
+      uploadModalInstance = new bootstrap.Modal(document.getElementById('uploadConfirmModal'));
     }
+    uploadModalInstance.show();
+  }
+
+  // ฟังก์ชันเริ่มอัปโหลดจริงหลังกดยืนยันใน Modal
+  async function executeUpload() {
+    if (uploadModalInstance) uploadModalInstance.hide();
+
+    const dept = document.getElementById('deptSelect').value;
+    const nameInputs = document.querySelectorAll('.other-name-input');
+    let names = [];
+    nameInputs.forEach(input => { if (input.value.trim() !== "") names.push(input.value.trim()); });
+    const receiverSuffix = names.length > 0 ? ` [${names.join(', ')}]` : "";
 
     const btn = document.getElementById('uploadBtn'); 
     btn.disabled = true;
@@ -627,8 +708,7 @@
         btn.innerText = `กำลังส่ง: ${file.name.substring(0,10)}...`;
         try {
             const fileData = await new Promise(resolve => { const r = new FileReader(); r.onload = e => resolve(e.target.result); r.readAsDataURL(file); });
-            //  โค้ดใหม่ที่คงเครื่องหมาย , ไว้ตามต้นฉบับ
-let originalName = file.name;
+            let originalName = file.name;
             let newFileName = originalName.toLowerCase().endsWith(".pdf") 
                 ? originalName.slice(0, -4) + receiverSuffix + ".pdf" 
                 : originalName + receiverSuffix;
@@ -665,9 +745,104 @@ let originalName = file.name;
     alert(`สำเร็จ! ส่งหนังสือ ${uploadedFiles.length} ฉบับ เรียบร้อย`);
     selectedFilesArray = []; renderFileList(); btn.disabled = false; btn.innerText = "อัปโหลดหนังสือและแจ้งเตือน LINE";
     
-    // 🧼 ล้าง Cache และบังคับเริ่มต้นคิวข้อมูลใหม่จากหลังบ้านทันทีหลังส่งงานสำเร็จ
     dataCache = {}; 
     resetAndReloadLogs();
+  }
+
+  // --- 10. ระบบจัดการแก้ไขฐานข้อมูลและเลือกลบหนังสือ ---
+  function handleEditDbBtnClick() {
+    if (selectedBooksToDelete.length > 0) {
+      // หากมีการเลือกหนังสือไว้ ให้เปิด Modal ยืนยันการลบ
+      openDeleteConfirmModal();
+    } else {
+      // สลับโหมดแก้ไข เปิด/ปิด Checkbox
+      isEditDbMode = !isEditDbMode;
+      updateEditDbButtonUI();
+      displayTable(allLogs);
+    }
+  }
+
+  function toggleSelectBookForDelete(encodedFileName, isChecked) {
+    const fileName = decodeURIComponent(encodedFileName);
+    if (isChecked) {
+      if (!selectedBooksToDelete.some(b => b.fileName === fileName)) {
+        selectedBooksToDelete.push({ fileName: fileName });
+      }
+    } else {
+      selectedBooksToDelete = selectedBooksToDelete.filter(b => b.fileName !== fileName);
+    }
+    updateEditDbButtonUI();
+  }
+
+  function updateEditDbButtonUI() {
+    const btn = document.getElementById('editDbBtn');
+    if (!isEditDbMode) {
+      btn.className = "btn btn-outline-danger shadow-sm text-nowrap";
+      btn.innerHTML = "⚙️ แก้ไขฐานข้อมูล";
+      selectedBooksToDelete = [];
+    } else if (selectedBooksToDelete.length === 0) {
+      btn.className = "btn btn-secondary shadow-sm text-nowrap";
+      btn.innerHTML = "❌ ยกเลิกการเลือก";
+    } else {
+      btn.className = "btn btn-danger shadow-sm text-nowrap fw-bold";
+      btn.innerHTML = `🗑️ ลบที่เลือก (${selectedBooksToDelete.length})`;
+    }
+  }
+
+  function openDeleteConfirmModal() {
+    document.getElementById('deleteModalCount').innerText = selectedBooksToDelete.length;
+    document.getElementById('deleteModalFileList').innerHTML = selectedBooksToDelete.map((b, i) => `
+      <li class="list-group-item list-group-item-danger py-2 small text-truncate">
+        <span class="badge bg-danger me-2">${i+1}</span>${b.fileName}
+      </li>
+    `).join('');
+
+    if (!deleteModalInstance) {
+      deleteModalInstance = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+    }
+    deleteModalInstance.show();
+  }
+
+  // ส่งคำขอลบไปยัง Google Apps Script
+  async function executeDelete() {
+    const confirmBtn = document.getElementById('confirmDeleteBtn');
+    confirmBtn.disabled = true;
+    confirmBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> กำลังลบ...`;
+
+    const selectedYear = document.getElementById('yearSelect').value;
+    const targetYear = (selectedYear === "all") ? currentScrollYear.toString() : selectedYear;
+
+    try {
+      const response = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: "deleteBooks",
+          year: targetYear,
+          books: selectedBooksToDelete
+        })
+      });
+      const result = await response.json();
+
+      if (result.success) {
+        alert(`✅ ลบหนังสือสำเร็จทั้งหมด ${result.deletedCount} รายการ`);
+      } else {
+        alert("⚠️ เกิดข้อผิดพลาด: " + (result.message || "ไม่สามารถลบข้อมูลได้"));
+      }
+    } catch (err) {
+      console.error(err);
+      alert("❌ เชื่อมต่อเซิร์ฟเวอร์ล้มเหลว กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      if (deleteModalInstance) deleteModalInstance.hide();
+      confirmBtn.disabled = false;
+      confirmBtn.innerHTML = `🗑️ ยืนยันการลบถาวร`;
+      
+      // ปิดโหมดแก้ไข ล้างค่าที่เลือก และโหลดข้อมูลใหม่
+      isEditDbMode = false;
+      selectedBooksToDelete = [];
+      updateEditDbButtonUI();
+      dataCache = {};
+      resetAndReloadLogs();
+    }
   }
 
   // --- 10. ฟังก์ชันติดตั้งความจำและควบคุมการดึงพารามิเตอร์ลิงก์ทางลัดเมื่อโหลดเสร็จ ---

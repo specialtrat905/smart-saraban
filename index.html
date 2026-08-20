@@ -29,11 +29,11 @@
 
     /* 🎨 สไตล์ปุ่มทึบสำหรับแถบส่งหนังสือ (Compact Action Bar) */
     .btn-action-dept {
-      background-color: #0d6efd !important; /* สีน้ำเงินทึบ */
+      background-color: #d63384 !important; /* สีชมพูทึบเนื้อแน่น */
       color: #ffffff !important;
       border: none !important;
     }
-    .btn-action-dept:hover { background-color: #0b5ed7 !important; color: #ffffff !important; }
+    .btn-action-dept:hover { background-color: #b8256f !important; color: #ffffff !important; }
 
     .btn-action-file {
       background-color: #4f46e5 !important; /* สีคราม Indigo ทึบ คมชัดและเข้าคู่กัน */
@@ -110,21 +110,21 @@
   </nav>
 
   <div class="container mt-4">
-    <!-- 🚀 แถบส่งหนังสือแบบ Compact Action Bar สัดส่วน 3 : 6 : 3 -->
+    <!-- 🚀 แถบส่งหนังสือแบบ Compact Action Bar สัดส่วน 3 : 7 : 2 -->
     <div id="adminView" style="display:none;" class="card p-3 mb-3 shadow-sm border-start border-4 border-success">
       <div class="row g-2 align-items-start">
-        <!-- ฝั่งซ้าย (ขนาดเล็ก): ปุ่มเลือกกลุ่มงาน + ป้ายชื่อกลุ่มงานใต้ปุ่ม -->
+        <!-- ฝั่งซ้าย (สัดส่วน 3): ปุ่มเลือกกลุ่มงาน (สีชมพู) + แสดงชื่อกลุ่มงาน 2 ช่องต่อแถว และเลื่อนได้ -->
         <div class="col-12 col-md-3">
           <button type="button" class="btn btn-action-dept w-100 py-2 fw-bold text-start d-flex justify-content-between align-items-center shadow-sm" onclick="openDeptModal()">
             <span class="text-truncate" style="font-size: 0.88rem;">🏢 เลือกกลุ่มงาน</span>
             <span id="deptCountBadge" class="badge bg-light text-dark">ยังไม่เลือก</span>
           </button>
-          <!-- แสดงกลุ่มงานใต้ปุ่ม ไม่เกินขนาดคอลัมน์ -->
-          <div id="selectedDeptsDisplay" class="mt-2 d-flex flex-column gap-1 overflow-hidden"></div>
+          <!-- แสดงกลุ่มงานใต้ปุ่ม 2 ช่องต่อแถว และมีแถบเลื่อนเมื่อมีหลายรายการ -->
+          <div id="selectedDeptsDisplay" class="mt-2 overflow-auto" style="max-height: 120px;"></div>
         </div>
 
-        <!-- ตรงกลาง (ขนาดกว้างสุด): ปุ่มเลือกหนังสือ + แสดงรายชื่อหนังสือใต้ปุ่ม -->
-        <div class="col-12 col-md-6">
+        <!-- ตรงกลาง (สัดส่วน 7 กว้างพิเศษ): ปุ่มเลือกหนังสือ + แสดงรายชื่อหนังสือใต้ปุ่ม -->
+        <div class="col-12 col-md-7">
           <label for="fileInput" class="btn btn-action-file w-100 py-2 fw-bold text-start d-flex justify-content-between align-items-center shadow-sm mb-0 cursor-pointer">
             <span class="text-truncate" style="font-size: 0.88rem;">📎 เลือกไฟล์หนังสือ</span>
             <span id="fileCountBadge" class="badge bg-light text-dark">0 ไฟล์</span>
@@ -134,10 +134,10 @@
           <div id="fileChipsContainer" class="mt-2 d-flex flex-column gap-1 overflow-auto" style="max-height: 120px;"></div>
         </div>
 
-        <!-- ฝั่งขวา (ขนาดเล็ก): ปุ่มกดส่ง -->
-        <div class="col-12 col-md-3">
-          <button onclick="handleUpload()" id="uploadBtn" class="btn btn-primary w-100 py-2 fw-bold shadow-sm text-truncate" style="font-size: 0.88rem;">
-            🚀 ส่งหนังสือ & LINE
+        <!-- ฝั่งขวา (สัดส่วน 2 กระชับ): ปุ่มกดส่ง -->
+        <div class="col-12 col-md-2">
+          <button onclick="handleUpload()" id="uploadBtn" class="btn btn-primary w-100 py-2 fw-bold shadow-sm text-truncate px-1" style="font-size: 0.85rem;">
+            🚀 ส่งหนังสือ
           </button>
         </div>
       </div>
@@ -409,14 +409,33 @@
         "ผู้อำนวยการ": "#add8e6", "รองผู้อำนวยการ": "#d2b48c", "อื่นๆ": "#adb5bd"
       };
 
-      display.innerHTML = selectedDepartments.map(d => {
+      const itemsHTML = selectedDepartments.map(d => {
+        const isOther = (d === "อื่นๆ");
         let text = d;
-        if (d === "อื่นๆ" && otherStaffNames.length > 0) {
+        if (isOther && otherStaffNames.length > 0) {
           text = `อื่นๆ [${otherStaffNames.join(', ')}]`;
         }
         const color = deptColors[d] || "#adb5bd";
-        return `<div class="badge border text-truncate w-100 text-start py-1" style="font-size: 0.72rem; background-color: ${color}; color: #fff;">${text}</div>`;
+
+        // หากเป็น 'อื่นๆ' ที่มีรายชื่อคนให้แสดงเต็มแถว (col-12) ถ้าเป็นกลุ่มงานทั่วไปแสดง 2 ช่องต่อแถว (col-6)
+        if (isOther && otherStaffNames.length > 0) {
+          return `
+            <div class="col-12">
+              <div class="badge border text-truncate w-100 text-start py-1 px-2 shadow-sm" style="font-size: 0.72rem; background-color: ${color}; color: #fff;">
+                ${text}
+              </div>
+            </div>`;
+        } else {
+          return `
+            <div class="col-6">
+              <div class="badge border text-truncate w-100 text-center py-1 px-1 shadow-sm" style="font-size: 0.70rem; background-color: ${color}; color: #fff;">
+                ${text}
+              </div>
+            </div>`;
+        }
       }).join('');
+
+      display.innerHTML = `<div class="row g-1">${itemsHTML}</div>`;
     }
   }
 

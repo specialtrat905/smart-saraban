@@ -42,11 +42,12 @@
     }
     .btn-action-file:hover { background-color: #4338ca !important; color: #ffffff !important; }
 
-    /* 🌿 สไตล์กรอบสีเขียวธีมระบบ หนาขึ้น + เพิ่มมิติเงาลึก (3D Elevation) */
+    /* 🌿 สไตล์แบบที่ 1: แถบสีเขียวขอบบน (Top Accent Bar) + เงาลอยตัวนุ่มนวล */
     .card-border-green {
-      border: 2.5px solid #00796b !important; /* เพิ่มความหนาของเส้นขอบเป็น 2.5px ชัดเจนขึ้น */
       background-color: #ffffff !important;
-      box-shadow: 0 6px 16px rgba(0, 77, 64, 0.14), 0 2px 4px rgba(0, 0, 0, 0.06) !important; /* เพิ่มเงาสะท้อนโทนเขียวสร้างมิติลอยตัว */
+      border: 1px solid rgba(0, 0, 0, 0.08) !important;
+      border-top: 4px solid #00796b !important; /* เส้นคาดด้านบนสีเขียวธีมระบบ */
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02) !important; /* เงาลอยตัวแบบซอฟต์ */
     }
     /* 📱 ปรับแต่งตารางสำหรับแสดงผลบนมือถือให้พอดี 1 หน้าจอ */
     .table { table-layout: fixed; width: 100%; }

@@ -9,26 +9,23 @@
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <style>
-    /* 🎨 โทนสีปุ่ม Soft สบายตาสำหรับ Navbar */
-    .btn-soft-warning {
-      background-color: rgba(255, 193, 7, 0.15) !important;
-      color: #ffda6a !important;
-      border: 1px solid rgba(255, 193, 7, 0.4) !important;
+    /* 🎨 สไตล์สีปุ่มทึบเนื้อแน่น (Solid Matte) สำหรับ Navbar */
+    .btn-nav-edit {
+      background-color: #d99b00 !important;
+      color: #ffffff !important;
+      border: 1px solid #b88300 !important;
       font-weight: 500;
     }
-    .btn-soft-warning:hover {
-      background-color: rgba(255, 193, 7, 0.3) !important;
-      color: #fff !important;
+    .btn-nav-edit:hover { background-color: #b88300 !important; color: #ffffff !important; }
+
+    .btn-nav-logout {
+      background-color: #b02a37 !important;
+      color: #ffffff !important;
+      border: 1px solid #93232e !important;
+      font-weight: 500;
     }
-    .btn-soft-danger {
-      background-color: rgba(220, 53, 69, 0.2) !important;
-      color: #f8d7da !important;
-      border: 1px solid rgba(220, 53, 69, 0.4) !important;
-    }
-    .btn-soft-danger:hover {
-      background-color: rgba(220, 53, 69, 0.4) !important;
-      color: #fff !important;
-    }
+    .btn-nav-logout:hover { background-color: #93232e !important; color: #ffffff !important; }
+    .cursor-pointer { cursor: pointer; }
     /* 📱 ปรับแต่งตารางสำหรับแสดงผลบนมือถือให้พอดี 1 หน้าจอ */
     .table { table-layout: fixed; width: 100%; }
     .thai-wrap { word-break: break-word; overflow-wrap: break-word; white-space: normal; line-height: 1.4; text-align: left; }
@@ -85,12 +82,12 @@
     <div class="container-fluid">
       <span class="fw-bold text-white">👤 <span id="userDisplay"></span> | <span id="roleDisplay" class="badge bg-warning text-dark"></span></span>
       <div class="d-flex gap-2 align-items-center">
-        <!-- ⚙️ ปุ่มแก้ไขฐานข้อมูล (สีทองละมุนตา ลดความเด่นลง) -->
-        <button id="editDbBtn" class="btn btn-sm btn-soft-warning shadow-sm" style="display:none;" onclick="handleEditDbBtnClick()">
+        <!-- ⚙️ ปุ่มแก้ไขฐานข้อมูล (สีมัสตาร์ดทองด้าน ทึบแน่น) -->
+        <button id="editDbBtn" class="btn btn-sm btn-nav-edit shadow-sm" style="display:none;" onclick="handleEditDbBtnClick()">
           ⚙️ แก้ไขฐานข้อมูล
         </button>
-        <!-- 🚪 ปุ่มออกจากระบบ (สีแดงซอฟต์ นุ่มนวลไม่จัดจ้าน) -->
-        <button id="logoutBtn" onclick="logout()" class="btn btn-sm btn-soft-danger shadow-sm" style="display:none;">
+        <!-- 🚪 ปุ่มออกจากระบบ (สีแดงอิฐด้าน ทึบแน่น) -->
+        <button id="logoutBtn" onclick="logout()" class="btn btn-sm btn-nav-logout shadow-sm" style="display:none;">
           ออกจากระบบ
         </button>
       </div>
@@ -101,28 +98,14 @@
     <div id="adminView" style="display:none;" class="card p-4 mb-4 shadow-sm border-start border-4 border-success">
       <h5 class="text-success fw-bold mb-3">🚀 ส่งหนังสือใหม่</h5>
       <div class="row g-3">
+        <!-- 🏢 ปุ่มเปิด Modal เลือกหลายกลุ่มงานพร้อมกัน -->
         <div class="col-md-6">
-  <select id="deptSelect" class="form-select" onchange="toggleOtherInput()">
-     <option value="">-- เลือกกลุ่มงานปลายทาง --</option>
-     <option>บริหารงานทั่วไป</option>
-     <option>บริหารงานบุคคล</option>
-     <option>บริหารงานวิชาการ</option>
-     <option>บริหารแผนงานและงบประมาณ</option>
-     <option>รองผู้อำนวยการ</option>
-     <option>ผู้อำนวยการ</option>
-     <option>อื่นๆ</option>
-  </select>
-  <div id="otherNamesContainer" style="display:none;" class="mt-2">
-    <div id="nameInputsList">
-      <div class="input-group mb-2">
-        <input list="staffList" class="form-control other-name-input" placeholder="พิมพ์ชื่อผู้รับคนที่ 1...">
-        <button type="button" class="btn btn-outline-success" onclick="addNameField()">➕</button>
-      </div>
-    </div>
-    <small class="text-muted">* สามารถเพิ่มรายชื่อได้โดยกดปุ่ม +</small>
-  </div>
-  <datalist id="staffList"></datalist>
-</div>
+          <button type="button" class="btn btn-outline-success w-100 py-2 fw-bold text-start d-flex justify-content-between align-items-center shadow-sm" onclick="openDeptModal()">
+            <span>🏢 เลือกกลุ่มงานส่งหนังสือ</span>
+            <span id="deptCountBadge" class="badge bg-secondary">ยังไม่ได้เลือก</span>
+          </button>
+          <div id="selectedDeptsDisplay" class="mt-2 d-flex flex-wrap gap-1"></div>
+        </div>
         <div class="col-md-6"><input type="file" id="fileInput" class="form-control" multiple></div>
         <div class="col-12">
           <div id="fileListContainer" class="mt-2" style="display:none;">
@@ -164,11 +147,6 @@
             <input type="text" id="searchInput" class="form-control border-start-0" placeholder="พิมพ์ชื่อหนังสือเพื่อค้นหาอัตโนมัติ..." oninput="handleSearchInput()">
           </div>
         </div>
-          <!-- ปุ่มแก้ไขฐานข้อมูล (แสดงเฉพาะ Admin) -->
-          <button id="editDbBtn" class="btn btn-outline-danger shadow-sm text-nowrap" style="display:none;" onclick="handleEditDbBtnClick()">
-            ⚙️ แก้ไขฐานข้อมูล
-          </button>
-        </div>
       </div>
 
       <div class="table-responsive">
@@ -184,6 +162,65 @@
         </table>
       </div>
     </div> <!-- ปิด card ตาราง -->
+
+    <!-- 🏢 Modal เลือกกลุ่มงานส่งหนังสือ -->
+    <div class="modal fade" id="deptSelectModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+          <div class="modal-header bg-success text-white">
+            <h5 class="modal-title fw-bold">🏢 เลือกกลุ่มงานปลายทาง</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body p-4">
+            <p class="text-muted small mb-2">สามารถเลือกส่งได้พร้อมกันหลายกลุ่มงาน:</p>
+            <div class="d-flex flex-column gap-2 mb-3">
+              <label class="list-group-item d-flex gap-2 align-items-center p-2 rounded border cursor-pointer">
+                <input class="form-check-input flex-shrink-0 dept-checkbox" type="checkbox" value="บริหารงานทั่วไป">
+                <span>บริหารงานทั่วไป</span>
+              </label>
+              <label class="list-group-item d-flex gap-2 align-items-center p-2 rounded border cursor-pointer">
+                <input class="form-check-input flex-shrink-0 dept-checkbox" type="checkbox" value="บริหารงานบุคคล">
+                <span>บริหารงานบุคคล</span>
+              </label>
+              <label class="list-group-item d-flex gap-2 align-items-center p-2 rounded border cursor-pointer">
+                <input class="form-check-input flex-shrink-0 dept-checkbox" type="checkbox" value="บริหารงานวิชาการ">
+                <span>บริหารงานวิชาการ</span>
+              </label>
+              <label class="list-group-item d-flex gap-2 align-items-center p-2 rounded border cursor-pointer">
+                <input class="form-check-input flex-shrink-0 dept-checkbox" type="checkbox" value="บริหารแผนงานและงบประมาณ">
+                <span>บริหารแผนงานและงบประมาณ</span>
+              </label>
+              <label class="list-group-item d-flex gap-2 align-items-center p-2 rounded border cursor-pointer">
+                <input class="form-check-input flex-shrink-0 dept-checkbox" type="checkbox" value="รองผู้อำนวยการ">
+                <span>รองผู้อำนวยการ</span>
+              </label>
+              <label class="list-group-item d-flex gap-2 align-items-center p-2 rounded border cursor-pointer">
+                <input class="form-check-input flex-shrink-0 dept-checkbox" type="checkbox" value="ผู้อำนวยการ">
+                <span>ผู้อำนวยการ</span>
+              </label>
+              <label class="list-group-item d-flex gap-2 align-items-center p-2 rounded border cursor-pointer">
+                <input class="form-check-input flex-shrink-0 dept-checkbox" type="checkbox" value="อื่นๆ" id="deptOtherCheck" onchange="toggleOtherSection()">
+                <span class="fw-bold text-success">อื่นๆ (ระบุรายชื่อผู้รับรายบุคคล)</span>
+              </label>
+            </div>
+
+            <!-- ส่วนระบุรายชื่อผู้รับเมื่อเลือก 'อื่นๆ' -->
+            <div id="otherStaffSection" style="display: none;" class="p-3 bg-light rounded border border-success border-opacity-50">
+              <label class="form-label fw-bold small text-dark mb-1">👤 ระบุรายชื่อผู้รับ:</label>
+              <div class="input-group mb-2">
+                <input type="text" id="staffInput" list="staffList" class="form-control form-control-sm" placeholder="พิมพ์ชื่อบุคลากร..." onkeydown="if(event.key==='Enter'){event.preventDefault();addOtherStaffName();}">
+                <button class="btn btn-sm btn-success" type="button" onclick="addOtherStaffName()">➕ เพิ่มชื่อ</button>
+              </div>
+              <div id="staffTagsContainer" class="d-flex flex-wrap gap-1"></div>
+              <datalist id="staffList"></datalist>
+            </div>
+          </div>
+          <div class="modal-footer bg-light">
+            <button type="button" class="btn btn-success px-4 fw-bold w-100" data-bs-dismiss="modal" onclick="saveDeptSelection()">บันทึกกลุ่มงานที่เลือก</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- 🟢 Modal 1: ยืนยันการอัปโหลดหนังสือ -->
     <div class="modal fade" id="uploadConfirmModal" tabindex="-1" aria-hidden="true">
@@ -245,6 +282,12 @@
   let selectedFilesArray = [];
   let currentYearBE = new Date().getFullYear() + 543;
   let staffNames = [];
+
+  // ⚙️ ตัวแปรควบคุมกลุ่มงานและรายชื่อผู้รับ
+  let selectedDepartments = [];
+  let otherStaffNames = [];
+  let deptModalInstance = null;
+
   // ⚙️ ตัวแปรควบคุมโหมดแก้ไขฐานข้อมูลและการลบ
   let isEditDbMode = false;
   let selectedBooksToDelete = [];
@@ -275,21 +318,80 @@
     } catch (e) { console.error("โหลดรายชื่อไม่สำเร็จ", e); }
   }
 
-  function addNameField() {
-    const container = document.getElementById('nameInputsList');
-    const div = document.createElement('div');
-    div.className = 'input-group mb-2';
-    div.innerHTML = `<input list="staffList" class="form-control other-name-input" placeholder="ระบุชื่อเพิ่มเติม..."><button type="button" class="btn btn-outline-danger" onclick="this.parentElement.remove()">✕</button>`;
-    container.appendChild(div);
+  // --- ระบบควบคุม Modal เลือกกลุ่มงานและแท็กผู้รับ ---
+  function openDeptModal() {
+    if (!deptModalInstance) {
+      deptModalInstance = new bootstrap.Modal(document.getElementById('deptSelectModal'));
+    }
+    document.querySelectorAll('.dept-checkbox').forEach(cb => {
+      cb.checked = selectedDepartments.includes(cb.value);
+    });
+    toggleOtherSection();
+    renderStaffTags();
+    deptModalInstance.show();
   }
 
-  function toggleOtherInput() {
-    const dept = document.getElementById('deptSelect').value;
-    const container = document.getElementById('otherNamesContainer');
-    if (dept === "อื่นๆ") { container.style.display = "block"; } 
-    else {
-        container.style.display = "none";
-        document.getElementById('nameInputsList').innerHTML = `<div class="input-group mb-2"><input list="staffList" class="form-control other-name-input" placeholder="พิมพ์ชื่อผู้รับคนที่ 1..."><button type="button" class="btn btn-outline-success" onclick="addNameField()">➕</button></div>`;
+  function toggleOtherSection() {
+    const isOtherChecked = document.getElementById('deptOtherCheck').checked;
+    document.getElementById('otherStaffSection').style.display = isOtherChecked ? 'block' : 'none';
+  }
+
+  function addOtherStaffName() {
+    const input = document.getElementById('staffInput');
+    const name = input.value.trim();
+    if (name && !otherStaffNames.includes(name)) {
+      otherStaffNames.push(name);
+      input.value = "";
+      renderStaffTags();
+    }
+  }
+
+  function removeOtherStaffName(name) {
+    otherStaffNames = otherStaffNames.filter(n => n !== name);
+    renderStaffTags();
+  }
+
+  function renderStaffTags() {
+    const container = document.getElementById('staffTagsContainer');
+    container.innerHTML = otherStaffNames.map(name => `
+      <span class="badge bg-secondary p-2 d-flex align-items-center gap-1" style="font-size: 0.75rem;">
+        ${name}
+        <span role="button" class="text-white ms-1 fw-bold cursor-pointer" onclick="removeOtherStaffName('${name}')">✕</span>
+      </span>
+    `).join('');
+  }
+
+  function saveDeptSelection() {
+    selectedDepartments = [];
+    document.querySelectorAll('.dept-checkbox:checked').forEach(cb => {
+      selectedDepartments.push(cb.value);
+    });
+
+    const badge = document.getElementById('deptCountBadge');
+    const display = document.getElementById('selectedDeptsDisplay');
+    
+    if (selectedDepartments.length === 0) {
+      badge.className = "badge bg-secondary";
+      badge.innerText = "ยังไม่ได้เลือก";
+      display.innerHTML = "";
+    } else {
+      badge.className = "badge bg-success";
+      badge.innerText = `${selectedDepartments.length} กลุ่มงาน`;
+      
+      const deptColors = {
+        "บริหารงานวิชาการ": "#ffde59", "บริหารแผนงานและงบประมาณ": "#ff5757",
+        "บริหารงานบุคคล": "#0cc0df", "บริหารงานทั่วไป": "#8c52ff",
+        "ผู้อำนวยการ": "#add8e6", "รองผู้อำนวยการ": "#d2b48c", "อื่นๆ": "#adb5bd"
+      };
+
+      display.innerHTML = selectedDepartments.map(d => {
+        let text = d;
+        if (d === "อื่นๆ" && otherStaffNames.length > 0) {
+          text = `อื่นๆ [${otherStaffNames.join(', ')}]`;
+        }
+        const color = deptColors[d] || "#adb5bd";
+        return `<small class="badge border" style="font-size: 0.75rem; background-color: ${color}; color: #fff;">${text}</small>`;
+      }).join('');
     }
   }
 
@@ -707,18 +809,21 @@
     }
   });
 
-  // --- 9. ระบบอัปโหลดพร้อมหน้าต่างยืนยัน (Confirmation Modal) ---
+  // --- 9. ระบบอัปโหลดหลายกลุ่มงานพร้อมหน้าต่างยืนยัน ---
   function handleUpload() {
-    const dept = document.getElementById('deptSelect').value;
-    if (selectedFilesArray.length === 0 || !dept) return alert("กรุณาเลือกไฟล์และกลุ่มงานปลายทาง");
+    if (selectedDepartments.length === 0) return alert("กรุณาเลือกกลุ่มงานปลายทางอย่างน้อย 1 กลุ่มงาน");
+    if (selectedDepartments.includes("อื่นๆ") && otherStaffNames.length === 0) {
+      return alert("กรุณาระบุรายชื่อผู้รับสำหรับกลุ่มงาน 'อื่นๆ' อย่างน้อย 1 ท่าน");
+    }
+    if (selectedFilesArray.length === 0) return alert("กรุณาเลือกไฟล์หนังสือที่จะส่ง");
 
-    const nameInputs = document.querySelectorAll('.other-name-input');
-    let names = [];
-    nameInputs.forEach(input => { if (input.value.trim() !== "") names.push(input.value.trim()); });
-    const receiverSuffix = names.length > 0 ? ` [${names.join(', ')}]` : "";
+    const modalTargetDept = document.getElementById('modalTargetDept');
+    modalTargetDept.innerHTML = selectedDepartments.map(d => {
+      let label = d;
+      if (d === "อื่นๆ") label = `อื่นๆ [${otherStaffNames.join(', ')}]`;
+      return `<span class="badge bg-success p-2 small">${label}</span>`;
+    }).join(' ');
 
-    // ใส่ข้อมูลลงใน Modal ยืนยัน
-    document.getElementById('modalTargetDept').innerHTML = dept + (receiverSuffix ? ` <span class="badge bg-secondary">${receiverSuffix}</span>` : "");
     document.getElementById('modalFileCount').innerText = selectedFilesArray.length;
     document.getElementById('modalFileList').innerHTML = selectedFilesArray.map((f, i) => `
       <li class="list-group-item list-group-item-action py-2 small">
@@ -732,60 +837,66 @@
     uploadModalInstance.show();
   }
 
-  // ฟังก์ชันเริ่มอัปโหลดจริงหลังกดยืนยันใน Modal
   async function executeUpload() {
     if (uploadModalInstance) uploadModalInstance.hide();
 
-    const dept = document.getElementById('deptSelect').value;
-    const nameInputs = document.querySelectorAll('.other-name-input');
-    let names = [];
-    nameInputs.forEach(input => { if (input.value.trim() !== "") names.push(input.value.trim()); });
-    const receiverSuffix = names.length > 0 ? ` [${names.join(', ')}]` : "";
-
     const btn = document.getElementById('uploadBtn'); 
     btn.disabled = true;
-    let uploadedFiles = []; 
+    const receiverSuffix = otherStaffNames.length > 0 ? ` [${otherStaffNames.join(', ')}]` : "";
 
-    for (let file of selectedFilesArray) {
-        btn.innerText = `กำลังส่ง: ${file.name.substring(0,10)}...`;
+    for (let dept of selectedDepartments) {
+      let uploadedFiles = [];
+      const currentSuffix = (dept === "อื่นๆ") ? receiverSuffix : "";
+
+      for (let file of selectedFilesArray) {
+        btn.innerText = `กำลังส่งฝ่าย [${dept}]: ${file.name.substring(0,8)}...`;
         try {
-            const fileData = await new Promise(resolve => { const r = new FileReader(); r.onload = e => resolve(e.target.result); r.readAsDataURL(file); });
-            let originalName = file.name;
-            let newFileName = originalName.toLowerCase().endsWith(".pdf") 
-                ? originalName.slice(0, -4) + receiverSuffix + ".pdf" 
-                : originalName + receiverSuffix;
+          const fileData = await new Promise(resolve => { 
+            const r = new FileReader(); 
+            r.onload = e => resolve(e.target.result); 
+            r.readAsDataURL(file); 
+          });
 
-            const res = await fetch(SCRIPT_URL, { 
-                method: 'POST', 
-                body: JSON.stringify({ 
-                    department: dept, 
-                    sender: currentUser.name, 
-                    fileName: newFileName, 
-                    fileData: fileData 
-                }) 
-            });
-            const result = await res.json();
-            if (result.success) uploadedFiles.push({ name: result.fileName, url: result.url });
+          let originalName = file.name;
+          let newFileName = originalName.toLowerCase().endsWith(".pdf") 
+              ? originalName.slice(0, -4) + currentSuffix + ".pdf" 
+              : originalName + currentSuffix;
+
+          const res = await fetch(SCRIPT_URL, { 
+              method: 'POST', 
+              body: JSON.stringify({ 
+                  department: dept, 
+                  sender: currentUser.name, 
+                  fileName: newFileName, 
+                  fileData: fileData 
+              }) 
+          });
+          const result = await res.json();
+          if (result.success) uploadedFiles.push({ name: result.fileName, url: result.url });
         } catch (err) { console.error(err); }
+      }
+
+      if (uploadedFiles.length > 0) {
+        btn.innerText = `กำลังแจ้ง LINE: [${dept}]...`;
+        try {
+          await fetch(SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+              action: "sendBatchNotification", 
+              department: dept,
+              sender: currentUser.name, 
+              fileList: uploadedFiles
+            })
+          });
+        } catch (err) { console.error(err); }
+      }
     }
 
-    if (uploadedFiles.length > 0) {
-        btn.innerText = "กำลังแจ้งเตือน LINE...";
-        try {
-            await fetch(SCRIPT_URL, {
-                method: 'POST',
-                body: JSON.stringify({
-                    action: "sendBatchNotification", 
-                    department: dept,
-                    sender: currentUser.name, 
-                    fileList: uploadedFiles
-                })
-            });
-        } catch (err) { console.error(err); }
-    }
-
-    alert(`สำเร็จ! ส่งหนังสือ ${uploadedFiles.length} ฉบับ เรียบร้อย`);
-    selectedFilesArray = []; renderFileList(); btn.disabled = false; btn.innerText = "อัปโหลดหนังสือและแจ้งเตือน LINE";
+    alert(`สำเร็จ! ส่งหนังสือ ${selectedFilesArray.length} ฉบับ ให้กับ ${selectedDepartments.length} กลุ่มงาน เรียบร้อยแล้ว`);
+    selectedFilesArray = []; 
+    renderFileList(); 
+    btn.disabled = false; 
+    btn.innerText = "อัปโหลดหนังสือและแจ้งเตือน LINE";
     
     dataCache = {}; 
     resetAndReloadLogs();
@@ -794,10 +905,8 @@
   // --- 10. ระบบจัดการแก้ไขฐานข้อมูลและเลือกลบหนังสือ ---
   function handleEditDbBtnClick() {
     if (selectedBooksToDelete.length > 0) {
-      // หากมีการเลือกหนังสือไว้ ให้เปิด Modal ยืนยันการลบ
       openDeleteConfirmModal();
     } else {
-      // สลับโหมดแก้ไข เปิด/ปิด Checkbox
       isEditDbMode = !isEditDbMode;
       updateEditDbButtonUI();
       displayTable(allLogs);
@@ -816,11 +925,10 @@
     updateEditDbButtonUI();
   }
 
-  // ⚙️ ฟังก์ชันอัปเดตสถานะปุ่มแก้ไขฐานข้อมูล
   function updateEditDbButtonUI() {
     const btn = document.getElementById('editDbBtn');
     if (!isEditDbMode) {
-      btn.className = "btn btn-sm btn-soft-warning shadow-sm text-nowrap";
+      btn.className = "btn btn-sm btn-nav-edit shadow-sm text-nowrap";
       btn.innerHTML = "⚙️ แก้ไขฐานข้อมูล";
       selectedBooksToDelete = [];
     } else if (selectedBooksToDelete.length === 0) {

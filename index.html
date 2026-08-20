@@ -95,25 +95,40 @@
   </nav>
 
   <div class="container mt-4">
-    <div id="adminView" style="display:none;" class="card p-4 mb-4 shadow-sm border-start border-4 border-success">
-      <h5 class="text-success fw-bold mb-3">🚀 ส่งหนังสือใหม่</h5>
-      <div class="row g-3">
-        <!-- 🏢 ปุ่มเปิด Modal เลือกหลายกลุ่มงานพร้อมกัน -->
-        <div class="col-md-6">
+    <!-- 🚀 แถบส่งหนังสือแบบ Compact Action Bar แถวเดียว -->
+    <div id="adminView" style="display:none;" class="card p-3 mb-3 shadow-sm border-start border-4 border-success">
+      <div class="row g-2 align-items-center">
+        <!-- ปุ่ม 1: เลือกกลุ่มงาน -->
+        <div class="col-12 col-md-4">
           <button type="button" class="btn btn-outline-success w-100 py-2 fw-bold text-start d-flex justify-content-between align-items-center shadow-sm" onclick="openDeptModal()">
-            <span>🏢 เลือกกลุ่มงานส่งหนังสือ</span>
-            <span id="deptCountBadge" class="badge bg-secondary">ยังไม่ได้เลือก</span>
+            <span class="text-truncate">🏢 1. เลือกกลุ่มงาน</span>
+            <span id="deptCountBadge" class="badge bg-secondary">ยังไม่เลือก</span>
           </button>
-          <div id="selectedDeptsDisplay" class="mt-2 d-flex flex-wrap gap-1"></div>
         </div>
-        <div class="col-md-6"><input type="file" id="fileInput" class="form-control" multiple></div>
-        <div class="col-12">
-          <div id="fileListContainer" class="mt-2" style="display:none;">
-            <ul id="selectedFilesList" class="list-group mb-3"></ul>
+
+        <!-- ปุ่ม 2: แนบไฟล์หนังสือ -->
+        <div class="col-12 col-md-4">
+          <label for="fileInput" class="btn btn-outline-primary w-100 py-2 fw-bold text-start d-flex justify-content-between align-items-center shadow-sm mb-0 cursor-pointer">
+            <span class="text-truncate">📎 2. แนบไฟล์หนังสือ</span>
+            <span id="fileCountBadge" class="badge bg-secondary">0 ไฟล์</span>
+          </label>
+          <input type="file" id="fileInput" class="d-none" multiple>
+        </div>
+
+        <!-- ปุ่ม 3: กดส่งและแจ้งเตือน LINE -->
+        <div class="col-12 col-md-4">
+          <button onclick="handleUpload()" id="uploadBtn" class="btn btn-primary w-100 py-2 fw-bold shadow-sm text-truncate">
+            🚀 3. อัปโหลด & แจ้ง LINE
+          </button>
+        </div>
+
+        <!-- แถบสรุปป้ายกลุ่มงานและชิปไฟล์แนบ (แสดงอัตโนมัติเมื่อมีการเลือก) -->
+        <div class="col-12" id="actionSummaryBar" style="display:none;">
+          <div class="p-2 bg-light rounded border d-flex flex-wrap gap-2 align-items-center" style="font-size: 0.78rem;">
+            <div id="selectedDeptsDisplay" class="d-flex flex-wrap gap-1 align-items-center"></div>
+            <div class="vr mx-1 d-none d-md-block" id="summaryDivider" style="display:none;"></div>
+            <div id="fileChipsContainer" class="d-flex flex-wrap gap-1 align-items-center"></div>
           </div>
-        </div>
-        <div class="col-12">
-          <button onclick="handleUpload()" id="uploadBtn" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">อัปโหลดหนังสือและแจ้งเตือน LINE</button>
         </div>
       </div>
     </div>
@@ -372,7 +387,7 @@
     
     if (selectedDepartments.length === 0) {
       badge.className = "badge bg-secondary";
-      badge.innerText = "ยังไม่ได้เลือก";
+      badge.innerText = "ยังไม่เลือก";
       display.innerHTML = "";
     } else {
       badge.className = "badge bg-success";
@@ -393,6 +408,7 @@
         return `<small class="badge border" style="font-size: 0.75rem; background-color: ${color}; color: #fff;">${text}</small>`;
       }).join('');
     }
+    updateSummaryBarVisibility();
   }
 
   // --- 3. ระบบรักษาความปลอดภัยและจัดการสิทธิ์การเข้าใช้งาน ---
@@ -455,19 +471,48 @@
     this.value = "";
   });
 
+  // 📎 ระบบแสดงผลรายการไฟล์แนบแบบชิปแนวนอน (Compact Chips)
   function renderFileList() {
-    const listElement = document.getElementById('selectedFilesList');
-    document.getElementById('fileListContainer').style.display = selectedFilesArray.length > 0 ? 'block' : 'none';
-    listElement.innerHTML = selectedFilesArray.map((file, index) => `
-      <li class="list-group-item d-flex justify-content-between align-items-center file-item py-2">
-        <div class="text-truncate" style="max-width: 85%; font-size:0.8rem;">
-          <span class="badge bg-success me-2">${index + 1}</span>${file.name}
-        </div>
-        <span class="btn-remove" onclick="removeFile(${index})">✕ ลบ</span>
-      </li>`).join('');
+    const fileBadge = document.getElementById('fileCountBadge');
+    const container = document.getElementById('fileChipsContainer');
+    
+    if (selectedFilesArray.length === 0) {
+      fileBadge.className = "badge bg-secondary";
+      fileBadge.innerText = "0 ไฟล์";
+      container.innerHTML = "";
+    } else {
+      fileBadge.className = "badge bg-primary";
+      fileBadge.innerText = `${selectedFilesArray.length} ไฟล์`;
+      container.innerHTML = selectedFilesArray.map((file, index) => `
+        <span class="badge bg-white text-dark border p-1 d-flex align-items-center gap-1 shadow-sm">
+          <span class="badge bg-primary text-white" style="font-size:0.65rem;">${index + 1}</span>
+          <span class="text-truncate" style="max-width: 140px;">${file.name}</span>
+          <span role="button" class="text-danger fw-bold ms-1 cursor-pointer" onclick="removeFile(${index})">✕</span>
+        </span>
+      `).join('');
+    }
+    updateSummaryBarVisibility();
   }
 
-  function removeFile(index) { selectedFilesArray.splice(index, 1); renderFileList(); }
+  function removeFile(index) { 
+    selectedFilesArray.splice(index, 1); 
+    renderFileList(); 
+  }
+
+  // 🔄 ฟังก์ชันควบคุมการเปิด/ปิด แถบสรุปแนวนอน
+  function updateSummaryBarVisibility() {
+    const summaryBar = document.getElementById('actionSummaryBar');
+    const divider = document.getElementById('summaryDivider');
+    const hasDepts = selectedDepartments.length > 0;
+    const hasFiles = selectedFilesArray.length > 0;
+
+    if (hasDepts || hasFiles) {
+      summaryBar.style.display = "block";
+      if (divider) divider.style.display = (hasDepts && hasFiles) ? "block" : "none";
+    } else {
+      summaryBar.style.display = "none";
+    }
+  }
 
   function copyLink(url) {
     navigator.clipboard.writeText(url).then(() => alert("✅ คัดลอกแล้ว!")).catch(() => {

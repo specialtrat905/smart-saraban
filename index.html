@@ -64,7 +64,13 @@
   <nav class="navbar nav-custom p-3 shadow-sm sticky-top">
     <div class="container-fluid">
       <span class="fw-bold text-white">👤 <span id="userDisplay"></span> | <span id="roleDisplay" class="badge bg-warning text-dark"></span></span>
-      <button id="logoutBtn" onclick="logout()" class="btn btn-sm btn-outline-light" style="display:none;">ออกจากระบบ</button>
+      <div class="d-flex gap-2 align-items-center">
+        <!-- ⚙️ ปุ่มแก้ไขฐานข้อมูล (ย้ายมาไว้หน้าปุ่มออกจากระบบ) -->
+        <button id="editDbBtn" class="btn btn-sm btn-warning text-dark fw-bold shadow-sm" style="display:none;" onclick="handleEditDbBtnClick()">
+          ⚙️ แก้ไขฐานข้อมูล
+        </button>
+        <button id="logoutBtn" onclick="logout()" class="btn btn-sm btn-outline-light" style="display:none;">ออกจากระบบ</button>
+      </div>
     </div>
   </nav>
 
@@ -129,11 +135,12 @@
           </select>
         </div>
 
-        <div class="col-12 col-md d-flex gap-2">
+        <div class="col-12 col-md">
           <div class="input-group shadow-sm">
             <span class="input-group-text bg-white border-end-0">🔍</span>
             <input type="text" id="searchInput" class="form-control border-start-0" placeholder="พิมพ์ชื่อหนังสือเพื่อค้นหาอัตโนมัติ..." oninput="handleSearchInput()">
           </div>
+        </div>
           <!-- ปุ่มแก้ไขฐานข้อมูล (แสดงเฉพาะ Admin) -->
           <button id="editDbBtn" class="btn btn-outline-danger shadow-sm text-nowrap" style="display:none;" onclick="handleEditDbBtnClick()">
             ⚙️ แก้ไขฐานข้อมูล
@@ -496,12 +503,14 @@
             localStorage.setItem('sarabanUser', JSON.stringify(currentUser));
             localStorage.setItem('loginTime', new Date().getTime());
             document.getElementById('logoutBtn').style.display = 'block';
+            document.getElementById('editDbBtn').style.display = 'block'; // แสดงปุ่มแก้ไขฐานข้อมูล
             document.getElementById('adminView').style.display = 'block';
             document.getElementById('deptFilterContainer').style.display = 'block';
         } else {
             localStorage.removeItem('sarabanUser');
             localStorage.removeItem('loginTime');
             document.getElementById('logoutBtn').style.display = 'none';
+            document.getElementById('editDbBtn').style.display = 'none';
         }
 
         document.getElementById('loginPage').style.display = 'none';
@@ -777,14 +786,14 @@
   function updateEditDbButtonUI() {
     const btn = document.getElementById('editDbBtn');
     if (!isEditDbMode) {
-      btn.className = "btn btn-outline-danger shadow-sm text-nowrap";
+      btn.className = "btn btn-sm btn-warning text-dark fw-bold shadow-sm text-nowrap";
       btn.innerHTML = "⚙️ แก้ไขฐานข้อมูล";
       selectedBooksToDelete = [];
     } else if (selectedBooksToDelete.length === 0) {
-      btn.className = "btn btn-secondary shadow-sm text-nowrap";
+      btn.className = "btn btn-sm btn-secondary shadow-sm text-nowrap";
       btn.innerHTML = "❌ ยกเลิกการเลือก";
     } else {
-      btn.className = "btn btn-danger shadow-sm text-nowrap fw-bold";
+      btn.className = "btn btn-sm btn-danger shadow-sm text-nowrap fw-bold animate__animated animate__pulse";
       btn.innerHTML = `🗑️ ลบที่เลือก (${selectedBooksToDelete.length})`;
     }
   }

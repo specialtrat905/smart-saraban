@@ -41,6 +41,12 @@
       border: none !important;
     }
     .btn-action-file:hover { background-color: #4338ca !important; color: #ffffff !important; }
+
+    /* 🌿 สไตล์กรอบสีเขียวธีมระบบ พื้นหลังขาว */
+    .card-border-green {
+      border: 1.5px solid #00796b !important;
+      background-color: #ffffff !important;
+    }
     /* 📱 ปรับแต่งตารางสำหรับแสดงผลบนมือถือให้พอดี 1 หน้าจอ */
     .table { table-layout: fixed; width: 100%; }
     .thai-wrap { word-break: break-word; overflow-wrap: break-word; white-space: normal; line-height: 1.4; text-align: left; }
@@ -110,8 +116,8 @@
   </nav>
 
   <div class="container mt-4">
-    <!-- 🚀 แถบส่งหนังสือแบบ Compact Action Bar สัดส่วน 3 : 7 : 2 -->
-    <div id="adminView" style="display:none;" class="card p-3 mb-3 shadow-sm border-start border-4 border-success">
+    <!-- 🚀 แถบส่งหนังสือแบบ Compact Action Bar กรอบเขียวธีมระบบ -->
+    <div id="adminView" style="display:none;" class="card card-border-green p-3 mb-3 shadow-sm">
       <div class="row g-2 align-items-start">
         <!-- ฝั่งซ้าย (สัดส่วน 3): ปุ่มเลือกกลุ่มงาน (สีชมพูอ่อน) + เลื่อนขึ้นลงเฉพาะแนวตั้ง -->
         <div class="col-12 col-md-3">
@@ -142,7 +148,7 @@
         </div>
       </div>
     </div>
-    <div class="card p-4 shadow-sm mb-5">
+    <div class="card card-border-green p-4 shadow-sm mb-5">
       <div class="row g-2 mb-3 align-items-center">
         <div class="col-12 col-md-2">
           <h5 class="fw-bold m-0 text-dark" style="font-size: 1.1rem;">รายการหนังสือรับ</h5>
@@ -448,7 +454,6 @@
       display.innerHTML = `<div class="row g-1 m-0 w-100">${itemsHTML}</div>`;
     }
   }
-  
   // --- 3. ระบบรักษาความปลอดภัยและจัดการสิทธิ์การเข้าใช้งาน ---
   function checkSession() {
     const savedUser = localStorage.getItem('sarabanUser');

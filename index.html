@@ -42,12 +42,14 @@
     }
     .btn-action-file:hover { background-color: #4338ca !important; color: #ffffff !important; }
 
-    /* 🌿 สไตล์แบบที่ 1: แถบสีเขียวขอบบน (Top Accent Bar) + เงาลอยตัวนุ่มนวล */
+    /* 🌿 ปรับพื้นหลังภาพรวมเป็นโทนเขียวนวลตา (Sage / Mint Tinted) */
+    body { background: #edf4f2; font-family: 'Sarabun', sans-serif; color: #1c1e21; }
+
+    /* 🌿 สไตล์แบบที่ 2: การ์ดสีขาวขอบเขียวมินต์บางเฉียบ + เงานวลกลืนกับพื้นหลัง */
     .card-border-green {
       background-color: #ffffff !important;
-      border: 1px solid rgba(0, 0, 0, 0.08) !important;
-      border-top: 4px solid #00796b !important; /* เส้นคาดด้านบนสีเขียวธีมระบบ */
-      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02) !important; /* เงาลอยตัวแบบซอฟต์ */
+      border: 1.5px solid #b2dfdb !important; /* เส้นขอบเขียวมินต์โปร่งบาง คมชัดแต่ไม่กระด้าง */
+      box-shadow: 0 6px 18px rgba(0, 77, 64, 0.07), 0 1px 3px rgba(0, 0, 0, 0.03) !important; /* มิติเงาสะท้อนโทนเขียวลอยตัวนุ่มนวล */
     }
     /* 📱 ปรับแต่งตารางสำหรับแสดงผลบนมือถือให้พอดี 1 หน้าจอ */
     .table { table-layout: fixed; width: 100%; }
@@ -66,7 +68,7 @@
       transform: scale(0.95) !important; /* ยุบขนาดลง 5% เวลาถูกกด */
       box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.2) !important; /* เพิ่มมิติเงาลึก */
     }
-    body { background: #f0f2f5; font-family: 'Sarabun', sans-serif; color: #1c1e21; }
+    
     .nav-custom { background: linear-gradient(135deg, #004d40 0%, #00796b 100%); color: white; border-bottom: 3px solid #ffc107; }
     .card { border-radius: 15px; border: none; }
     .main-app { display: none; }

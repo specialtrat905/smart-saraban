@@ -93,7 +93,7 @@
   <div class="card p-4 shadow-lg text-center border-0">
     <!-- 🏫 โลโก้ด้านบนชื่อระบบ (นำรหัสไฟล์จาก Drive มาใส่แทนคำว่า รหัสไฟล์_ID) -->
     <div class="mb-3">
-      <img src="https://lh3.googleusercontent.com/d/1kLyYDJNV7hYAD0YERRxW8GEgJNB-XplP" alt="Logo" class="img-fluid" style="max-height: 100x; width: auto; object-fit: contain;">
+      <img src="https://lh3.googleusercontent.com/d/1kLyYDJNV7hYAD0YERRxW8GEgJNB-XplP" alt="Logo" class="img-fluid" style="max-height: 80x; width: auto; object-fit: contain;">
     </div>
     <h3 class="fw-bold text-success mb-4">ระบบส่งหนังสือ ศกศ.ตราด</h3>
     <input type="text" id="user" class="form-control mb-3" placeholder="ชื่อผู้ใช้">
@@ -303,6 +303,106 @@
           <div class="modal-footer bg-light">
             <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">ยกเลิก</button>
             <button type="button" id="confirmDeleteBtn" class="btn btn-danger px-4 fw-bold" onclick="executeDelete()">🗑️ ยืนยันการลบถาวร</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ⚙️ Modal 3: เมนูเลือกรูปแบบการจัดการฐานข้อมูล -->
+    <div class="modal fade" id="dbActionModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg">
+          <div class="modal-header bg-warning text-dark">
+            <h6 class="modal-title fw-bold m-0">⚙️ เลือกการจัดการฐานข้อมูล</h6>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body p-3 d-flex flex-column gap-2">
+            <button type="button" class="btn btn-outline-danger p-3 text-start d-flex align-items-center gap-2 fw-bold shadow-sm" onclick="setDbMode('delete')">
+              <span class="fs-4">🗑️</span>
+              <div>
+                <div>ลบหนังสือออกจากระบบ</div>
+                <small class="text-muted fw-normal" style="font-size:0.75rem;">เลือกติ๊กหลายเล่มเพื่อลบถาวร</small>
+              </div>
+            </button>
+            <button type="button" class="btn btn-outline-success p-3 text-start d-flex align-items-center gap-2 fw-bold shadow-sm" onclick="setDbMode('editDept')">
+              <span class="fs-4">✏️</span>
+              <div>
+                <div>แก้ไขกลุ่มงาน / รายชื่อผู้รับ</div>
+                <small class="text-muted fw-normal" style="font-size:0.75rem;">ย้ายฝ่าย หรือเพิ่มกลุ่มงานรับเรื่อง</small>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ✏️ Modal 4: หน้าต่างแก้ไขกลุ่มงานและรายชื่อผู้รับของหนังสือเล่มที่เลือก -->
+    <div class="modal fade" id="editBookDeptModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+          <div class="modal-header bg-success text-white">
+            <h5 class="modal-title fw-bold">✏️ แก้ไขกลุ่มงานปลายทาง</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body p-4">
+            <div class="mb-3 p-2 bg-light rounded border">
+              <small class="text-muted d-block mb-1">📄 หนังสือที่กำลังแก้ไข:</small>
+              <div id="editTargetBookName" class="fw-bold text-dark text-break" style="font-size: 0.88rem;"></div>
+            </div>
+
+            <p class="text-muted small mb-2">ติ๊กเลือกกลุ่มงานที่ต้องการ (ติ๊กออกเพื่อยกเลิก / ติ๊กเข้าเพื่อเพิ่มฝ่าย):</p>
+            <div class="d-flex flex-column gap-2 mb-3">
+              <label class="list-group-item d-flex gap-2 align-items-center p-2 rounded border cursor-pointer">
+                <input class="form-check-input flex-shrink-0 edit-dept-checkbox" type="checkbox" value="บริหารงานทั่วไป">
+                <span>บริหารงานทั่วไป</span>
+              </label>
+              <label class="list-group-item d-flex gap-2 align-items-center p-2 rounded border cursor-pointer">
+                <input class="form-check-input flex-shrink-0 edit-dept-checkbox" type="checkbox" value="บริหารงานบุคคล">
+                <span>บริหารงานบุคคล</span>
+              </label>
+              <label class="list-group-item d-flex gap-2 align-items-center p-2 rounded border cursor-pointer">
+                <input class="form-check-input flex-shrink-0 edit-dept-checkbox" type="checkbox" value="บริหารงานวิชาการ">
+                <span>บริหารงานวิชาการ</span>
+              </label>
+              <label class="list-group-item d-flex gap-2 align-items-center p-2 rounded border cursor-pointer">
+                <input class="form-check-input flex-shrink-0 edit-dept-checkbox" type="checkbox" value="บริหารแผนงานและงบประมาณ">
+                <span>บริหารแผนงานและงบประมาณ</span>
+              </label>
+              <label class="list-group-item d-flex gap-2 align-items-center p-2 rounded border cursor-pointer">
+                <input class="form-check-input flex-shrink-0 edit-dept-checkbox" type="checkbox" value="รองผู้อำนวยการ">
+                <span>รองผู้อำนวยการ</span>
+              </label>
+              <label class="list-group-item d-flex gap-2 align-items-center p-2 rounded border cursor-pointer">
+                <input class="form-check-input flex-shrink-0 edit-dept-checkbox" type="checkbox" value="ผู้อำนวยการ">
+                <span>ผู้อำนวยการ</span>
+              </label>
+              <label class="list-group-item d-flex gap-2 align-items-center p-2 rounded border cursor-pointer">
+                <input class="form-check-input flex-shrink-0 edit-dept-checkbox" type="checkbox" value="อื่นๆ" id="editDeptOtherCheck" onchange="toggleEditOtherSection()">
+                <span class="fw-bold text-success">อื่นๆ (ระบุรายชื่อผู้รับรายบุคคล)</span>
+              </label>
+            </div>
+
+            <!-- ส่วนระบุรายชื่อผู้รับเมื่อเลือก 'อื่นๆ' -->
+            <div id="editOtherStaffSection" style="display: none;" class="p-3 bg-light rounded border border-success border-opacity-50 mb-3">
+              <label class="form-label fw-bold small text-dark mb-1">👤 ระบุรายชื่อผู้รับ:</label>
+              <div class="input-group mb-2">
+                <input type="text" id="editStaffInput" list="staffList" class="form-control form-control-sm" placeholder="พิมพ์ชื่อบุคลากร..." onkeydown="if(event.key==='Enter'){event.preventDefault();addEditOtherStaffName();}">
+                <button class="btn btn-sm btn-success" type="button" onclick="addEditOtherStaffName()">➕ เพิ่มชื่อ</button>
+              </div>
+              <div id="editStaffTagsContainer" class="d-flex flex-wrap gap-1"></div>
+            </div>
+
+            <!-- ติ๊กส่งแจ้งเตือน LINE -->
+            <div class="form-check mt-2">
+              <input class="form-check-input" type="checkbox" id="editNotifyLineCheck" checked>
+              <label class="form-check-label small fw-bold text-success" for="editNotifyLineCheck">
+                🔔 ส่งแจ้งเตือน LINE ไปยังกลุ่มงานใหม่ที่เพิ่มขึ้น
+              </label>
+            </div>
+          </div>
+          <div class="modal-footer bg-light">
+            <button type="button" class="btn btn-secondary px-3" data-bs-dismiss="modal">ยกเลิก</button>
+            <button type="button" id="saveEditDeptBtn" class="btn btn-success px-4 fw-bold" onclick="executeSaveEditDept()">💾 บันทึกการแก้ไข</button>
           </div>
         </div>
       </div>
@@ -646,16 +746,24 @@
 
       const deptBadgesContainer = (deptBadges || staffBadge) ? `<div class="d-flex flex-column align-items-start mt-1">${deptBadges}${staffBadge}</div>` : "";
       
-      // 🎯 ส่วนจัดการปุ่ม หรือ Checkbox เมื่ออยู่ในโหมดแก้ไขฐานข้อมูล
+      // 🎯 ส่วนจัดการปุ่ม รองรับโหมดปกติ / โหมดลบ / โหมดแก้ไขกลุ่มงาน
       let actionColumnHTML = "";
       if (isMissing) {
         actionColumnHTML = "";
-      } else if (isEditDbMode && currentUser.role === 'Admin') {
+      } else if (currentDbMode === 'delete' && currentUser.role === 'Admin') {
         const isChecked = selectedBooksToDelete.some(b => b.fileName === col[2]);
         actionColumnHTML = `
           <div class="form-check d-flex justify-content-center align-items-center">
             <input class="form-check-input border-danger" type="checkbox" style="width: 1.4rem; height: 1.4rem; cursor: pointer;" 
               ${isChecked ? 'checked' : ''} onchange="toggleSelectBookForDelete('${encodeURIComponent(col[2])}', this.checked)">
+          </div>
+        `;
+      } else if (currentDbMode === 'editDept' && currentUser.role === 'Admin') {
+        actionColumnHTML = `
+          <div class="d-flex justify-content-center">
+            <button onclick="openEditBookDeptModal(${index})" class="btn btn-sm btn-warning text-dark fw-bold shadow-sm w-100">
+              ✏️ แก้ไข
+            </button>
           </div>
         `;
       } else {
@@ -984,17 +1092,59 @@
     resetAndReloadLogs();
   }
 
-  // --- 10. ระบบจัดการแก้ไขฐานข้อมูลและเลือกลบหนังสือ ---
+  // --- 10. ระบบจัดการแก้ไขฐานข้อมูล (เลือกลบ หรือ แก้ไขกลุ่มงาน) ---
+  let currentDbMode = null; // null | 'delete' | 'editDept'
+  let currentEditingIndex = null;
+  let editOtherStaffNames = [];
+  let dbActionModalInstance = null;
+  let editBookDeptModalInstance = null;
+
   function handleEditDbBtnClick() {
-    if (selectedBooksToDelete.length > 0) {
+    if (currentDbMode === 'delete' && selectedBooksToDelete.length > 0) {
       openDeleteConfirmModal();
-    } else {
-      isEditDbMode = !isEditDbMode;
+    } else if (currentDbMode !== null) {
+      // หากอยู่ในโหมดใดโหมดหนึ่งแล้วกดซ้ำ จะเป็นการปิดโหมด
+      currentDbMode = null;
+      selectedBooksToDelete = [];
       updateEditDbButtonUI();
       displayTable(allLogs);
+    } else {
+      // เปิดหน้าต่างเลือกคำสั่งจัดการฐานข้อมูล
+      if (!dbActionModalInstance) {
+        dbActionModalInstance = new bootstrap.Modal(document.getElementById('dbActionModal'));
+      }
+      dbActionModalInstance.show();
     }
   }
 
+  function setDbMode(mode) {
+    if (dbActionModalInstance) dbActionModalInstance.hide();
+    currentDbMode = mode;
+    selectedBooksToDelete = [];
+    updateEditDbButtonUI();
+    displayTable(allLogs);
+  }
+
+  function updateEditDbButtonUI() {
+    const btn = document.getElementById('editDbBtn');
+    if (currentDbMode === null) {
+      btn.className = "btn btn-sm btn-nav-edit shadow-sm text-nowrap";
+      btn.innerHTML = "⚙️ แก้ไขฐานข้อมูล";
+    } else if (currentDbMode === 'delete') {
+      if (selectedBooksToDelete.length === 0) {
+        btn.className = "btn btn-sm btn-secondary shadow-sm text-nowrap";
+        btn.innerHTML = "❌ ยกเลิกโหมดลบ";
+      } else {
+        btn.className = "btn btn-sm btn-danger shadow-sm text-nowrap fw-bold";
+        btn.innerHTML = `🗑️ ลบที่เลือก (${selectedBooksToDelete.length})`;
+      }
+    } else if (currentDbMode === 'editDept') {
+      btn.className = "btn btn-sm btn-warning text-dark shadow-sm text-nowrap fw-bold";
+      btn.innerHTML = "❌ ปิดโหมดแก้ไข";
+    }
+  }
+
+  // --- ส่วนของโหมดลบหนังสือ ---
   function toggleSelectBookForDelete(encodedFileName, isChecked) {
     const fileName = decodeURIComponent(encodedFileName);
     if (isChecked) {
@@ -1005,21 +1155,6 @@
       selectedBooksToDelete = selectedBooksToDelete.filter(b => b.fileName !== fileName);
     }
     updateEditDbButtonUI();
-  }
-
-  function updateEditDbButtonUI() {
-    const btn = document.getElementById('editDbBtn');
-    if (!isEditDbMode) {
-      btn.className = "btn btn-sm btn-nav-edit shadow-sm text-nowrap";
-      btn.innerHTML = "⚙️ แก้ไขฐานข้อมูล";
-      selectedBooksToDelete = [];
-    } else if (selectedBooksToDelete.length === 0) {
-      btn.className = "btn btn-sm btn-secondary shadow-sm text-nowrap";
-      btn.innerHTML = "❌ ยกเลิกการเลือก";
-    } else {
-      btn.className = "btn btn-sm btn-danger shadow-sm text-nowrap fw-bold";
-      btn.innerHTML = `🗑️ ลบที่เลือก (${selectedBooksToDelete.length})`;
-    }
   }
 
   function openDeleteConfirmModal() {
@@ -1036,7 +1171,6 @@
     deleteModalInstance.show();
   }
 
-  // ส่งคำขอลบไปยัง Google Apps Script
   async function executeDelete() {
     const confirmBtn = document.getElementById('confirmDeleteBtn');
     confirmBtn.disabled = true;
@@ -1063,15 +1197,152 @@
       }
     } catch (err) {
       console.error(err);
-      alert("❌ เชื่อมต่อเซิร์ฟเวอร์ล้มเหลว..กรุณาลองใหม่อีกครั้ง");
+      alert("❌ เชื่อมต่อเซิร์ฟเวอร์ล้มเหลว กรุณาลองใหม่อีกครั้ง");
     } finally {
       if (deleteModalInstance) deleteModalInstance.hide();
       confirmBtn.disabled = false;
       confirmBtn.innerHTML = `🗑️ ยืนยันการลบถาวร`;
       
-      // ปิดโหมดแก้ไข ล้างค่าที่เลือก และโหลดข้อมูลใหม่
-      isEditDbMode = false;
+      currentDbMode = null;
       selectedBooksToDelete = [];
+      updateEditDbButtonUI();
+      dataCache = {};
+      resetAndReloadLogs();
+    }
+  }
+
+  // --- ส่วนของโหมดแก้ไขกลุ่มงาน / รายชื่อผู้รับ ---
+  function openEditBookDeptModal(index) {
+    currentEditingIndex = index;
+    const book = allLogs[index];
+    const fullFileName = book[2];
+    const existingDepts = book[3] ? book[3].split(',').map(s => s.trim()) : [];
+
+    document.getElementById('editTargetBookName').innerText = fullFileName;
+
+    // ตรวจสอบรายชื่อในเครื่องหมายก้ามปู [ ... ]
+    const nameMatch = fullFileName.match(/\[(.*?)\]/);
+    if (nameMatch) {
+      editOtherStaffNames = nameMatch[1].split(',').map(s => s.trim()).filter(Boolean);
+    } else {
+      editOtherStaffNames = [];
+    }
+
+    // ติ๊ก Checkbox กลุ่มงานเดิมที่เคยเลือกไว้
+    document.querySelectorAll('.edit-dept-checkbox').forEach(cb => {
+      if (cb.value === "อื่นๆ") {
+        cb.checked = existingDepts.includes("อื่นๆ") || editOtherStaffNames.length > 0;
+      } else {
+        cb.checked = existingDepts.includes(cb.value);
+      }
+    });
+
+    toggleEditOtherSection();
+    renderEditStaffTags();
+
+    if (!editBookDeptModalInstance) {
+      editBookDeptModalInstance = new bootstrap.Modal(document.getElementById('editBookDeptModal'));
+    }
+    editBookDeptModalInstance.show();
+  }
+
+  function toggleEditOtherSection() {
+    const isChecked = document.getElementById('editDeptOtherCheck').checked;
+    document.getElementById('editOtherStaffSection').style.display = isChecked ? 'block' : 'none';
+  }
+
+  function addEditOtherStaffName() {
+    const input = document.getElementById('editStaffInput');
+    const name = input.value.trim();
+    if (name && !editOtherStaffNames.includes(name)) {
+      editOtherStaffNames.push(name);
+      input.value = "";
+      renderEditStaffTags();
+    }
+  }
+
+  function removeEditOtherStaffName(name) {
+    editOtherStaffNames = editOtherStaffNames.filter(n => n !== name);
+    renderEditStaffTags();
+  }
+
+  function renderEditStaffTags() {
+    const container = document.getElementById('editStaffTagsContainer');
+    container.innerHTML = editOtherStaffNames.map(name => `
+      <span class="badge bg-secondary p-2 d-flex align-items-center gap-1" style="font-size: 0.75rem;">
+        ${name}
+        <span role="button" class="text-white ms-1 fw-bold cursor-pointer" onclick="removeEditOtherStaffName('${name}')">✕</span>
+      </span>
+    `).join('');
+  }
+
+  async function executeSaveEditDept() {
+    let newSelectedDepts = [];
+    document.querySelectorAll('.edit-dept-checkbox:checked').forEach(cb => {
+      newSelectedDepts.push(cb.value);
+    });
+
+    if (newSelectedDepts.length === 0) {
+      return alert("กรุณาเลือกกลุ่มงานปลายทางอย่างน้อย 1 กลุ่มงาน");
+    }
+    if (newSelectedDepts.includes("อื่นๆ") && editOtherStaffNames.length === 0) {
+      return alert("กรุณาระบุรายชื่อผู้รับสำหรับกลุ่มงาน 'อื่นๆ' อย่างน้อย 1 ท่าน");
+    }
+
+    const saveBtn = document.getElementById('saveEditDeptBtn');
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> กำลังบันทึก...`;
+
+    const book = allLogs[currentEditingIndex];
+    const oldFileName = book[2];
+    const existingDepts = book[3] ? book[3].split(',').map(s => s.trim()) : [];
+    const notifyLine = document.getElementById('editNotifyLineCheck').checked;
+
+    // คำนวณชื่อไฟล์ใหม่ (แทรกหรือตัดรายชื่อ [ ... ])
+    let baseFileName = oldFileName.replace(/\[.*?\]/, "").trim();
+    let newFileName = baseFileName;
+    if (newSelectedDepts.includes("อื่นๆ") && editOtherStaffNames.length > 0) {
+      const suffix = ` [${editOtherStaffNames.join(', ')}]`;
+      newFileName = baseFileName.toLowerCase().endsWith(".pdf")
+        ? baseFileName.slice(0, -4) + suffix + ".pdf"
+        : baseFileName + suffix;
+    }
+
+    const selectedYear = document.getElementById('yearSelect').value;
+    const targetYear = (selectedYear === "all") ? currentScrollYear.toString() : selectedYear;
+
+    try {
+      const response = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: "updateBookDepts",
+          year: targetYear,
+          fileUrl: book[4],
+          oldFileName: oldFileName,
+          newFileName: newFileName,
+          oldDepts: existingDepts,
+          newDepts: newSelectedDepts,
+          notifyLine: notifyLine,
+          staffNames: editOtherStaffNames,
+          editor: currentUser.name
+        })
+      });
+      const result = await response.json();
+
+      if (result.success) {
+        alert("✅ แก้ไขกลุ่มงานเรียบร้อยแล้ว");
+      } else {
+        alert("⚠️ เกิดข้อผิดพลาด: " + (result.message || "ไม่สามารถแก้ไขข้อมูลได้"));
+      }
+    } catch (err) {
+      console.error(err);
+      alert("❌ เชื่อมต่อเซิร์ฟเวอร์ล้มเหลว กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      if (editBookDeptModalInstance) editBookDeptModalInstance.hide();
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = `💾 บันทึกการแก้ไข`;
+
+      currentDbMode = null;
       updateEditDbButtonUI();
       dataCache = {};
       resetAndReloadLogs();

@@ -126,6 +126,10 @@
         <div id="userNavContainer" class="d-flex align-items-center gap-2"></div>
       </div>
       <div class="d-flex gap-2 align-items-center">
+        <!-- 👥 ปุ่มจัดการรายชื่อบุคลากร (เฉพาะ Admin) -->
+        <button id="manageStaffBtn" class="btn btn-sm btn-light text-dark shadow-sm fw-bold" style="display:none;" onclick="openStaffManageModal()">
+          👥 จัดการบุคลากร
+        </button>
         <!-- ⚙️ ปุ่มแก้ไขฐานข้อมูล (สีมัสตาร์ดทองด้าน ทึบแน่น) -->
         <button id="editDbBtn" class="btn btn-sm btn-nav-edit shadow-sm" style="display:none;" onclick="handleEditDbBtnClick()">
           ⚙️ แก้ไขฐานข้อมูล
@@ -295,6 +299,13 @@
               <ul id="modalFileList" class="list-group mt-2" style="max-height: 160px; overflow-y: auto;"></ul>
             </div>
 
+            <!-- ⚠️ กล่องแจ้งเตือนหนังสือซ้ำในระบบ -->
+            <div id="duplicateWarningSection" style="display: none;" class="mt-3 p-2 bg-warning bg-opacity-25 rounded border border-warning">
+              <div class="fw-bold text-dark small mb-1">⚠️ ตรวจพบเลข/ชื่อหนังสือซ้ำในระบบ:</div>
+              <ul id="duplicateWarningList" class="small text-danger mb-0 ps-3"></ul>
+              <div class="text-muted" style="font-size: 0.72rem; margin-top: 4px;">* หากยืนยันส่ง ระบบจะบันทึกซ้ำตามคำสั่งของคุณ</div>
+            </div>
+
             <!-- 📊 แถบสถานะความก้าวหน้าการส่ง (Progress Bar) -->
             <div id="uploadProgressSection" style="display: none;" class="mt-3 p-3 bg-light rounded border border-success border-opacity-50">
               <div class="d-flex justify-content-between align-items-center mb-1">
@@ -309,6 +320,56 @@
           <div class="modal-footer bg-light" id="uploadModalFooter">
             <button type="button" class="btn btn-danger px-4" id="uploadCancelBtn" data-bs-dismiss="modal">❌ ยกเลิก</button>
             <button type="button" class="btn btn-success px-4 fw-bold" id="uploadConfirmBtn" onclick="executeUpload()">✅ ยืนยันการส่ง</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 📄 Modal 5: เปิดอ่านเอกสาร PDF ในหน้าเว็บทันที (In-App PDF Viewer) -->
+    <div class="modal fade" id="pdfViewerModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-xl modal-dialog-centered" style="height: 90vh;">
+        <div class="modal-content h-100 border-0 shadow-lg">
+          <div class="modal-header bg-dark text-white py-2 px-3">
+            <div class="d-flex align-items-center gap-2 text-truncate me-2">
+              <span class="fs-5">📄</span>
+              <span id="pdfModalTitle" class="fw-bold text-truncate" style="font-size: 0.9rem;"></span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <a id="pdfModalExternalBtn" href="#" target="_blank" class="btn btn-sm btn-outline-light text-nowrap" style="font-size: 0.75rem;">
+                ↗️ เปิดใน Drive
+              </a>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+          </div>
+          <div class="modal-body p-0 bg-secondary bg-opacity-10 h-100">
+            <iframe id="pdfModalIframe" src="" class="w-100 h-100 border-0" allow="autoplay"></iframe>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 👥 Modal 6: จัดการรายชื่อบุคลากร (Staff Management) -->
+    <div class="modal fade" id="staffManageModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+          <div class="modal-header bg-success text-white">
+            <h5 class="modal-title fw-bold">👥 จัดการรายชื่อบุคลากร</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body p-4">
+            <label class="form-label fw-bold small text-dark">➕ เพิ่มรายชื่อบุคลากรใหม่:</label>
+            <div class="input-group mb-3">
+              <input type="text" id="newStaffNameInput" class="form-control" placeholder="ระบุ ชื่อ-นามสกุล..." onkeydown="if(event.key==='Enter'){event.preventDefault();addNewStaffName();}">
+              <button class="btn btn-success fw-bold" id="addStaffBtn" type="button" onclick="addNewStaffName()">➕ เพิ่ม</button>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="fw-bold text-dark small">รายชื่อบุคลากรปัจจุบัน (<span id="staffTotalCount">0</span> คน):</span>
+            </div>
+            <div id="staffManageListContainer" class="d-flex flex-column gap-1 overflow-auto border rounded p-2 bg-light" style="max-height: 250px;"></div>
+          </div>
+          <div class="modal-footer bg-light">
+            <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">ปิดหน้าต่าง</button>
           </div>
         </div>
       </div>
@@ -458,7 +519,7 @@
   // --- 1. การตั้งค่าสิทธิ์พื้นฐานองค์กร ---
   const GH_OWNER = "specialtrat905";
   const GH_REPO = "smart-saraban";
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw8D2ty11K3toYLJC0wYnX4sPvo7dvQjLmMfvn3Im7fYW2Aw5H04dSJHfxqaJC4bnMcFg/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzR3MDJwaZ92htZbAKr14pPUKrGBRNjkf9z0B1_k0q7vdVgZ7WCUFDUn0gDcfIsY_tfDQ/exec";
 
   let currentUser = {};
   let allLogs = [];
@@ -627,10 +688,12 @@
                 document.getElementById('logoutBtn').style.display = 'block'; 
                 document.getElementById('adminView').style.display = 'block';
                 document.getElementById('deptFilterContainer').style.display = 'block';
-                document.getElementById('editDbBtn').style.display = 'block'; // แสดงปุ่มแก้ไขฐานข้อมูล
+                document.getElementById('editDbBtn').style.display = 'block';
+                document.getElementById('manageStaffBtn').style.display = 'block'; // แสดงปุ่มจัดการบุคลากร
             } else {
                 document.getElementById('logoutBtn').style.display = 'none';  
                 document.getElementById('editDbBtn').style.display = 'none';
+                document.getElementById('manageStaffBtn').style.display = 'none';
             }
 
             updateYearOptions();
@@ -869,7 +932,9 @@
       } else {
         actionColumnHTML = `
           <div class="action-buttons justify-content-center">
-            <a href="${col[4]}" target="_blank" class="btn btn-sm btn-primary shadow-sm flex-grow-1">เปิดดู</a>
+            <button onclick="openPdfViewer('${col[4]}', '${encodeURIComponent(cleanFileName)}')" class="btn btn-sm btn-primary shadow-sm flex-grow-1">
+              👁️ เปิดดู
+            </button>
             <button onclick="copyLink('${col[4]}')" class="btn btn-sm btn-copy shadow-sm">คัดลอก</button>
           </div>
         `;
@@ -928,7 +993,8 @@
             localStorage.setItem('sarabanUser', JSON.stringify(currentUser));
             localStorage.setItem('loginTime', new Date().getTime());
             document.getElementById('logoutBtn').style.display = 'block';
-            document.getElementById('editDbBtn').style.display = 'block'; // แสดงปุ่มแก้ไขฐานข้อมูล
+            document.getElementById('editDbBtn').style.display = 'block';
+            document.getElementById('manageStaffBtn').style.display = 'block'; // แสดงปุ่มจัดการบุคลากร
             document.getElementById('adminView').style.display = 'block';
             document.getElementById('deptFilterContainer').style.display = 'block';
         } else {
@@ -936,6 +1002,7 @@
             localStorage.removeItem('loginTime');
             document.getElementById('logoutBtn').style.display = 'none';
             document.getElementById('editDbBtn').style.display = 'none';
+            document.getElementById('manageStaffBtn').style.display = 'none';
         }
 
         document.getElementById('loginPage').style.display = 'none';
@@ -1127,6 +1194,32 @@
         <span class="badge bg-success me-2">${i+1}</span>${f.name}
       </li>
     `).join('');
+
+    // 🔍 ระบบตรวจจับหนังสือซ้ำในฐานข้อมูล
+    const duplicateList = [];
+    selectedFilesArray.forEach(file => {
+      const cleanUploadName = file.name.replace(/\s*\[.*?\]/, "").replace(/\.pdf$/i, "").trim();
+      const numMatch = cleanUploadName.match(/^(\d+[-/]\d+)/);
+
+      const isDup = allLogs.some(row => {
+        if (!row || row[0] === "❌") return false;
+        const existingName = row[2].toString().replace(/\s*\[.*?\]/, "").replace(/\.pdf$/i, "").trim();
+        if (numMatch && existingName.startsWith(numMatch[1])) return true;
+        return existingName.toLowerCase() === cleanUploadName.toLowerCase();
+      });
+
+      if (isDup) duplicateList.push(file.name);
+    });
+
+    const dupSection = document.getElementById('duplicateWarningSection');
+    const dupUl = document.getElementById('duplicateWarningList');
+    if (duplicateList.length > 0) {
+      dupSection.style.display = 'block';
+      dupUl.innerHTML = duplicateList.map(name => `<li>${name}</li>`).join('');
+    } else {
+      dupSection.style.display = 'none';
+      dupUl.innerHTML = '';
+    }
 
     // รีเซ็ตแถบความก้าวหน้า (Progress Bar)
     document.getElementById('uploadProgressSection').style.display = 'none';
@@ -1323,6 +1416,104 @@
       deleteModalInstance = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
     }
     deleteModalInstance.show();
+  }
+  // --- 11. ระบบ In-App PDF Viewer (เปิดดูเอกสารในหน้าเว็บ) ---
+  let pdfModalInstance = null;
+
+  function openPdfViewer(fileUrl, encodedTitle) {
+    const title = decodeURIComponent(encodedTitle);
+    const idMatch = fileUrl.match(/[-\w]{25,}/);
+    const previewUrl = idMatch ? `https://drive.google.com/file/d/${idMatch[0]}/preview` : fileUrl;
+
+    document.getElementById('pdfModalTitle').innerText = title;
+    document.getElementById('pdfModalExternalBtn').href = fileUrl;
+    document.getElementById('pdfModalIframe').src = previewUrl;
+
+    if (!pdfModalInstance) {
+      pdfModalInstance = new bootstrap.Modal(document.getElementById('pdfViewerModal'));
+      document.getElementById('pdfViewerModal').addEventListener('hidden.bs.modal', () => {
+        document.getElementById('pdfModalIframe').src = "";
+      });
+    }
+    pdfModalInstance.show();
+  }
+
+  // --- 12. ระบบจัดการรายชื่อบุคลากร (Staff Management) ---
+  let staffManageModalInstance = null;
+
+  function openStaffManageModal() {
+    renderStaffManageList();
+    if (!staffManageModalInstance) {
+      staffManageModalInstance = new bootstrap.Modal(document.getElementById('staffManageModal'));
+    }
+    staffManageModalInstance.show();
+  }
+
+  function renderStaffManageList() {
+    document.getElementById('staffTotalCount').innerText = staffNames.length;
+    const container = document.getElementById('staffManageListContainer');
+    if (staffNames.length === 0) {
+      container.innerHTML = `<div class="text-center text-muted small p-3">ยังไม่มีรายชื่อบุคลากร</div>`;
+      return;
+    }
+    container.innerHTML = staffNames.map((name, idx) => `
+      <div class="p-2 bg-white rounded border d-flex justify-content-between align-items-center shadow-sm" style="font-size: 0.85rem;">
+        <span><span class="badge bg-secondary me-2">${idx + 1}</span>${name}</span>
+        <button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold" onclick="deleteStaffName('${name}')">🗑️ ลบ</button>
+      </div>
+    `).join('');
+  }
+
+  async function addNewStaffName() {
+    const input = document.getElementById('newStaffNameInput');
+    const name = input.value.trim();
+    if (!name) return alert("กรุณาระบุชื่อ-นามสกุลบุคลากร");
+    if (staffNames.includes(name)) return alert("มีรายชื่อนี้อยู่ในระบบแล้ว");
+
+    const btn = document.getElementById('addStaffBtn');
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span>`;
+
+    try {
+      const res = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: "addStaff", name: name })
+      });
+      const result = await res.json();
+      if (result.success) {
+        staffNames.push(name);
+        input.value = "";
+        renderStaffManageList();
+        // อัปเดต datalist ให้เลือกได้ทันที
+        const list = document.getElementById('staffList');
+        if (list) list.innerHTML = staffNames.map(n => `<option value="${n}">`).join('');
+      }
+    } catch (e) {
+      alert("❌ เชื่อมต่อเซิร์ฟเวอร์ล้มเหลว");
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = "➕ เพิ่ม";
+    }
+  }
+
+  async function deleteStaffName(name) {
+    if (!confirm(`คุณต้องการลบ "${name}" ออกจากรายชื่อบุคลากรใช่หรือไม่?`)) return;
+
+    try {
+      const res = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: "deleteStaff", name: name })
+      });
+      const result = await res.json();
+      if (result.success) {
+        staffNames = staffNames.filter(n => n !== name);
+        renderStaffManageList();
+        const list = document.getElementById('staffList');
+        if (list) list.innerHTML = staffNames.map(n => `<option value="${n}">`).join('');
+      }
+    } catch (e) {
+      alert("❌ ไม่สามารถลบรายชื่อได้");
+    }
   }
 
   async function executeDelete() {

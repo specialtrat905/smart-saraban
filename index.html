@@ -93,7 +93,7 @@
   <div class="card p-4 shadow-lg text-center border-0">
     <!-- 🏫 โลโก้ด้านบนชื่อระบบ (นำรหัสไฟล์จาก Drive มาใส่แทนคำว่า รหัสไฟล์_ID) -->
     <div class="mb-3">
-      <img src="https://lh3.googleusercontent.com/d/1kLyYDJNV7hYAD0YERRxW8GEgJNB-XplP" alt="Logo" class="img-fluid" style="max-height: 80x; width: auto; object-fit: contain;">
+      <img src="https://lh3.googleusercontent.com/d/1kLyYDJNV7hYAD0YERRxW8GEgJNB-XplP" alt="Logo" class="img-fluid" style="max-height: 40x; width: auto; object-fit: contain;">
     </div>
     <h3 class="fw-bold text-success mb-4">ระบบส่งหนังสือ ศกศ.ตราด</h3>
     <input type="text" id="user" class="form-control mb-3" placeholder="ชื่อผู้ใช้">
@@ -107,9 +107,12 @@
 </div>
 
 <div id="mainApp" class="main-app">
-  <nav class="navbar nav-custom p-3 shadow-sm sticky-top">
+  <nav class="navbar nav-custom p-2 px-3 shadow-sm sticky-top">
     <div class="container-fluid">
-      <span class="fw-bold text-white">👤 <span id="userDisplay"></span> | <span id="roleDisplay" class="badge bg-warning text-dark"></span></span>
+      <div class="d-flex align-items-center gap-2">
+        <img src="https://lh3.googleusercontent.com/d/1kLyYDJNV7hYAD0YERRxW8GEgJNB-XplP" alt="Logo" style="height: 32px; width: auto; object-fit: contain; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));">
+        <span class="fw-bold text-white"><span id="userDisplay"></span> | <span id="roleDisplay" class="badge bg-warning text-dark"></span></span>
+      </div>
       <div class="d-flex gap-2 align-items-center">
         <!-- ⚙️ ปุ่มแก้ไขฐานข้อมูล (สีมัสตาร์ดทองด้าน ทึบแน่น) -->
         <button id="editDbBtn" class="btn btn-sm btn-nav-edit shadow-sm" style="display:none;" onclick="handleEditDbBtnClick()">
@@ -1024,13 +1027,24 @@
     if (selectedDepartments.length === 0) return alert("กรุณาเลือกกลุ่มงานปลายทางอย่างน้อย 1 กลุ่มงาน");
     if (selectedFilesArray.length === 0) return alert("กรุณาเลือกไฟล์หนังสือที่จะส่ง");
 
+    const deptColors = {
+      "บริหารงานวิชาการ": "#ffde59",
+      "บริหารแผนงานและงบประมาณ": "#ff5757",
+      "บริหารงานบุคคล": "#0cc0df",
+      "บริหารงานทั่วไป": "#8c52ff",
+      "ผู้อำนวยการ": "#add8e6",
+      "รองผู้อำนวยการ": "#d2b48c",
+      "อื่นๆ": "#adb5bd"
+    };
+
     const modalTargetDept = document.getElementById('modalTargetDept');
     modalTargetDept.innerHTML = selectedDepartments.map(d => {
       let label = d;
       if (d === "อื่นๆ" && otherStaffNames.length > 0) {
         label = `อื่นๆ [${otherStaffNames.join(', ')}]`;
       }
-      return `<span class="badge bg-success p-2 small shadow-sm">${label}</span>`;
+      const color = deptColors[d] || "#adb5bd";
+      return `<span class="badge border p-2 small shadow-sm" style="background-color: ${color}; color: #fff;">${label}</span>`;
     }).join(' ');
 
     document.getElementById('modalFileCount').innerText = selectedFilesArray.length;

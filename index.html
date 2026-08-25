@@ -445,7 +445,7 @@
   <!-- 🌿 แถบ Footer สีเขียวธีมระบบ ตรึงด้านล่างตลอดเวลา -->
     <footer class="footer-custom py-2 px-3 shadow-lg fixed-bottom d-flex justify-content-between align-items-center" style="font-size: 0.82rem; z-index: 1030;">
       <span class="fw-bold text-white">
-        💻 สร้างโดย <span class="text-warning">นายราชศักดิ์ ไพฑูรย์เลิศ</span>
+        💻 สร้างโดย นายราชศักดิ์ ไพฑูรย์เลิศ
       </span>
       <span id="appVersionDisplay" class="badge bg-warning text-dark fw-bold px-2 py-1 shadow-sm">
         กำลังโหลดเวอร์ชัน...
@@ -669,27 +669,33 @@
     }
   }
 
-  // 🔄 ดึงเวอร์ชันและประวัติอัปเดตล่าสุดจาก GitHub อัตโนมัติ
+  // 🔄 ดึงเวอร์ชันจากชื่อ Commit ล่าสุด และวันที่อัปเดตแบบ พ.ศ. สองหลัก (เช่น 25/08/69)
   async function fetchAppVersion() {
     const versionElem = document.getElementById('appVersionDisplay');
-    const baseVersion = "v5.22"; 
     try {
       const res = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/commits?per_page=1&t=${new Date().getTime()}`);
       if (res.ok) {
         const data = await res.json();
         if (data && data.length > 0) {
-          const sha = data[0].sha.substring(0, 7);
+          // 1. ดึงข้อความชื่อ Commit บรรทัดแรกมาแสดงเป็นชื่อเวอร์ชัน
+          const commitMessage = data[0].commit.message.split('\n')[0].trim();
+          
+          // 2. จัดรูปแบบ วันที่ (2 หลัก) / เดือน (2 หลัก) / ปี พ.ศ. ย่อ (2 หลัก)
           const date = new Date(data[0].commit.committer.date);
-          const thaiYear = date.getFullYear() + 543;
-          const dateStr = `${date.getDate()}/${date.getMonth() + 1}/${thaiYear}`;
-          versionElem.innerText = `${baseVersion} (อัปเดต ${dateStr} #${sha})`;
+          const day = String(date.getDate()).padStart(2, '0');
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const thaiYearShort = String((date.getFullYear() + 543) % 100).padStart(2, '0');
+          const dateStr = `${day}/${month}/${thaiYearShort}`;
+          
+          // 3. แสดงผลรูปแบบ เช่น: V 5.22 (Fix 1) (อัพเดท 25/08/69)
+          versionElem.innerText = `${commitMessage} (อัพเดท ${dateStr})`;
           return;
         }
       }
     } catch (e) {
       console.warn("ไม่สามารถดึงเวอร์ชันจาก GitHub ได้", e);
     }
-    versionElem.innerText = baseVersion;
+    versionElem.innerText = "V 5.22";
   }
 
   // 🚪 ฟังก์ชันออกจากระบบ + ล้างแคชและฐานข้อมูลบนเบราว์เซอร์ทิ้งหมดจด 100%

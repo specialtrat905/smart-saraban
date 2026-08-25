@@ -42,8 +42,20 @@
     }
     .btn-action-file:hover { background-color: #4338ca !important; color: #ffffff !important; }
 
-    /* 🌿 ปรับพื้นหลังภาพรวมเป็นโทนเขียวนวลตา (Sage / Mint Tinted) */
-    body { background: #edf4f2; font-family: 'Sarabun', sans-serif; color: #1c1e21; }
+    /* 🌿 ปรับพื้นหลังภาพรวม และเว้นระยะล่างไม่ให้แถบ Footer บังตาราง */
+    body { 
+      background: #edf4f2; 
+      font-family: 'Sarabun', sans-serif; 
+      color: #1c1e21; 
+      padding-bottom: 55px; 
+    }
+
+    /* 🌿 สไตล์แถบ Footer สีเขียวธีมระบบ ตรึงด้านล่างตลอดเวลา */
+    .footer-custom { 
+      background: linear-gradient(135deg, #004d40 0%, #00796b 100%); 
+      color: white; 
+      border-top: 3px solid #ffc107; 
+    }
 
     /* 🌿 สไตล์แบบที่ 2: การ์ดสีขาวขอบเขียวมินต์บางเฉียบ + เงานวลกลืนกับพื้นหลัง */
     .card-border-green {
@@ -111,7 +123,7 @@
     <div class="container-fluid">
       <div class="d-flex align-items-center gap-2">
         <img src="https://lh3.googleusercontent.com/d/1kLyYDJNV7hYAD0YERRxW8GEgJNB-XplP" alt="Logo" style="height: 32px; width: auto; object-fit: contain; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));">
-        <span class="fw-bold text-white"><span id="userDisplay"></span> | <span id="roleDisplay" class="badge bg-warning text-dark"></span></span>
+        <div id="userNavContainer" class="d-flex align-items-center gap-2"></div>
       </div>
       <div class="d-flex gap-2 align-items-center">
         <!-- ⚙️ ปุ่มแก้ไขฐานข้อมูล (สีมัสตาร์ดทองด้าน ทึบแน่น) -->
@@ -430,16 +442,14 @@
         </div>
       </div>
     </div>
-  <!-- 🌿 แถบ Footer ด้านล่างแสดงเครดิตและเวอร์ชัน -->
-    <footer class="mt-4 mb-3 py-3 px-3 bg-white rounded-3 border card-border-green shadow-sm">
-      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2" style="font-size: 0.82rem;">
-        <span class="text-muted fw-bold">
-          💻 สร้างโดย <span class="text-success">นายราชศักดิ์ ไพฑูรย์เลิศ</span>
-        </span>
-        <span class="badge bg-light text-secondary border px-2 py-1">
-          Smart Saraban v2.6 (2026)
-        </span>
-      </div>
+  <!-- 🌿 แถบ Footer สีเขียวธีมระบบ ตรึงด้านล่างตลอดเวลา -->
+    <footer class="footer-custom py-2 px-3 shadow-lg fixed-bottom d-flex justify-content-between align-items-center" style="font-size: 0.82rem; z-index: 1030;">
+      <span class="fw-bold text-white">
+        💻 สร้างโดย <span class="text-warning">นายราชศักดิ์ ไพฑูรย์เลิศ</span>
+      </span>
+      <span id="appVersionDisplay" class="badge bg-warning text-dark fw-bold px-2 py-1 shadow-sm">
+        กำลังโหลดเวอร์ชัน...
+      </span>
     </footer>
   </div> <!-- ปิด container -->
 </div> <!-- ปิด mainApp -->
@@ -611,8 +621,7 @@
             currentUser = JSON.parse(savedUser);
             document.getElementById('loginPage').style.display = 'none';
             document.getElementById('mainApp').style.display = 'block';
-            document.getElementById('userDisplay').innerText = currentUser.name;
-            document.getElementById('roleDisplay').innerText = currentUser.role;
+            renderUserNavbar();
 
             if(currentUser.role === 'Admin') {
                 document.getElementById('logoutBtn').style.display = 'block'; 
@@ -630,6 +639,57 @@
             logout();
         }
     }
+  }
+
+// 👤 แสดงผลชื่อผู้ใช้งานบน Navbar (Admin แสดงแบบเดิม / User แสดงป้ายสีเดียวตามกลุ่มงาน)
+  function renderUserNavbar() {
+    const container = document.getElementById('userNavContainer');
+    if (!container) return;
+
+    const deptColors = {
+      "ฝ่ายบริหารวิชาการ": "#ffde59", "บริหารงานวิชาการ": "#ffde59",
+      "ฝ่ายบริหารงบประมาณ": "#ff5757", "บริหารแผนงานและงบประมาณ": "#ff5757",
+      "ฝ่ายบริหารงานบุคคล": "#0cc0df", "บริหารงานบุคคล": "#0cc0df",
+      "ฝ่ายบริหารทั่วไป": "#8c52ff", "บริหารงานทั่วไป": "#8c52ff",
+      "ผู้อำนวยการ": "#add8e6", "รองผู้อำนวยการ": "#d2b48c", "อื่นๆ": "#adb5bd"
+    };
+
+    if (currentUser.role === 'Admin') {
+      container.innerHTML = `
+        <span class="fw-bold text-white">${currentUser.name}</span>
+        <span class="badge bg-warning text-dark shadow-sm">Admin</span>
+      `;
+    } else {
+      const color = deptColors[currentUser.role] || "#00796b";
+      container.innerHTML = `
+        <span class="badge border shadow-sm" style="background-color: ${color}; color: #fff; font-size: 0.82rem; font-weight: 500; border-color: rgba(255,255,255,0.4) !important;">
+          🏢 ${currentUser.role}
+        </span>
+      `;
+    }
+  }
+
+  // 🔄 ดึงเวอร์ชันและประวัติอัปเดตล่าสุดจาก GitHub อัตโนมัติ
+  async function fetchAppVersion() {
+    const versionElem = document.getElementById('appVersionDisplay');
+    const baseVersion = "v5.22"; 
+    try {
+      const res = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/commits?per_page=1&t=${new Date().getTime()}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.length > 0) {
+          const sha = data[0].sha.substring(0, 7);
+          const date = new Date(data[0].commit.committer.date);
+          const thaiYear = date.getFullYear() + 543;
+          const dateStr = `${date.getDate()}/${date.getMonth() + 1}/${thaiYear}`;
+          versionElem.innerText = `${baseVersion} (อัปเดต ${dateStr} #${sha})`;
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn("ไม่สามารถดึงเวอร์ชันจาก GitHub ได้", e);
+    }
+    versionElem.innerText = baseVersion;
   }
 
   // 🚪 ฟังก์ชันออกจากระบบ + ล้างแคชและฐานข้อมูลบนเบราว์เซอร์ทิ้งหมดจด 100%
@@ -874,8 +934,7 @@
 
         document.getElementById('loginPage').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
-        document.getElementById('userDisplay').innerText = currentUser.name;
-        document.getElementById('roleDisplay').innerText = currentUser.role;
+        renderUserNavbar();
         
         updateYearOptions();
         resetAndReloadLogs();
@@ -1448,6 +1507,7 @@
   // --- 10. ฟังก์ชันติดตั้งความจำและควบคุมการดึงพารามิเตอร์ลิงก์ทางลัดเมื่อโหลดเสร็จ ---
   window.addEventListener('load', () => {
     loadStaffList(); 
+    fetchAppVersion(); 
     
     // 🧠 ตรรกะผูก Event อัจฉริยะ: ควบคุมช่องค้นหาและ Dropdown อัตโนมัติ ป้องกันปัญหาทางโค้ด HTML ผิดเพี้ยน
     const searchInput = document.getElementById('searchInput');

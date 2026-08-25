@@ -261,33 +261,45 @@
       </div>
     </div>
 
-    <!-- 🟢 Modal 1: ยืนยันการอัปโหลดหนังสือ -->
-    <div class="modal fade" id="uploadConfirmModal" tabindex="-1" aria-hidden="true">
+    <!-- 🟢 Modal 1: ยืนยันการอัปโหลดหนังสือ (พร้อม Progress Bar และกรอบไม่ล้นจอ) -->
+    <div class="modal fade" id="uploadConfirmModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg">
           <div class="modal-header bg-success text-white">
             <h5 class="modal-title fw-bold">📄 ยืนยันการส่งหนังสือ</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            <button type="button" class="btn-close btn-close-white" id="uploadModalCloseX" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body p-4">
             <div class="mb-3">
               <span class="text-muted small">กลุ่มงานปลายทาง:</span>
-              <div id="modalTargetDept" class="fw-bold text-dark fs-6 mt-1"></div>
+              <!-- 📦 กรอบแสดงกลุ่มงาน ล็อกความสูงและตัดคำสวยงามไม่ล้นจอ -->
+              <div id="modalTargetDept" class="d-flex flex-wrap gap-1 mt-1 p-2 bg-light rounded border" style="max-height: 90px; overflow-y: auto;"></div>
             </div>
             <div class="mb-2">
               <span class="text-muted small">รายการหนังสือที่จะส่ง (<span id="modalFileCount" class="fw-bold text-success"></span> ฉบับ):</span>
-              <ul id="modalFileList" class="list-group mt-2" style="max-height: 200px; overflow-y: auto;"></ul>
+              <ul id="modalFileList" class="list-group mt-2" style="max-height: 160px; overflow-y: auto;"></ul>
+            </div>
+
+            <!-- 📊 แถบสถานะความก้าวหน้าการส่ง (Progress Bar) -->
+            <div id="uploadProgressSection" style="display: none;" class="mt-3 p-3 bg-light rounded border border-success border-opacity-50">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <small id="uploadStatusText" class="fw-bold text-success text-truncate me-2">กำลังเริ่มส่งไฟล์...</small>
+                <small id="uploadPercentText" class="fw-bold text-dark">0%</small>
+              </div>
+              <div class="progress" style="height: 12px;">
+                <div id="uploadProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 0%;"></div>
+              </div>
             </div>
           </div>
-          <div class="modal-footer bg-light">
-            <button type="button" class="btn btn-danger px-4" data-bs-dismiss="modal">❌ ยกเลิก</button>
-            <button type="button" class="btn btn-success px-4 fw-bold" onclick="executeUpload()">✅ ยืนยันการส่ง</button>
+          <div class="modal-footer bg-light" id="uploadModalFooter">
+            <button type="button" class="btn btn-danger px-4" id="uploadCancelBtn" data-bs-dismiss="modal">❌ ยกเลิก</button>
+            <button type="button" class="btn btn-success px-4 fw-bold" id="uploadConfirmBtn" onclick="executeUpload()">✅ ยืนยันการส่ง</button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 🔴 Modal 2: ยืนยันการลบหนังสือออกจากฐานข้อมูล -->
+    <!-- 🔴 Modal 2: ยืนยันการลบหนังสือออกจากฐานข้อมูล (เพิ่มตัวเลือกส่ง LINE แจ้งยกเลิก) -->
     <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg">
@@ -296,9 +308,17 @@
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body p-4">
-            <p class="text-danger fw-bold mb-2">⚠️ คำเตือน: ระบบจะลบไฟล์ใน Google Drive และลบแถวใน Google Sheet ของทุกกลุ่มงานที่เกี่ยวข้องอย่างถาวร</p>
+            <p class="text-danger fw-bold mb-2">⚠️ คำเตือน: ระบบจะลบไฟล์ใน Google Drive แบบถาวร และลบแถวใน Google Sheet ของทุกกลุ่มงานที่เกี่ยวข้อง</p>
             <span class="text-muted small">รายการหนังสือที่จะลบ (<span id="deleteModalCount" class="fw-bold text-danger"></span> ฉบับ):</span>
-            <ul id="deleteModalFileList" class="list-group mt-2" style="max-height: 200px; overflow-y: auto;"></ul>
+            <ul id="deleteModalFileList" class="list-group mt-2" style="max-height: 180px; overflow-y: auto;"></ul>
+
+            <!-- 🔔 Checkbox ส่งแจ้งเตือนยกเลิกทาง LINE -->
+            <div class="form-check mt-3 p-2 bg-light rounded border border-danger border-opacity-25">
+              <input class="form-check-input ms-1 me-2" type="checkbox" id="deleteNotifyLineCheck" checked>
+              <label class="form-check-label small fw-bold text-danger" for="deleteNotifyLineCheck">
+                🔔 ส่งแจ้งเตือน LINE ไปยังกลุ่มงานที่เกี่ยวข้องเพื่อแจ้งยกเลิกหนังสือ
+              </label>
+            </div>
           </div>
           <div class="modal-footer bg-light">
             <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">ยกเลิก</button>
@@ -414,7 +434,7 @@
   // --- 1. การตั้งค่าสิทธิ์พื้นฐานองค์กร ---
   const GH_OWNER = "specialtrat905";
   const GH_REPO = "smart-saraban";
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxksl0pxV6QHEH4d3_Kay6S3INKu_1UGmJPKe_7YcJDOF_DBKbVSAHbNyAu5rei34wtvg/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzVvJYAOo0SfuYq7j3cdhO08GTi4g4v2L5Xl75BmZhX4XloqlIpg1s4zNfgf1kfQGdfUw/exec";
 
   let currentUser = {};
   let allLogs = [];
@@ -999,27 +1019,35 @@
     }
   });
 
-  // --- 9. ระบบอัปโหลดหลายกลุ่มงานพร้อมหน้าต่างยืนยัน ---
+  // --- 9. ระบบอัปโหลดหลายกลุ่มงานพร้อม Progress Bar และยกเลิกกลุ่มงานอัตโนมัติ ---
   function handleUpload() {
     if (selectedDepartments.length === 0) return alert("กรุณาเลือกกลุ่มงานปลายทางอย่างน้อย 1 กลุ่มงาน");
-    if (selectedDepartments.includes("อื่นๆ") && otherStaffNames.length === 0) {
-      return alert("กรุณาระบุรายชื่อผู้รับสำหรับกลุ่มงาน 'อื่นๆ' อย่างน้อย 1 ท่าน");
-    }
     if (selectedFilesArray.length === 0) return alert("กรุณาเลือกไฟล์หนังสือที่จะส่ง");
 
     const modalTargetDept = document.getElementById('modalTargetDept');
     modalTargetDept.innerHTML = selectedDepartments.map(d => {
       let label = d;
-      if (d === "อื่นๆ") label = `อื่นๆ [${otherStaffNames.join(', ')}]`;
-      return `<span class="badge bg-success p-2 small">${label}</span>`;
+      if (d === "อื่นๆ" && otherStaffNames.length > 0) {
+        label = `อื่นๆ [${otherStaffNames.join(', ')}]`;
+      }
+      return `<span class="badge bg-success p-2 small shadow-sm">${label}</span>`;
     }).join(' ');
 
     document.getElementById('modalFileCount').innerText = selectedFilesArray.length;
     document.getElementById('modalFileList').innerHTML = selectedFilesArray.map((f, i) => `
-      <li class="list-group-item list-group-item-action py-2 small">
+      <li class="list-group-item list-group-item-action py-2 small text-truncate">
         <span class="badge bg-success me-2">${i+1}</span>${f.name}
       </li>
     `).join('');
+
+    // รีเซ็ตแถบความก้าวหน้า (Progress Bar)
+    document.getElementById('uploadProgressSection').style.display = 'none';
+    document.getElementById('uploadProgressBar').style.width = '0%';
+    document.getElementById('uploadPercentText').innerText = '0%';
+    document.getElementById('uploadCancelBtn').style.display = 'inline-block';
+    document.getElementById('uploadConfirmBtn').style.display = 'inline-block';
+    document.getElementById('uploadConfirmBtn').disabled = false;
+    document.getElementById('uploadModalCloseX').style.display = 'block';
 
     if (!uploadModalInstance) {
       uploadModalInstance = new bootstrap.Modal(document.getElementById('uploadConfirmModal'));
@@ -1028,18 +1056,39 @@
   }
 
   async function executeUpload() {
-    if (uploadModalInstance) uploadModalInstance.hide();
+    const cancelBtn = document.getElementById('uploadCancelBtn');
+    const confirmBtn = document.getElementById('uploadConfirmBtn');
+    const closeX = document.getElementById('uploadModalCloseX');
+    const progressSection = document.getElementById('uploadProgressSection');
+    const progressBar = document.getElementById('uploadProgressBar');
+    const statusText = document.getElementById('uploadStatusText');
+    const percentText = document.getElementById('uploadPercentText');
 
-    const btn = document.getElementById('uploadBtn'); 
-    btn.disabled = true;
+    // ล็อกปุ่มป้องกันการปิดหน้าต่างระหว่างส่ง
+    cancelBtn.style.display = 'none';
+    confirmBtn.disabled = true;
+    confirmBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> กำลังส่ง...`;
+    closeX.style.display = 'none';
+    progressSection.style.display = 'block';
+
     const receiverSuffix = otherStaffNames.length > 0 ? ` [${otherStaffNames.join(', ')}]` : "";
+    const totalSteps = (selectedDepartments.length * selectedFilesArray.length) + selectedDepartments.length;
+    let completedSteps = 0;
+
+    function updateProgress(msg) {
+      completedSteps++;
+      const pct = Math.min(Math.round((completedSteps / totalSteps) * 100), 100);
+      progressBar.style.width = `${pct}%`;
+      percentText.innerText = `${pct}%`;
+      statusText.innerText = msg;
+    }
 
     for (let dept of selectedDepartments) {
       let uploadedFiles = [];
       const currentSuffix = (dept === "อื่นๆ") ? receiverSuffix : "";
 
       for (let file of selectedFilesArray) {
-        btn.innerText = `กำลังส่งฝ่าย [${dept}]: ${file.name.substring(0,8)}...`;
+        updateProgress(`กำลังส่งฝ่าย [${dept}]: ${file.name.substring(0, 15)}...`);
         try {
           const fileData = await new Promise(resolve => { 
             const r = new FileReader(); 
@@ -1067,7 +1116,7 @@
       }
 
       if (uploadedFiles.length > 0) {
-        btn.innerText = `กำลังแจ้ง LINE: [${dept}]...`;
+        updateProgress(`กำลังแจ้งเตือน LINE ไปยัง [${dept}]...`);
         try {
           await fetch(SCRIPT_URL, {
             method: 'POST',
@@ -1079,17 +1128,34 @@
             })
           });
         } catch (err) { console.error(err); }
+      } else {
+        updateProgress(`เสร็จสิ้นกลุ่มงาน [${dept}]`);
       }
     }
 
-    alert(`สำเร็จ! ส่งหนังสือ ${selectedFilesArray.length} ฉบับ ให้กับ ${selectedDepartments.length} กลุ่มงาน เรียบร้อยแล้ว`);
-    selectedFilesArray = []; 
-    renderFileList(); 
-    btn.disabled = false; 
-    btn.innerText = "อัปโหลดหนังสือและแจ้งเตือน LINE";
-    
-    dataCache = {}; 
-    resetAndReloadLogs();
+    progressBar.style.width = '100%';
+    percentText.innerText = '100%';
+    statusText.innerText = '✅ ส่งหนังสือและแจ้งเตือน LINE เรียบร้อยแล้ว!';
+
+    setTimeout(() => {
+      if (uploadModalInstance) uploadModalInstance.hide();
+      alert(`สำเร็จ! ส่งหนังสือ ${selectedFilesArray.length} ฉบับ ให้กับ ${selectedDepartments.length} กลุ่มงาน เรียบร้อยแล้ว`);
+      
+      // ล้างไฟล์แนบ
+      selectedFilesArray = []; 
+      renderFileList(); 
+
+      // 🧹 รีเซ็ตการเลือกกลุ่มงานและรายชื่อผู้รับทั้งหมดให้กลับสู่ค่าเริ่มต้น
+      selectedDepartments = [];
+      otherStaffNames = [];
+      document.querySelectorAll('.dept-checkbox').forEach(cb => cb.checked = false);
+      toggleOtherSection();
+      renderStaffTags();
+      saveDeptSelection();
+
+      dataCache = {}; 
+      resetAndReloadLogs();
+    }, 600);
   }
 
   // --- 10. ระบบจัดการแก้ไขฐานข้อมูล (เลือกลบ หรือ แก้ไขกลุ่มงาน) ---
@@ -1178,6 +1244,7 @@
 
     const selectedYear = document.getElementById('yearSelect').value;
     const targetYear = (selectedYear === "all") ? currentScrollYear.toString() : selectedYear;
+    const notifyLine = document.getElementById('deleteNotifyLineCheck').checked;
 
     try {
       const response = await fetch(SCRIPT_URL, {
@@ -1185,7 +1252,9 @@
         body: JSON.stringify({
           action: "deleteBooks",
           year: targetYear,
-          books: selectedBooksToDelete
+          books: selectedBooksToDelete,
+          notifyLine: notifyLine,
+          deleter: currentUser.name
         })
       });
       const result = await response.json();
@@ -1284,9 +1353,6 @@
 
     if (newSelectedDepts.length === 0) {
       return alert("กรุณาเลือกกลุ่มงานปลายทางอย่างน้อย 1 กลุ่มงาน");
-    }
-    if (newSelectedDepts.includes("อื่นๆ") && editOtherStaffNames.length === 0) {
-      return alert("กรุณาระบุรายชื่อผู้รับสำหรับกลุ่มงาน 'อื่นๆ' อย่างน้อย 1 ท่าน");
     }
 
     const saveBtn = document.getElementById('saveEditDeptBtn');

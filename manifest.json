@@ -1,0 +1,18 @@
+{
+  "name": "ระบบสารบรรณ ศกศ.ตราด",
+  "short_name": "สารบรรณ ตราด",
+  "description": "ระบบส่งหนังสือและสารบรรณ Hybrid ศูนย์การศึกษาพิเศษประจำจังหวัดตราด",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#edf4f2",
+  "theme_color": "#004d40",
+  "icons": [
+    {
+      "src": "https://lh3.googleusercontent.com/d/1kLyYDJNV7hYAD0YERRxW8GEgJNB-XplP",
+      "sizes": "192x192 512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

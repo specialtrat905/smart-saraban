@@ -1,7 +1,12 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <link rel="icon" href="data:,">
+  <link rel="icon" href="https://lh3.googleusercontent.com/d/1kLyYDJNV7hYAD0YERRxW8GEgJNB-XplP">
+  <link rel="apple-touch-icon" href="https://lh3.googleusercontent.com/d/1kLyYDJNV7hYAD0YERRxW8GEgJNB-XplP">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#004d40">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ระบบสารบรรณ Hybrid - ศกศ.ตราด</title>
@@ -989,20 +994,22 @@
       if (result) {
         currentUser = { user: result.user, role: result.role, name: result.name };
 
+        // 📱 บันทึกสิทธิ์ลงเครื่อง เพื่อให้ทุกกลุ่มงานเปิดแอป PWA มาแล้วใช้งานได้ทันที
+        localStorage.setItem('sarabanUser', JSON.stringify(currentUser));
+        localStorage.setItem('loginTime', new Date().getTime());
+
         if (currentUser.role === 'Admin') {
-            localStorage.setItem('sarabanUser', JSON.stringify(currentUser));
-            localStorage.setItem('loginTime', new Date().getTime());
             document.getElementById('logoutBtn').style.display = 'block';
             document.getElementById('editDbBtn').style.display = 'block';
-            document.getElementById('manageStaffBtn').style.display = 'block'; // แสดงปุ่มจัดการบุคลากร
+            document.getElementById('manageStaffBtn').style.display = 'block';
             document.getElementById('adminView').style.display = 'block';
             document.getElementById('deptFilterContainer').style.display = 'block';
         } else {
-            localStorage.removeItem('sarabanUser');
-            localStorage.removeItem('loginTime');
-            document.getElementById('logoutBtn').style.display = 'none';
+            document.getElementById('logoutBtn').style.display = 'block'; // แสดงปุ่มออกจากระบบเพื่อให้เปลี่ยนผู้ใช้ได้หากจำเป็น
             document.getElementById('editDbBtn').style.display = 'none';
             document.getElementById('manageStaffBtn').style.display = 'none';
+            document.getElementById('adminView').style.display = 'none';
+            document.getElementById('deptFilterContainer').style.display = 'none';
         }
 
         document.getElementById('loginPage').style.display = 'none';
@@ -1703,6 +1710,11 @@
 
   // --- 10. ฟังก์ชันติดตั้งความจำและควบคุมการดึงพารามิเตอร์ลิงก์ทางลัดเมื่อโหลดเสร็จ ---
   window.addEventListener('load', () => {
+    // 📱 ลงทะเบียน Service Worker เพื่อเปิดใช้งานคุณสมบัติ PWA
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(err => console.warn('PWA SW Fail:', err));
+    }
+
     loadStaffList(); 
     fetchAppVersion(); 
     

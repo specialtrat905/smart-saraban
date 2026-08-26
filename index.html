@@ -92,6 +92,61 @@
       padding-bottom: 34px; 
     }
 
+    /* 📂 สไตล์กรอบลากวางไฟล์ (Drag & Drop Zone) */
+    .drop-zone {
+      border: 2px dashed #4f46e5;
+      border-radius: 10px;
+      transition: all 0.2s ease-in-out;
+      background: #ffffff;
+    }
+    .drop-zone.drag-active {
+      border-color: #00796b !important;
+      background-color: #e8f5e9 !important;
+      transform: scale(1.01);
+    }
+
+    /* ⚡ สไตล์ปุ่มตัวกรองด่วน (Quick Filter Chips) */
+    .btn-filter-chip {
+      font-size: 0.75rem;
+      padding: 3px 10px;
+      border-radius: 20px;
+      border: 1px solid #b2dfdb;
+      background: #ffffff;
+      color: #004d40;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    .btn-filter-chip:hover, .btn-filter-chip.active {
+      background: #00796b;
+      color: #ffffff;
+      border-color: #004d40;
+    }
+
+    /* ⬆️ สไตล์ปุ่มลอยเลื่อนขึ้นบนสุด (Scroll to Top) */
+    .btn-scroll-top {
+      position: fixed;
+      bottom: 45px;
+      right: 18px;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: #00796b;
+      color: #ffffff;
+      border: 2px solid #ffc107;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 1020;
+      transition: all 0.2s ease-in-out;
+      font-size: 1rem;
+    }
+    .btn-scroll-top:hover {
+      background: #004d40;
+      transform: translateY(-3px);
+    }
+
     /* 🌿 สไตล์แถบ Footer ขนาดกะทัดรัด (Slim & Sleek) */
     .footer-custom { 
       background: linear-gradient(135deg, #004d40 0%, #00796b 100%); 
@@ -212,15 +267,17 @@
           <div id="selectedDeptsDisplay" class="mt-2 overflow-y-auto overflow-x-hidden" style="max-height: 120px;"></div>
         </div>
 
-        <!-- ตรงกลาง (สัดส่วน 7 กว้างพิเศษ): ปุ่มเลือกหนังสือ + แสดงรายชื่อหนังสือใต้ปุ่ม -->
+        <!-- ตรงกลาง (สัดส่วน 7 กว้างพิเศษ): พื้นที่เลือกและลากวางไฟล์ (Drag & Drop Zone) -->
         <div class="col-12 col-md-7">
-          <label for="fileInput" class="btn btn-action-file w-100 py-2 fw-bold text-start d-flex justify-content-between align-items-center shadow-sm mb-0 cursor-pointer">
-            <span class="text-truncate" style="font-size: 0.88rem;">📎 เลือกไฟล์หนังสือ</span>
-            <span id="fileCountBadge" class="badge bg-light text-dark">0 ไฟล์</span>
-          </label>
-          <input type="file" id="fileInput" class="d-none" multiple>
-          <!-- แสดงรายชื่อไฟล์ใต้ปุ่ม พร้อมแถบเลื่อนเมื่อมีหลายไฟล์ -->
-          <div id="fileChipsContainer" class="mt-2 d-flex flex-column gap-1 overflow-auto" style="max-height: 120px;"></div>
+          <div id="dropZone" class="drop-zone p-1">
+            <label for="fileInput" class="btn btn-action-file w-100 py-2 fw-bold text-start d-flex justify-content-between align-items-center shadow-sm mb-0 cursor-pointer">
+              <span class="text-truncate" style="font-size: 0.88rem;">📎 เลือกไฟล์ หรือลากไฟล์ PDF มาวางที่นี่</span>
+              <span id="fileCountBadge" class="badge bg-light text-dark">0 ไฟล์</span>
+            </label>
+            <input type="file" id="fileInput" class="d-none" multiple accept=".pdf">
+            <!-- แสดงรายชื่อไฟล์ใต้ปุ่ม พร้อมแถบเลื่อนเมื่อมีหลายไฟล์ -->
+            <div id="fileChipsContainer" class="mt-2 d-flex flex-column gap-1 overflow-auto" style="max-height: 120px;"></div>
+          </div>
         </div>
 
         <!-- ฝั่งขวา (สัดส่วน 2 กระชับ): ปุ่มกดส่ง -->
@@ -559,10 +616,15 @@
         </div>
       </div>
     </div>
+  <!-- ⬆️ ปุ่มลอยเลื่อนกลับขึ้นบนสุด (Scroll to Top) -->
+    <button id="scrollTopBtn" class="btn-scroll-top" onclick="scrollToTop()" title="กลับขึ้นบนสุด">
+      ▲
+    </button>
+
   <!-- 🌿 แถบ Footer ขนาดกะทัดรัด ประหยัดพื้นที่หน้าจอ -->
     <footer class="footer-custom py-1 px-3 shadow-lg fixed-bottom d-flex justify-content-between align-items-center flex-nowrap overflow-hidden" style="font-size: 0.72rem; z-index: 1030; min-height: 26px;">
       <span class="fw-bold text-white text-nowrap text-truncate me-2" style="letter-spacing: 0.1px;">
-        💻 สร้างโดย นายราชศักดิ์ ไพฑูรย์เลิศ
+        💻 Create by BACKZAA
       </span>
       <span id="appVersionDisplay" class="badge bg-warning text-dark fw-bold px-2 py-0 shadow-sm flex-shrink-0" style="font-size: 0.65rem; line-height: 1.5;">
         กำลังโหลดเวอร์ชัน...
@@ -991,7 +1053,9 @@
             <button onclick="openPdfViewer('${col[4]}', '${encodeURIComponent(cleanFileName)}')" class="btn btn-sm btn-primary shadow-sm flex-grow-1">
               เปิดดู
             </button>
-            <button onclick="copyLink('${col[4]}')" class="btn btn-sm btn-copy shadow-sm">คัดลอก</button>
+            <button onclick="copyDeepLink('${col[4]}', '${encodeURIComponent(cleanFileName)}')" class="btn btn-sm btn-copy shadow-sm" title="คัดลอกลิงก์เปิดอ่านในแอปทันที">
+              คัดลอก
+            </button>
           </div>
         `;
       }
@@ -1522,6 +1586,147 @@
     `).join('');
   }
 
+// --- 13. ระบบ In-App Deep Linking & คัดลอกลิงก์เปิดอ่านในแอป ---
+  function copyDeepLink(fileUrl, encodedTitle) {
+    const deepUrl = `${window.location.origin}${window.location.pathname}?view=${encodeURIComponent(fileUrl)}&title=${encodedTitle}`;
+    navigator.clipboard.writeText(deepUrl).then(() => {
+      alert("✅ คัดลอกลิงก์เปิดเอกสารในแอปแล้ว! สามารถส่งแชร์ทาง LINE เพื่อเปิดอ่านได้ทันที");
+    }).catch(() => {
+      const t = document.createElement("textarea"); t.value = deepUrl; document.body.appendChild(t); t.select();
+      document.execCommand("copy"); document.body.removeChild(t);
+      alert("✅ คัดลอกลิงก์เปิดเอกสารในแอปแล้ว!");
+    });
+  }
+
+  // --- 14. ระบบลากและวางไฟล์ (Drag & Drop File Upload) ---
+  function setupDragAndDrop() {
+    const dropZone = document.getElementById('dropZone');
+    if (!dropZone) return;
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropZone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.add('drag-active');
+      }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropZone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropZone.classList.remove('drag-active');
+      }, false);
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      const files = Array.from(e.dataTransfer.files).filter(f => f.name.toLowerCase().endsWith('.pdf'));
+      if (files.length === 0) return alert("⚠️ กรุณาวางเฉพาะไฟล์เอกสาร .pdf เท่านั้น");
+
+      files.forEach(file => {
+        if (!selectedFilesArray.some(f => f.name === file.name)) {
+          selectedFilesArray.push(file);
+        }
+      });
+      renderFileList();
+    }, false);
+  }
+
+  // --- 15. ระบบคัดกรองช่วงเวลาด่วน (Quick Date Filter Chips) ---
+  let activeDateFilter = 'all';
+
+  function setDateFilter(type) {
+    activeDateFilter = type;
+    document.querySelectorAll('.btn-filter-chip').forEach(btn => btn.classList.remove('active'));
+    
+    if (type === 'all') document.getElementById('chipAll').classList.add('active');
+    if (type === 'today') document.getElementById('chipToday').classList.add('active');
+    if (type === '7days') document.getElementById('chip7Days').classList.add('active');
+    if (type === 'month') document.getElementById('chipMonth').classList.add('active');
+
+    applyDateFilterToTable();
+  }
+
+  function applyDateFilterToTable() {
+    if (activeDateFilter === 'all') {
+      displayTable(allLogs);
+      return;
+    }
+
+    const now = new Date();
+    const todayStr = `${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear() + 543}`;
+
+    const filtered = allLogs.filter(row => {
+      if (!row || row[0] === "❌") return false;
+      const rawDate = row[0].split(/[T\s,]+/)[0];
+      
+      let rowDateObj = null;
+      if (rawDate.includes("/")) {
+        const p = rawDate.split("/");
+        let yr = parseInt(p[2]); if (yr > 2500) yr -= 543;
+        rowDateObj = new Date(yr, parseInt(p[1]) - 1, parseInt(p[0]));
+      } else if (rawDate.includes("-")) {
+        const p = rawDate.split("-");
+        let yr = parseInt(p[0]); if (yr > 2500) yr -= 543;
+        rowDateObj = new Date(yr, parseInt(p[1]) - 1, parseInt(p[2]));
+      }
+      if (!rowDateObj) return false;
+
+      if (activeDateFilter === 'today') {
+        return rowDateObj.toDateString() === now.toDateString();
+      } else if (activeDateFilter === '7days') {
+        const diffDays = (now - rowDateObj) / (1000 * 60 * 60 * 24);
+        return diffDays >= 0 && diffDays <= 7;
+      } else if (activeDateFilter === 'month') {
+        return rowDateObj.getMonth() === now.getMonth() && rowDateObj.getFullYear() === now.getFullYear();
+      }
+      return true;
+    });
+
+    displayTable(filtered);
+  }
+
+  // --- 16. ระบบส่งออกข้อมูลรายงานเป็นไฟล์ CSV / Excel ---
+  function exportToCSV() {
+    if (!allLogs || allLogs.length === 0) return alert("ไม่มีข้อมูลสำหรับส่งออก");
+
+    const selectedYear = document.getElementById('yearSelect').value;
+    const selectedDept = (currentUser.role === 'Admin') ? document.getElementById('deptFilter').value : currentUser.role;
+
+    let csvContent = "\uFEFFวันที่,ผู้ส่ง,ชื่อหนังสือ,กลุ่มงาน,ลิงก์เอกสาร\n";
+
+    allLogs.forEach(row => {
+      if (!row || row[0] === "❌") return;
+      const date = `"${(row[0] || '').replace(/"/g, '""')}"`;
+      const sender = `"${(row[1] || '').replace(/"/g, '""')}"`;
+      const fileName = `"${(row[2] || '').replace(/"/g, '""')}"`;
+      const dept = `"${(row[3] || '').replace(/"/g, '""')}"`;
+      const link = `"${(row[4] || '').replace(/"/g, '""')}"`;
+      csvContent += `${date},${sender},${fileName},${dept},${link}\n`;
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `รายงานทะเบียนหนังสือรับ_${selectedDept}_${selectedYear}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  // --- 17. ปุ่มลอยเลื่อนกลับขึ้นบนสุด (Scroll to Top) ---
+  function scrollToTop() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  window.addEventListener('scroll', () => {
+    const topBtn = document.getElementById('scrollTopBtn');
+    if (topBtn) {
+      topBtn.style.display = (window.scrollY > 280) ? 'flex' : 'none';
+    }
+  });
+
   async function addNewStaffName() {
     const input = document.getElementById('newStaffNameInput');
     const name = input.value.trim();
@@ -1761,19 +1966,18 @@
 
   // --- 10. ฟังก์ชันติดตั้งความจำและควบคุมการดึงพารามิเตอร์ลิงก์ทางลัดเมื่อโหลดเสร็จ ---
   window.addEventListener('load', () => {
-    // 📱 ลงทะเบียน Service Worker เพื่อเปิดใช้งานคุณสมบัติ PWA
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js').catch(err => console.warn('PWA SW Fail:', err));
     }
 
     loadStaffList(); 
     fetchAppVersion(); 
+    setupDragAndDrop(); // 📂 เปิดใช้งานระบบลากวางไฟล์
     
-    // 🧠 ตรรกะผูก Event อัจฉริยะ: ควบคุมช่องค้นหาและ Dropdown อัตโนมัติ ป้องกันปัญหาทางโค้ด HTML ผิดเพี้ยน
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
         searchInput.oninput = handleSearchInput;
-        searchInput.onkeypress = null; // ปลดล็อกการดักปุ่ม Enter แบบดั้งเดิมออกทิ้ง
+        searchInput.onkeypress = null;
         searchInput.placeholder = "พิมพ์ชื่อหนังสือเพื่อค้นหาอัตโนมัติ...";
     }
     const yearSelect = document.getElementById('yearSelect');
@@ -1783,6 +1987,14 @@
     if (deptFilter) deptFilter.onchange = resetAndReloadLogs;
 
     const p = new URLSearchParams(window.location.search);
+    
+    // 🔗 ระบบ Deep Link: หากมีพารามิเตอร์ view ให้เปิดอ่าน PDF ในแอปทันที
+    if (p.get('view')) {
+      const viewUrl = p.get('view');
+      const viewTitle = p.get('title') || "เอกสารหนังสือรับ";
+      openPdfViewer(viewUrl, viewTitle);
+    }
+
     if (p.get('u') && p.get('p')) {
         localStorage.clear(); 
         document.getElementById('user').value = p.get('u');

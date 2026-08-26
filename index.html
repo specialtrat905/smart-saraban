@@ -1339,13 +1339,14 @@
       dupUl.innerHTML = '';
     }
 
-    // รีเซ็ตแถบความก้าวหน้า (Progress Bar)
+    // รีเซ็ตแถบความก้าวหน้า (Progress Bar) และปุ่มกดให้กลับเป็นค่าเริ่มต้น
     document.getElementById('uploadProgressSection').style.display = 'none';
     document.getElementById('uploadProgressBar').style.width = '0%';
     document.getElementById('uploadPercentText').innerText = '0%';
     document.getElementById('uploadCancelBtn').style.display = 'inline-block';
     document.getElementById('uploadConfirmBtn').style.display = 'inline-block';
     document.getElementById('uploadConfirmBtn').disabled = false;
+    document.getElementById('uploadConfirmBtn').innerHTML = '✅ ยืนยันการส่ง';
     document.getElementById('uploadModalCloseX').style.display = 'block';
 
     if (!uploadModalInstance) {
@@ -1370,75 +1371,81 @@
     closeX.style.display = 'none';
     progressSection.style.display = 'block';
 
-    const receiverSuffix = otherStaffNames.length > 0 ? ` [${otherStaffNames.join(', ')}]` : "";
-    const totalSteps = (selectedDepartments.length * selectedFilesArray.length) + selectedDepartments.length;
-    let completedSteps = 0;
+    const totalFilesCount = selectedFilesArray.length;
+    const totalDeptsCount = selectedDepartments.length;
 
-    function updateProgress(msg) {
-      completedSteps++;
-      const pct = Math.min(Math.round((completedSteps / totalSteps) * 100), 100);
-      progressBar.style.width = `${pct}%`;
-      percentText.innerText = `${pct}%`;
-      statusText.innerText = msg;
-    }
+    try {
+      const receiverSuffix = otherStaffNames.length > 0 ? ` [${otherStaffNames.join(', ')}]` : "";
+      const totalSteps = (selectedDepartments.length * selectedFilesArray.length) + selectedDepartments.length;
+      let completedSteps = 0;
 
-    for (let dept of selectedDepartments) {
-      let uploadedFiles = [];
-      const currentSuffix = (dept === "อื่นๆ") ? receiverSuffix : "";
-
-      for (let file of selectedFilesArray) {
-        updateProgress(`กำลังส่งฝ่าย [${dept}]: ${file.name.substring(0, 15)}...`);
-        try {
-          const fileData = await new Promise(resolve => { 
-            const r = new FileReader(); 
-            r.onload = e => resolve(e.target.result); 
-            r.readAsDataURL(file); 
-          });
-
-          let originalName = file.name;
-          let newFileName = originalName.toLowerCase().endsWith(".pdf") 
-              ? originalName.slice(0, -4) + currentSuffix + ".pdf" 
-              : originalName + currentSuffix;
-
-          const res = await fetch(SCRIPT_URL, { 
-              method: 'POST', 
-              body: JSON.stringify({ 
-                  department: dept, 
-                  sender: currentUser.name, 
-                  fileName: newFileName, 
-                  fileData: fileData 
-              }) 
-          });
-          const result = await res.json();
-          if (result.success) uploadedFiles.push({ name: result.fileName, url: result.url });
-        } catch (err) { console.error(err); }
+      function updateProgress(msg) {
+        completedSteps++;
+        const pct = Math.min(Math.round((completedSteps / totalSteps) * 100), 100);
+        progressBar.style.width = `${pct}%`;
+        percentText.innerText = `${pct}%`;
+        statusText.innerText = msg;
       }
 
-      if (uploadedFiles.length > 0) {
-        updateProgress(`กำลังแจ้งเตือน LINE ไปยัง [${dept}]...`);
-        try {
-          await fetch(SCRIPT_URL, {
-            method: 'POST',
-            body: JSON.stringify({
-              action: "sendBatchNotification", 
-              department: dept,
-              sender: currentUser.name, 
-              fileList: uploadedFiles
-            })
-          });
-        } catch (err) { console.error(err); }
-      } else {
-        updateProgress(`เสร็จสิ้นกลุ่มงาน [${dept}]`);
+      for (let dept of selectedDepartments) {
+        let uploadedFiles = [];
+        const currentSuffix = (dept === "อื่นๆ") ? receiverSuffix : "";
+
+        for (let file of selectedFilesArray) {
+          updateProgress(`กำลังส่งฝ่าย [${dept}]: ${file.name.substring(0, 15)}...`);
+          try {
+            const fileData = await new Promise((resolve, reject) => { 
+              const r = new FileReader(); 
+              r.onload = e => resolve(e.target.result); 
+              r.onerror = err => reject(err);
+              r.readAsDataURL(file); 
+            });
+
+            let originalName = file.name;
+            let newFileName = originalName.toLowerCase().endsWith(".pdf") 
+                ? originalName.slice(0, -4) + currentSuffix + ".pdf" 
+                : originalName + currentSuffix;
+
+            const res = await fetch(SCRIPT_URL, { 
+                method: 'POST', 
+                body: JSON.stringify({ 
+                    department: dept, 
+                    sender: currentUser.name, 
+                    fileName: newFileName, 
+                    fileData: fileData 
+                }) 
+            });
+            const result = await res.json();
+            if (result.success) uploadedFiles.push({ name: result.fileName, url: result.url });
+          } catch (err) { console.error(err); }
+        }
+
+        if (uploadedFiles.length > 0) {
+          updateProgress(`กำลังแจ้งเตือน LINE ไปยัง [${dept}]...`);
+          try {
+            await fetch(SCRIPT_URL, {
+              method: 'POST',
+              body: JSON.stringify({
+                action: "sendBatchNotification", 
+                department: dept,
+                sender: currentUser.name, 
+                fileList: uploadedFiles
+              })
+            });
+          } catch (err) { console.error(err); }
+        } else {
+          updateProgress(`เสร็จสิ้นกลุ่มงาน [${dept}]`);
+        }
       }
-    }
 
-    progressBar.style.width = '100%';
-    percentText.innerText = '100%';
-    statusText.innerText = '✅ ส่งหนังสือและแจ้งเตือน LINE เรียบร้อยแล้ว!';
+      progressBar.style.width = '100%';
+      percentText.innerText = '100%';
+      statusText.innerText = '✅ ส่งหนังสือและแจ้งเตือน LINE เรียบร้อยแล้ว!';
 
-    setTimeout(() => {
+      await new Promise(r => setTimeout(r, 600));
+
       if (uploadModalInstance) uploadModalInstance.hide();
-      alert(`สำเร็จ! ส่งหนังสือ ${selectedFilesArray.length} ฉบับ ให้กับ ${selectedDepartments.length} กลุ่มงาน เรียบร้อยแล้ว`);
+      alert(`สำเร็จ! ส่งหนังสือ ${totalFilesCount} ฉบับ ให้กับ ${totalDeptsCount} กลุ่มงาน เรียบร้อยแล้ว`);
       
       // ล้างไฟล์แนบ
       selectedFilesArray = []; 
@@ -1454,7 +1461,20 @@
 
       dataCache = {}; 
       resetAndReloadLogs();
-    }, 600);
+
+    } catch (err) {
+      console.error("Upload Error:", err);
+      alert("⚠️ เกิดข้อผิดพลาดในระหว่างการส่งหนังสือ กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      // 🔄 ปลดล็อกและคืนค่าสถานะปุ่มกดยืนยันให้พร้อมส่งรอบใหม่เสมอ
+      confirmBtn.disabled = false;
+      confirmBtn.innerHTML = `✅ ยืนยันการส่ง`;
+      cancelBtn.style.display = 'inline-block';
+      closeX.style.display = 'block';
+      progressSection.style.display = 'none';
+      progressBar.style.width = '0%';
+      percentText.innerText = '0%';
+    }
   }
 
   // --- 10. ระบบจัดการแก้ไขฐานข้อมูล (เลือกลบ หรือ แก้ไขกลุ่มงาน) ---

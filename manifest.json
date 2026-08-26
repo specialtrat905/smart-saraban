@@ -5,14 +5,20 @@
   "start_url": "./index.html",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#edf4f2",
+  "background_color": "#ffffff",
   "theme_color": "#004d40",
   "icons": [
     {
-      "src": "https://lh3.googleusercontent.com/d/1kLyYDJNV7hYAD0YERRxW8GEgJNB-XplP",
-      "sizes": "192x192 512x512",
+      "src": "./logo.png?v=2",
+      "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "./logo.png?v=2",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

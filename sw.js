@@ -1,5 +1,5 @@
 // 📱 Service Worker ควบคุมการติดตั้ง PWA และโหลดหน้าเว็บรวดเร็ว
-const CACHE_NAME = 'saraban-cache-v1';
+const CACHE_NAME = 'saraban-cache-v2';
 
 self.addEventListener('install', (e) => {
   self.skipWaiting();

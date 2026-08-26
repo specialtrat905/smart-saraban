@@ -92,17 +92,14 @@
       padding-bottom: 34px; 
     }
 
-    /* 📂 สไตล์กรอบลากวางไฟล์ (Drag & Drop Zone) */
-    .drop-zone {
-      border: 2px dashed #4f46e5;
-      border-radius: 10px;
+    /* 📂 เอฟเฟกต์ตอนลากไฟล์มาวาง (ปุ่มเปลี่ยนเป็นสีเขียวและยุบตัวเล็กน้อย ไม่มีเส้นประ) */
+    #dropZone {
       transition: all 0.2s ease-in-out;
-      background: #ffffff;
     }
-    .drop-zone.drag-active {
-      border-color: #00796b !important;
-      background-color: #e8f5e9 !important;
-      transform: scale(1.01);
+    #dropZone.drag-active .btn-action-file {
+      background-color: #00796b !important;
+      transform: scale(0.98);
+      box-shadow: 0 0 10px rgba(0, 121, 107, 0.4) !important;
     }
 
     /* ⚡ สไตล์ปุ่มตัวกรองด่วน (Quick Filter Chips) */
@@ -267,17 +264,15 @@
           <div id="selectedDeptsDisplay" class="mt-2 overflow-y-auto overflow-x-hidden" style="max-height: 120px;"></div>
         </div>
 
-        <!-- ตรงกลาง (สัดส่วน 7 กว้างพิเศษ): พื้นที่เลือกและลากวางไฟล์ (Drag & Drop Zone) -->
-        <div class="col-12 col-md-7">
-          <div id="dropZone" class="drop-zone p-1">
-            <label for="fileInput" class="btn btn-action-file w-100 py-2 fw-bold text-start d-flex justify-content-between align-items-center shadow-sm mb-0 cursor-pointer">
-              <span class="text-truncate" style="font-size: 0.88rem;">📎 เลือกไฟล์ หรือลากไฟล์ PDF มาวางที่นี่</span>
-              <span id="fileCountBadge" class="badge bg-light text-dark">0 ไฟล์</span>
-            </label>
-            <input type="file" id="fileInput" class="d-none" multiple accept=".pdf">
-            <!-- แสดงรายชื่อไฟล์ใต้ปุ่ม พร้อมแถบเลื่อนเมื่อมีหลายไฟล์ -->
-            <div id="fileChipsContainer" class="mt-2 d-flex flex-column gap-1 overflow-auto" style="max-height: 120px;"></div>
-          </div>
+        <!-- ตรงกลาง (สัดส่วน 7 กว้างพิเศษ): ปุ่มเลือกหนังสือแบบเดิม (รองรับการลากไฟล์มาวางได้) -->
+        <div class="col-12 col-md-7" id="dropZone">
+          <label for="fileInput" class="btn btn-action-file w-100 py-2 fw-bold text-start d-flex justify-content-between align-items-center shadow-sm mb-0 cursor-pointer">
+            <span class="text-truncate" style="font-size: 0.88rem;">📎 เลือกไฟล์หนังสือ</span>
+            <span id="fileCountBadge" class="badge bg-light text-dark">0 ไฟล์</span>
+          </label>
+          <input type="file" id="fileInput" class="d-none" multiple accept=".pdf">
+          <!-- แสดงรายชื่อไฟล์ใต้ปุ่ม พร้อมแถบเลื่อนเมื่อมีหลายไฟล์ -->
+          <div id="fileChipsContainer" class="mt-2 d-flex flex-column gap-1 overflow-auto" style="max-height: 120px;"></div>
         </div>
 
         <!-- ฝั่งขวา (สัดส่วน 2 กระชับ): ปุ่มกดส่ง -->
@@ -869,7 +864,7 @@
           const dateStr = `${day}/${month}/${thaiYearShort}`;
           
           // 3. แสดงผลรูปแบบ เช่น: V 5.22 (Fix 1) (อัพเดท 25/08/69)
-          versionElem.innerText = `${commitMessage} (อัพเดท ${dateStr})`;
+          versionElem.innerText = `${commitMessage}`;
           return;
         }
       }

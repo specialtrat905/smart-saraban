@@ -446,7 +446,10 @@
               <a id="pdfModalExternalBtn" href="#" target="_blank" class="btn btn-sm btn-outline-light text-nowrap" style="font-size: 0.75rem;">
                 ↗️ เปิดใน Drive
               </a>
-              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+              <!-- 🔴 ปุ่มปิดสีแดงเด่นชัด มองเห็นและกดง่าย -->
+              <button type="button" class="btn btn-danger btn-sm px-2 py-1 fw-bold shadow-sm d-flex align-items-center gap-1" data-bs-dismiss="modal" title="ปิดหน้าต่าง" style="font-size: 0.8rem; border-radius: 6px;">
+                <span>✕</span> <span>ปิด</span>
+              </button>
             </div>
           </div>
           <div class="modal-body p-0 bg-secondary bg-opacity-10 h-100">
@@ -1004,11 +1007,14 @@
 
       let staffBadge = "";
 
+      let plainFileName = cleanFileName; // 📄 ตัวแปรเก็บชื่อหนังสือข้อความล้วนสำหรับเปิดพรีวิวและคัดลอก
+
       if (!isMissing) {
           const nameMatch = fullFileName.match(/\[(.*?)\]/);
           if (nameMatch) {
               const names = nameMatch[1];
               cleanFileName = fullFileName.replace(/\[.*?\]/, "").trim();
+              plainFileName = cleanFileName;
               staffBadge = `<div class="mb-1"><small class="badge border" style="font-size: 0.7rem; font-weight: 400; background-color: #adb5bd; color: #fff; border-color: rgba(0,0,0,0.1) !important; white-space: normal; text-align: left;">${names}</small></div>`;
           }
 
@@ -1045,10 +1051,10 @@
       } else {
         actionColumnHTML = `
           <div class="action-buttons justify-content-center">
-            <button onclick="openPdfViewer('${col[4]}', '${encodeURIComponent(cleanFileName)}')" class="btn btn-sm btn-primary shadow-sm flex-grow-1">
+            <button onclick="openPdfViewer('${col[4]}', '${encodeURIComponent(plainFileName)}')" class="btn btn-sm btn-primary shadow-sm flex-grow-1">
               เปิดดู
             </button>
-            <button onclick="copyDeepLink('${col[4]}', '${encodeURIComponent(cleanFileName)}')" class="btn btn-sm btn-copy shadow-sm" title="คัดลอกลิงก์เปิดอ่านในแอปทันที">
+            <button onclick="copyDeepLink('${col[4]}', '${encodeURIComponent(plainFileName)}')" class="btn btn-sm btn-copy shadow-sm" title="คัดลอกลิงก์เปิดอ่านในแอป">
               คัดลอก
             </button>
           </div>
@@ -1538,7 +1544,8 @@
   let pdfModalInstance = null;
 
   function openPdfViewer(fileUrl, encodedTitle) {
-    const title = decodeURIComponent(encodedTitle);
+    // 🧹 ล้างแท็ก HTML ออกทั้งหมดเพื่อให้แสดงผลเฉพาะชื่อเรื่องสะอาดตา
+    const title = decodeURIComponent(encodedTitle).replace(/<[^>]*>?/gm, '').trim();
     const idMatch = fileUrl.match(/[-\w]{25,}/);
     const previewUrl = idMatch ? `https://drive.google.com/file/d/${idMatch[0]}/preview` : fileUrl;
 

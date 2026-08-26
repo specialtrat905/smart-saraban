@@ -14,6 +14,43 @@
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <style>
+    /* ✨ กรอบโลโก้ 3D Acrylic Badge สำหรับหน้าแรก */
+    .logo-3d-wrapper {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.95), rgba(237, 244, 242, 0.6));
+      border: 2px solid #b2dfdb;
+      box-shadow: 0 10px 25px rgba(0, 77, 64, 0.15), 
+                  inset 0 2px 4px rgba(255, 255, 255, 0.8),
+                  inset 0 -2px 4px rgba(0, 77, 64, 0.08);
+      transition: all 0.3s ease;
+    }
+    .logo-3d-wrapper:hover {
+      transform: translateY(-3px) scale(1.03);
+      box-shadow: 0 15px 30px rgba(0, 77, 64, 0.22);
+    }
+    .logo-3d-img {
+      max-height: 90px;
+      width: auto;
+      object-fit: contain;
+      filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.18));
+    }
+
+    /* ✨ โลโก้บน Navbar ให้มีมิติคมชัด */
+    .navbar-logo-glow {
+      height: 34px;
+      width: auto;
+      object-fit: contain;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3)) brightness(1.05);
+      transition: transform 0.2s ease;
+    }
+    .navbar-logo-glow:hover {
+      transform: scale(1.08);
+    }
     /* 🎨 สไตล์สีปุ่มทึบเนื้อแน่น (Solid Matte) สำหรับ Navbar */
     .btn-nav-edit {
       background-color: #d99b00 !important;
@@ -76,6 +113,20 @@
       .table th, .table td { padding: 0.5rem 0.2rem !important; }
       .action-buttons { flex-direction: column; gap: 4px; } /* บนมือถือปรับปุ่มเป็นแนวตั้งเรียงต่อกัน */
       .action-buttons .btn { width: 100%; font-size: 0.75rem; padding: 0.25rem 0.2rem; }
+      
+      /* 📱 บังคับให้ Footer บนมือถืออยู่บรรทัดเดียว ไม่ตัดขึ้นบรรทัดใหม่ */
+      .footer-custom { 
+        padding: 4px 8px !important; 
+        font-size: 0.62rem !important; 
+        flex-wrap: nowrap !important; 
+      }
+      .footer-custom span { 
+        white-space: nowrap !important; 
+      }
+      #appVersionDisplay { 
+        font-size: 0.58rem !important; 
+        padding: 1px 5px !important; 
+      }
     }
     /* ✨ เพิ่มเอฟเฟกต์ปุ่มกดแบบ Interactive (ปุ่มยุบตัวเวลาคลิกเหมือนกดจริง) */
     .btn-interactive {
@@ -108,9 +159,11 @@
 
 <div id="loginPage" class="container mt-5" style="max-width: 400px;">
   <div class="card p-4 shadow-lg text-center border-0">
-    <!-- 🏫 โลโก้ด้านบนชื่อระบบ (นำรหัสไฟล์จาก Drive มาใส่แทนคำว่า รหัสไฟล์_ID) -->
-    <div class="mb-3">
-      <img src="https://lh3.googleusercontent.com/d/1kLyYDJNV7hYAD0YERRxW8GEgJNB-XplP" alt="Logo" class="img-fluid" style="max-height: 40x; width: auto; object-fit: contain;">
+    <!-- 🏫 โลโก้ทางการพร้อมกรอบ 3D Acrylic Badge หรูหรา -->
+    <div class="mb-3 text-center">
+      <div class="logo-3d-wrapper">
+        <img src="./logo.png" alt="Logo ศกศ.ตราด" class="logo-3d-img">
+      </div>
     </div>
     <h3 class="fw-bold text-success mb-4">ระบบส่งหนังสือ ศกศ.ตราด</h3>
     <input type="text" id="user" class="form-control mb-3" placeholder="ชื่อผู้ใช้">
@@ -127,7 +180,7 @@
   <nav class="navbar nav-custom p-2 px-3 shadow-sm sticky-top">
     <div class="container-fluid">
       <div class="d-flex align-items-center gap-2">
-        <img src="https://lh3.googleusercontent.com/d/1kLyYDJNV7hYAD0YERRxW8GEgJNB-XplP" alt="Logo" style="height: 32px; width: auto; object-fit: contain; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));">
+        <img src="./logo.png" alt="Logo ศกศ.ตราด" class="navbar-logo-glow">
         <div id="userNavContainer" class="d-flex align-items-center gap-2"></div>
       </div>
       <div class="d-flex gap-2 align-items-center">
@@ -509,11 +562,11 @@
       </div>
     </div>
   <!-- 🌿 แถบ Footer ขนาดกะทัดรัด ประหยัดพื้นที่หน้าจอ -->
-    <footer class="footer-custom py-1 px-3 shadow-lg fixed-bottom d-flex justify-content-between align-items-center" style="font-size: 0.72rem; z-index: 1030; min-height: 28px;">
-      <span class="fw-bold text-white" style="letter-spacing: 0.2px;">
+    <footer class="footer-custom py-1 px-3 shadow-lg fixed-bottom d-flex justify-content-between align-items-center flex-nowrap overflow-hidden" style="font-size: 0.72rem; z-index: 1030; min-height: 26px;">
+      <span class="fw-bold text-white text-nowrap text-truncate me-2" style="letter-spacing: 0.1px;">
         💻 สร้างโดย นายราชศักดิ์ ไพฑูรย์เลิศ
       </span>
-      <span id="appVersionDisplay" class="badge bg-warning text-dark fw-bold px-2 py-0 shadow-sm" style="font-size: 0.68rem; line-height: 1.5;">
+      <span id="appVersionDisplay" class="badge bg-warning text-dark fw-bold px-2 py-0 shadow-sm flex-shrink-0" style="font-size: 0.65rem; line-height: 1.5;">
         กำลังโหลดเวอร์ชัน...
       </span>
     </footer>

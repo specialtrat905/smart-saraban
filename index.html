@@ -788,35 +788,31 @@
   // --- 3. ระบบรักษาความปลอดภัยและจัดการสิทธิ์การเข้าใช้งาน ---
   function checkSession() {
     const savedUser = localStorage.getItem('sarabanUser');
-    const loginTime = localStorage.getItem('loginTime');
     
-    if (savedUser && loginTime) {
-        const now = new Date().getTime();
-        const twoHours = 2 * 60 * 60 * 1000; 
-        
-        if (now - loginTime < twoHours) {
-            currentUser = JSON.parse(savedUser);
-            document.getElementById('loginPage').style.display = 'none';
-            document.getElementById('mainApp').style.display = 'block';
-            renderUserNavbar();
+    // 📱 ถ้าเคยล็อกอินไว้ในเครื่องแล้ว ให้เปิดเข้าใช้งานได้ทันทีโดยไม่มีหมดเวลา
+    if (savedUser) {
+        currentUser = JSON.parse(savedUser);
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'block';
+        renderUserNavbar();
 
-            if(currentUser.role === 'Admin') {
-                document.getElementById('logoutBtn').style.display = 'block'; 
-                document.getElementById('adminView').style.display = 'block';
-                document.getElementById('deptFilterContainer').style.display = 'block';
-                document.getElementById('editDbBtn').style.display = 'block';
-                document.getElementById('manageStaffBtn').style.display = 'block'; // แสดงปุ่มจัดการบุคลากร
-            } else {
-                document.getElementById('logoutBtn').style.display = 'none';  
-                document.getElementById('editDbBtn').style.display = 'none';
-                document.getElementById('manageStaffBtn').style.display = 'none';
-            }
+        // แสดงปุ่มออกจากระบบให้ทุกสิทธิ์ (เพื่อให้ User สลับฝ่ายหรือออกจากระบบได้)
+        document.getElementById('logoutBtn').style.display = 'block'; 
 
-            updateYearOptions();
-            resetAndReloadLogs(); 
+        if(currentUser.role === 'Admin') {
+            document.getElementById('adminView').style.display = 'block';
+            document.getElementById('deptFilterContainer').style.display = 'block';
+            document.getElementById('editDbBtn').style.display = 'block';
+            document.getElementById('manageStaffBtn').style.display = 'block';
         } else {
-            logout();
+            document.getElementById('adminView').style.display = 'none';
+            document.getElementById('deptFilterContainer').style.display = 'none';
+            document.getElementById('editDbBtn').style.display = 'none';
+            document.getElementById('manageStaffBtn').style.display = 'none';
         }
+
+        updateYearOptions();
+        resetAndReloadLogs(); 
     }
   }
 
@@ -1110,9 +1106,8 @@
       if (result) {
         currentUser = { user: result.user, role: result.role, name: result.name };
 
-        // 📱 บันทึกสิทธิ์ลงเครื่อง เพื่อให้ทุกกลุ่มงานเปิดแอป PWA มาแล้วใช้งานได้ทันที
+        // 📱 บันทึกสิทธิ์ลงเครื่องถาวร (เปิดผ่านไอคอนแอปได้ตลอดเวลา ไม่หลุด)
         localStorage.setItem('sarabanUser', JSON.stringify(currentUser));
-        localStorage.setItem('loginTime', new Date().getTime());
 
         if (currentUser.role === 'Admin') {
             document.getElementById('logoutBtn').style.display = 'block';

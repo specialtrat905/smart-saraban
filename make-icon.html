@@ -2,44 +2,17 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <title>สร้างไอคอนวงกลมสีทอง 3D - ศกศ.ตราด</title>
+  <title>สร้างไอคอนสีทองไร้ขอบขาว (512x512) - ศกศ.ตราด</title>
   <style>
-    body { 
-      background: #0f172a; 
-      color: #fff; 
-      font-family: sans-serif; 
-      display: flex; 
-      flex-direction: column; 
-      align-items: center; 
-      justify-content: center; 
-      min-height: 100vh; 
-      gap: 20px; 
-    }
-    /* พื้นหลังตารางหมากรุกแสดงความโปร่งใส */
-    .preview-box {
-      padding: 16px;
-      border-radius: 24px;
-      background: repeating-conic-gradient(#1e293b 0% 25%, #334155 0% 50%) 50% / 20px 20px;
-      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
-    }
-    canvas { display: block; }
-    button { 
-      background: linear-gradient(135deg, #f59e0b, #d97706); 
-      color: #000; 
-      font-weight: bold; 
-      border: none; 
-      padding: 12px 28px; 
-      border-radius: 10px; 
-      font-size: 1rem; 
-      cursor: pointer; 
-      box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
-      transition: all 0.2s ease;
-    }
-    button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(245, 158, 11, 0.6); }
+    body { background: #0f172a; color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 20px; }
+    .preview-box { padding: 16px; border-radius: 24px; box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6); }
+    canvas { display: block; border-radius: 20px; }
+    button { background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; font-weight: bold; border: none; padding: 12px 28px; border-radius: 10px; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4); }
+    button:hover { transform: translateY(-2px); }
   </style>
 </head>
 <body>
-  <h2>✨ พรีวิวไอคอนวงกลมสีทอง 3D (512x512 px)</h2>
+  <h2>✨ พรีวิวไอคอนสีทองเต็มผืน (ไร้ขอบขาวบน Android)</h2>
   
   <div class="preview-box">
     <canvas id="iconCanvas" width="512" height="512"></canvas>
@@ -51,67 +24,65 @@
     const canvas = document.getElementById('iconCanvas');
     const ctx = canvas.getContext('2d');
 
-    // ล้างพื้นหลังให้โปร่งใสทั้งหมด 100%
-    ctx.clearRect(0, 0, 512, 512);
-
     const centerX = 256;
     const centerY = 256;
-    const radius = 240; // รัศมีวงกลมหลักใน Safe Zone
+    const radius = 215; // ขนาดเหรียญทองใน Safe Zone ป้องกันโดนตัดขอบ
 
-    // 1. เงาตกกระทบภายนอกของเหรียญวงกลม (3D Outer Shadow)
+    // 1. เทพื้นหลังสีทองเต็มผืน 512x512 พิกเซล (แก้ปัญหามุมขาวถาวร)
+    const baseGrad = ctx.createRadialGradient(180, 160, 40, centerX, centerY, 360);
+    baseGrad.addColorStop(0, '#FEE48B');
+    baseGrad.addColorStop(0.5, '#D48B16');
+    baseGrad.addColorStop(1, '#8C5103');
+    ctx.fillStyle = baseGrad;
+    ctx.fillRect(0, 0, 512, 512);
+
+    // 2. วาดมิติเงาหลุม 3 มิติรอบเหรียญ
     ctx.save();
-    ctx.shadowColor = "rgba(0, 0, 0, 0.4)";
-    ctx.shadowBlur = 20;
-    ctx.shadowOffsetY = 10;
     ctx.beginPath();
-    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-    ctx.fillStyle = "#d48b16";
+    ctx.arc(centerX, centerY, radius + 8, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(0, 0, 0, 0.25)";
     ctx.fill();
     ctx.restore();
 
-    // 2. พื้นเหรียญวงกลมสีทองไล่เฉด 3 มิติ (Radial Metallic Gold)
-    const goldGrad = ctx.createRadialGradient(180, 160, 30, centerX, centerY, radius);
-    goldGrad.addColorStop(0, '#FFFDF0');   // จุดสะท้อนแสงสีทองสว่าง
-    goldGrad.addColorStop(0.25, '#FEE48B'); // สีทองนวล
-    goldGrad.addColorStop(0.55, '#E5A623'); // สีทองอร่าม
-    goldGrad.addColorStop(0.85, '#B87309'); // สีทองเข้ม
-    goldGrad.addColorStop(1, '#7C4A03');    // ขอบเงาทองลึก 3D
+    // 3. วาดเหรียญทองวงกลมนูนมิติ 3D ตรงกลาง
+    const coinGrad = ctx.createRadialGradient(190, 170, 30, centerX, centerY, radius);
+    coinGrad.addColorStop(0, '#FFFDF0');   // แสงไฮไลต์สีทองสว่าง
+    coinGrad.addColorStop(0.3, '#FEE48B'); // สีทองนวล
+    coinGrad.addColorStop(0.7, '#E5A623'); // สีทองอร่าม
+    coinGrad.addColorStop(1, '#B87309');    // ขอบทองเข้ม
 
     ctx.beginPath();
     ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-    ctx.fillStyle = goldGrad;
+    ctx.fillStyle = coinGrad;
     ctx.fill();
 
-    // 3. เส้นขอบเหรียญทองนูนมิติ 2 ชั้น (Double 3D Bevel Rim)
-    // ขอบชั้นนอก
+    // เส้นขอบเหรียญ 3 มิติ (Double Rim)
     ctx.beginPath();
-    ctx.arc(centerX, centerY, radius - 4, 0, Math.PI * 2);
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
-    ctx.lineWidth = 3;
+    ctx.arc(centerX, centerY, radius - 3, 0, Math.PI * 2);
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.7)";
+    ctx.lineWidth = 3.5;
     ctx.stroke();
 
-    // ขอบชั้นใน
     ctx.beginPath();
-    ctx.arc(centerX, centerY, radius - 16, 0, Math.PI * 2);
+    ctx.arc(centerX, centerY, radius - 14, 0, Math.PI * 2);
     ctx.strokeStyle = "rgba(124, 74, 3, 0.35)";
     ctx.lineWidth = 2.5;
     ctx.stroke();
 
-    // 4. โหลดและวาดภาพตราทางการให้อยู่ตรงกลางเหรียญพอดี
+    // 4. วาดภาพตราทางการให้อยู่ตรงกลางเหรียญอย่างสวยงาม
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.src = "https://lh3.googleusercontent.com/d/1kLyYDJNV7hYAD0YERRxW8GEgJNB-XplP";
 
     img.onload = () => {
-      const targetHeight = 350; // ย่อขนาดให้ยอดและฐานอยู่ภายในวงกลมพอดี
+      const targetHeight = 310;
       const targetWidth = (img.width / img.height) * targetHeight;
       const x = (512 - targetWidth) / 2;
       const y = (512 - targetHeight) / 2 + 2;
 
-      // มิติเงาให้ตัวตราลอยเด่นขึ้นมาจากเหรียญทอง
       ctx.save();
       ctx.shadowColor = "rgba(0, 0, 0, 0.35)";
-      ctx.shadowBlur = 14;
+      ctx.shadowBlur = 12;
       ctx.shadowOffsetY = 6;
       ctx.drawImage(img, x, y, targetWidth, targetHeight);
       ctx.restore();

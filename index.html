@@ -218,21 +218,31 @@
       box-shadow: 0 8px 18px rgba(0, 77, 64, 0.08);
       border-color: #00796b;
     }
-    /* 📋 สไตล์ตารางทะเบียนบุคลากรเต็มจอ กำหนดขนาดคอลัมน์ให้อ่านง่าย ไม่บีบอัด ไม่ซ้อนทับ */
+    /* 📋 สไตล์ตารางทะเบียนบุคลากร: ขนาดคอลัมน์พอดีกับข้อมูลที่ยาวที่สุด + ตัวหนาสีดำล้วน */
     .table-staff-custom {
       table-layout: auto !important;
       width: max-content !important;
       min-width: 100% !important;
     }
-    .table-staff-custom th, .table-staff-custom td {
+    .table-staff-custom th {
       white-space: nowrap !important;
       vertical-align: middle;
-      padding: 0.55rem 0.65rem !important;
+      padding: 0.5rem 0.75rem !important;
+      color: #000000 !important;
+      font-weight: bold !important;
+      background-color: #f1f5f9 !important;
+    }
+    .table-staff-custom td {
+      white-space: nowrap !important;
+      vertical-align: middle;
+      padding: 0.45rem 0.75rem !important;
+      color: #000000 !important;
+      font-weight: bold !important;
     }
     .table-staff-custom td.col-address {
       white-space: normal !important;
-      min-width: 200px;
-      max-width: 280px;
+      min-width: 160px;
+      max-width: 260px;
       word-break: break-word;
     }
   </style>
@@ -367,14 +377,14 @@
       <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 pb-2 border-bottom">
         <div>
           <h4 class="fw-bold text-success mb-0">👥 สมุดรายนามและทะเบียนบุคลากร ศกศ.ตราด</h4>
-          <small class="text-muted">บุคลากรทั้งหมด <span id="staffTotalCount" class="fw-bold text-dark">0</span> ท่าน</small>
+          <small class="text-muted">บุคลากรทั้งหมด <span id="staffTotalCount" class="fw-bold text-dark">0</span> คน</small>
         </div>
         <div class="d-flex gap-2">
           <button class="btn btn-sm btn-success fw-bold shadow-sm" onclick="openAddStaffForm()">
             ➕ เพิ่มบุคลากรใหม่
           </button>
           <button class="btn btn-sm btn-outline-secondary fw-bold shadow-sm" onclick="switchToSarabanView()">
-            ⬅️ กลับหน้าระบบสารบรรณ
+            ⬅️ กลับระบบส่งหนังสือ
           </button>
         </div>
       </div>
@@ -384,7 +394,7 @@
         <div class="col-12 col-md-6">
           <div class="input-group shadow-sm">
             <span class="input-group-text bg-white">🔍</span>
-            <input type="text" id="staffSearchInput" class="form-control" placeholder="พิมพ์ค้นหา ชื่อ, ชื่อเล่น, ตำแหน่ง, เบอร์โทร, ที่อยู่..." oninput="filterStaffDirectory()">
+            <input type="text" id="staffSearchInput" class="form-control" placeholder="พิมพ์ค้นหา ชื่อ, ตำแหน่ง, เบอร์โทร, ที่อยู่..." oninput="filterStaffDirectory()">
           </div>
         </div>
         <div class="col-12 col-md-6">
@@ -432,7 +442,11 @@
           </div>
           <div class="col-12 col-md-4">
             <label class="form-label small fw-bold mb-1">วัน เดือน ปีเกิด</label>
-            <input type="text" id="formStaffBirthDate" class="form-control form-control-sm" placeholder="เช่น 15 ม.ค. 2526">
+            <div class="input-group input-group-sm">
+              <input type="text" id="formStaffBirthDate" class="form-control" placeholder="เช่น 15 มกราคม 2526">
+              <button class="btn btn-outline-secondary" type="button" onclick="triggerDatePicker()" title="เลือกจากปฏิทิน">📅</button>
+              <input type="date" id="formStaffDatePickerHelper" class="d-none" onchange="syncDatePickerToThai(this.value)">
+            </div>
           </div>
           <div class="col-12 col-md-4">
             <label class="form-label small fw-bold mb-1">เบอร์โทรศัพท์</label>
@@ -475,22 +489,22 @@
         </div>
       </div>
 
-      <!-- 📋 ตารางแสดงรายชื่อบุคลากรเต็มจอแยกหมวดหมู่ (กำหนดความกว้างคอลัมน์แบบไม่อึดอัด) -->
+      <!-- 📋 ตารางแสดงรายชื่อบุคลากรเต็มจอแยกหมวดหมู่ (ความกว้างปรับตามข้อมูลจริงอัตโนมัติ) -->
       <div class="table-responsive border rounded shadow-sm bg-white" style="max-height: 72vh;">
         <table class="table table-hover table-bordered align-middle table-staff-custom mb-0" style="font-size: 0.86rem;">
           <thead class="table-light text-center sticky-top shadow-sm" style="z-index: 5;">
             <tr>
-              <th style="min-width: 55px; width: 55px;">ลำดับ</th>
-              <th style="min-width: 210px;">ชื่อ - นามสกุล</th>
-              <th style="min-width: 155px;">ตำแหน่ง</th>
-              <th style="min-width: 145px;">วัน เดือน ปีเกิด</th>
-              <th style="min-width: 120px;">เบอร์โทรศัพท์</th>
-              <th style="min-width: 200px;">ที่อยู่</th>
-              <th style="min-width: 160px;">เลขบัตรประชาชน</th>
-              <th style="min-width: 85px;">ชื่อเล่น</th>
-              <th style="min-width: 220px;">e - mail</th>
-              <th style="min-width: 105px;">หน่วยบริการ</th>
-              <th style="min-width: 100px; width: 100px;">จัดการ</th>
+              <th>ลำดับ</th>
+              <th>ชื่อ - นามสกุล</th>
+              <th>ตำแหน่ง</th>
+              <th>วัน เดือน ปีเกิด</th>
+              <th>เบอร์โทรศัพท์</th>
+              <th>ที่อยู่</th>
+              <th>เลขบัตรประชาชน</th>
+              <th>ชื่อเล่น</th>
+              <th>e - mail</th>
+              <th>หน่วยบริการ</th>
+              <th>จัดการ</th>
             </tr>
           </thead>
           <tbody id="staffTableBody"></tbody>
@@ -654,6 +668,32 @@
           <div class="modal-footer bg-light">
             <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">ยกเลิก</button>
             <button type="button" id="confirmDeleteBtn" class="btn btn-danger px-4 fw-bold" onclick="executeDelete()">🗑️ ยืนยันการลบถาวร</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- 🗑️ Modal ยืนยันการลบบุคลากร (พร้อมระบบใส่รหัสผ่านยืนยัน) -->
+    <div class="modal fade" id="deleteStaffModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+          <div class="modal-header bg-danger text-white">
+            <h5 class="modal-title fw-bold">🗑️ ยืนยันการลบข้อมูลบุคลากร</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body p-4">
+            <p class="mb-2">คุณต้องการลบข้อมูลของบุคลากรท่านนี้ใช่หรือไม่?</p>
+            <div class="p-2 bg-light rounded border text-center mb-3">
+              <span id="delStaffNameDisplay" class="fw-bold fs-5 text-danger"></span>
+            </div>
+            <p class="text-danger small mb-3">⚠️ คำเตือน: ข้อมูลจะถูกลบออกจากฐานข้อมูลชีตอย่างถาวร</p>
+            
+            <label class="form-label fw-bold small text-dark mb-1">🔒 กรุณากรอกรหัสผ่านเพื่อยืนยันการลบ:</label>
+            <input type="password" id="deleteStaffPassInput" class="form-control" placeholder="กรอกรหัสผ่าน (1234)..." onkeydown="if(event.key==='Enter'){event.preventDefault();executeDeleteStaffWithPassword();}">
+            <div id="delStaffErr" class="text-danger small mt-2 fw-bold"></div>
+          </div>
+          <div class="modal-footer bg-light">
+            <button type="button" class="btn btn-secondary px-3" data-bs-dismiss="modal">ยกเลิก</button>
+            <button type="button" id="confirmDeleteStaffBtn" class="btn btn-danger px-4 fw-bold shadow-sm" onclick="executeDeleteStaffWithPassword()">🗑️ ยืนยันการลบ</button>
           </div>
         </div>
       </div>
@@ -872,14 +912,41 @@
     renderStaffTable(filtered);
   }
 
-  // 🗓️ ฟังก์ชันแปลงวันเดือนปีเกิดให้เป็นรูปแบบภาษาไทย "13 มีนาคม 2523"
+  // 📅 ฟังก์ชันเรียกเปิดปฏิทิน
+  function triggerDatePicker() {
+    const helper = document.getElementById('formStaffDatePickerHelper');
+    if (helper) {
+      if (typeof helper.showPicker === 'function') {
+        helper.showPicker();
+      } else {
+        helper.click();
+      }
+    }
+  }
+
+  // 🔄 แปลงค่าจากปฏิทินสากลเป็น วัน เดือน(ไทยเต็ม) ปี พ.ศ.
+  function syncDatePickerToThai(isoVal) {
+    if (!isoVal) return;
+    const parts = isoVal.split('-');
+    if (parts.length === 3) {
+      const y = parseInt(parts[0]) + 543;
+      const m = parseInt(parts[1]) - 1;
+      const d = parseInt(parts[2]);
+      const thaiMonths = [
+        "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+        "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+      ];
+      document.getElementById('formStaffBirthDate').value = `${d} ${thaiMonths[m]} ${y}`;
+    }
+  }
+
+  // 🗓️ ฟังก์ชันแปลงวันเดือนปีเกิดเป็นภาษาไทยเต็ม เช่น "16 กันยายน 2527"
   function formatThaiBirthDate(val) {
     if (!val || val === "-" || val === "nan" || val === "undefined") return "-";
     
     let str = val.toString().trim();
 
-    // กรณีได้รับค่าเป็นสตริงวันเวลา เช่น "Sat Mar 13 2523..." หรือรูปแบบสากล
-    if (str.includes("GMT") || str.includes("T") || str.includes("Indochina")) {
+    if (str.includes("GMT") || str.includes("T") || str.includes("Indochina") || str.includes("เวลา")) {
       const d = new Date(str);
       if (!isNaN(d.getTime())) {
         let y = d.getFullYear();
@@ -892,7 +959,6 @@
       }
     }
 
-    // แปลงตัวย่อเดือนภาษาไทยเป็นตัวเต็ม
     const shortMonthsMap = {
       "ม.ค.": "มกราคม", "ก.พ.": "กุมภาพันธ์", "ก.พ": "กุมภาพันธ์",
       "มี.ค.": "มีนาคม", "มี.ค": "มีนาคม",
@@ -914,7 +980,6 @@
       }
     }
 
-    // กรณีได้รับเป็นรูปแบบ YYYY-MM-DD
     if (str.includes('-')) {
       const parts = str.split(' ')[0].split('-');
       if (parts.length === 3) {
@@ -947,13 +1012,6 @@
       return;
     }
 
-    const unitColors = {
-      "เมือง": "#00796b", "คลองใหญ่": "#0891b2", "เขาสมิง": "#d97706",
-      "บ่อไร่": "#7c3aed", "แหลมงอบ": "#dc2626", "เกาะช้าง": "#2563eb",
-      "เกาะกูด": "#4f46e5", "คู่ขนาน": "#ea580c", "โรงพยาบาล": "#059669"
-    };
-
-    // จัดกลุ่มตามประเภทบุคลากร
     const groups = {};
     list.forEach(item => {
       const cat = item.category || "ข้าราชการ";
@@ -968,50 +1026,47 @@
       html += `
         <tr class="table-success table-opacity-50">
           <td colspan="11" class="fw-bold py-2 ps-3 text-dark bg-success bg-opacity-10" style="font-size: 0.92rem;">
-            📌 ${cat} (${members.length} ท่าน)
+            📌 ${cat} (${members.length} คน)
           </td>
         </tr>
       `;
 
       members.forEach((s, idx) => {
-        const unitColor = unitColors[s.serviceUnit] || "#64748b";
         const formattedBirth = formatThaiBirthDate(s.birthDate);
         
         html += `
           <tr class="align-middle text-center">
             <!-- 1. ลำดับ -->
-            <td class="text-muted fw-bold">${idx + 1}</td>
+            <td class="text-dark fw-bold">${idx + 1}</td>
             <!-- 2. ชื่อ - นามสกุล -->
-            <td class="text-start fw-bold text-dark">${s.name}</td>
+            <td class="text-start text-dark fw-bold">${s.name}</td>
             <!-- 3. ตำแหน่ง -->
-            <td class="text-start text-secondary">${s.position || '-'}</td>
+            <td class="text-start text-dark fw-bold">${s.position || '-'}</td>
             <!-- 4. วัน เดือน ปีเกิด -->
-            <td>${formattedBirth}</td>
+            <td class="text-dark fw-bold">${formattedBirth}</td>
             <!-- 5. เบอร์โทรศัพท์ -->
             <td>
-              ${s.phone ? `<a href="tel:${s.phone}" class="text-decoration-none fw-bold text-primary">${s.phone}</a>` : '-'}
+              ${s.phone ? `<a href="tel:${s.phone}" class="text-decoration-none text-dark fw-bold">${s.phone}</a>` : '-'}
             </td>
             <!-- 6. ที่อยู่ -->
-            <td class="text-start col-address" title="${s.address || ''}">
+            <td class="text-start col-address text-dark fw-bold" title="${s.address || ''}">
               ${s.address || '-'}
             </td>
             <!-- 7. เลขบัตรประชาชน -->
-            <td class="font-monospace small text-dark">${s.cid || '-'}</td>
+            <td class="text-dark fw-bold">${s.cid || '-'}</td>
             <!-- 8. ชื่อเล่น -->
-            <td>${s.nickname ? `<span class="badge bg-warning text-dark fw-bold">${s.nickname}</span>` : '-'}</td>
+            <td class="text-dark fw-bold">${s.nickname || '-'}</td>
             <!-- 9. e - mail -->
             <td class="text-start">
-              ${s.email ? `<a href="mailto:${s.email}" class="text-decoration-none text-secondary">${s.email}</a>` : '-'}
+              ${s.email ? `<a href="mailto:${s.email}" class="text-decoration-none text-dark fw-bold">${s.email}</a>` : '-'}
             </td>
             <!-- 10. หน่วยบริการ -->
-            <td>
-              <span class="badge text-white shadow-sm" style="background-color: ${unitColor}; font-size: 0.75rem;">${s.serviceUnit || 'เมือง'}</span>
-            </td>
+            <td class="text-dark fw-bold">${s.serviceUnit || 'เมือง'}</td>
             <!-- 11. จัดการ -->
             <td>
               <div class="d-flex justify-content-center gap-1">
                 <button class="btn btn-sm btn-outline-warning text-dark py-0 px-2 fw-bold shadow-sm" onclick="openEditStaffForm('${encodeURIComponent(s.name)}')">✏️</button>
-                <button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold shadow-sm" onclick="deleteStaffName('${s.name}')">🗑️</button>
+                <button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold shadow-sm" onclick="openDeleteStaffModal('${encodeURIComponent(s.name)}')">🗑️</button>
               </div>
             </td>
           </tr>
@@ -1047,13 +1102,14 @@
     document.getElementById('staffFormTitle').innerText = `✏️ แก้ไขข้อมูลบุคลากร: ${staff.name}`;
     document.getElementById('staffFormOldName').value = staff.name;
     document.getElementById('formStaffName').value = staff.name;
-    document.getElementById('formStaffNickname').value = staff.nickname;
-    document.getElementById('formStaffPosition').value = staff.position;
-    document.getElementById('formStaffPhone').value = staff.phone;
+    document.getElementById('formStaffNickname').value = staff.nickname || "";
+    document.getElementById('formStaffPosition').value = staff.position || "";
+    document.getElementById('formStaffPhone').value = staff.phone || "";
     document.getElementById('formStaffAddress').value = staff.address || "";
-    document.getElementById('formStaffEmail').value = staff.email;
-    document.getElementById('formStaffBirthDate').value = staff.birthDate;
-    document.getElementById('formStaffCid').value = staff.cid;
+    document.getElementById('formStaffEmail').value = staff.email || "";
+    // ✨ แปลงวันที่เกิดให้เป็นรูปแบบไทยเต็มในช่องกรอกแก้ไข
+    document.getElementById('formStaffBirthDate').value = formatThaiBirthDate(staff.birthDate);
+    document.getElementById('formStaffCid').value = staff.cid || "";
     document.getElementById('formStaffCategory').value = staff.category || "ข้าราชการ";
     document.getElementById('formStaffUnit').value = staff.serviceUnit || "เมือง";
     document.getElementById('staffFormContainer').style.display = 'block';
@@ -1109,21 +1165,57 @@
     }
   }
 
-  async function deleteStaffName(name) {
-    if (!confirm(`คุณต้องการลบ "${name}" ออกจากฐานข้อมูลบุคลากรใช่หรือไม่?`)) return;
+  // --- 🔒 ระบบยืนยันการลบบุคลากรพร้อมรหัสผ่าน Admin ---
+  let staffNameToDelete = "";
+  let deleteStaffModalInstance = null;
+
+  function openDeleteStaffModal(encodedName) {
+    staffNameToDelete = decodeURIComponent(encodedName);
+    document.getElementById('delStaffNameDisplay').innerText = staffNameToDelete;
+    document.getElementById('deleteStaffPassInput').value = "";
+    document.getElementById('delStaffErr').innerText = "";
+    
+    if (!deleteStaffModalInstance) {
+      deleteStaffModalInstance = new bootstrap.Modal(document.getElementById('deleteStaffModal'));
+    }
+    deleteStaffModalInstance.show();
+  }
+
+  async function executeDeleteStaffWithPassword() {
+    const pass = document.getElementById('deleteStaffPassInput').value.trim();
+    const errDiv = document.getElementById('delStaffErr');
+    
+    if (!pass) {
+      errDiv.innerText = "กรุณากรอกรหัสผ่านเพื่อยืนยัน";
+      return;
+    }
+    if (pass !== "1234") {
+      errDiv.innerText = "รหัสผ่านไม่ถูกต้อง";
+      return;
+    }
+
+    const btn = document.getElementById('confirmDeleteStaffBtn');
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> กำลังลบ...`;
 
     try {
       const res = await fetch(SCRIPT_URL, {
         method: 'POST',
-        body: JSON.stringify({ action: "deleteStaff", name: name })
+        body: JSON.stringify({ action: "deleteStaff", name: staffNameToDelete })
       });
       const result = await res.json();
       if (result.success) {
-        alert(`✅ ลบ "${name}" ออกจากระบบเรียบร้อยแล้ว`);
+        if (deleteStaffModalInstance) deleteStaffModalInstance.hide();
+        alert(`✅ ลบ "${staffNameToDelete}" ออกจากระบบเรียบร้อยแล้ว`);
         loadStaffList();
+      } else {
+        errDiv.innerText = result.message || "ไม่สามารถลบข้อมูลได้";
       }
     } catch (e) {
-      alert("❌ ไม่สามารถลบรายชื่อได้");
+      errDiv.innerText = "เชื่อมต่อเซิร์ฟเวอร์ล้มเหลว";
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = "🗑️ ยืนยันการลบ";
     }
   }
 
@@ -2203,57 +2295,7 @@
     }
   });
 
-  async function addNewStaffName() {
-    const input = document.getElementById('newStaffNameInput');
-    const name = input.value.trim();
-    if (!name) return alert("กรุณาระบุชื่อ-นามสกุลบุคลากร");
-    if (staffNames.includes(name)) return alert("มีรายชื่อนี้อยู่ในระบบแล้ว");
 
-    const btn = document.getElementById('addStaffBtn');
-    btn.disabled = true;
-    btn.innerHTML = `<span class="spinner-border spinner-border-sm"></span>`;
-
-    try {
-      const res = await fetch(SCRIPT_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: "addStaff", name: name })
-      });
-      const result = await res.json();
-      if (result.success) {
-        staffNames.push(name);
-        input.value = "";
-        renderStaffManageList();
-        // อัปเดต datalist ให้เลือกได้ทันที
-        const list = document.getElementById('staffList');
-        if (list) list.innerHTML = staffNames.map(n => `<option value="${n}">`).join('');
-      }
-    } catch (e) {
-      alert("❌ เชื่อมต่อเซิร์ฟเวอร์ล้มเหลว");
-    } finally {
-      btn.disabled = false;
-      btn.innerHTML = "➕ เพิ่ม";
-    }
-  }
-
-  async function deleteStaffName(name) {
-    if (!confirm(`คุณต้องการลบ "${name}" ออกจากรายชื่อบุคลากรใช่หรือไม่?`)) return;
-
-    try {
-      const res = await fetch(SCRIPT_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: "deleteStaff", name: name })
-      });
-      const result = await res.json();
-      if (result.success) {
-        staffNames = staffNames.filter(n => n !== name);
-        renderStaffManageList();
-        const list = document.getElementById('staffList');
-        if (list) list.innerHTML = staffNames.map(n => `<option value="${n}">`).join('');
-      }
-    } catch (e) {
-      alert("❌ ไม่สามารถลบรายชื่อได้");
-    }
-  }
 
   async function executeDelete() {
     const confirmBtn = document.getElementById('confirmDeleteBtn');

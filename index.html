@@ -308,9 +308,9 @@
         <div id="userNavContainer" class="d-flex align-items-center gap-2"></div>
       </div>
       <div class="d-flex gap-2 align-items-center">
-        <!-- 👥 ปุ่มสลับไปหน้าจัดการบุคลากร (เฉพาะ Admin) -->
+        <!-- 👥 ปุ่มสลับไปหน้ารายชื่อบุคลากร (แสดงทั้ง Admin และ User) -->
         <button id="manageStaffBtn" class="btn btn-sm btn-light text-dark shadow-sm fw-bold" style="display:none;" onclick="switchToStaffView()">
-          👥 ทะเบียนบุคลากร
+          👥 รายชื่อบุคลากร
         </button>
         <!-- ⬅️ ปุ่มย้อนกลับหน้าระบบสารบรรณ -->
         <button id="backToSarabanBtn" class="btn btn-sm btn-light text-dark shadow-sm fw-bold" style="display:none;" onclick="switchToSarabanView()">
@@ -413,11 +413,22 @@
           <h4 class="fw-bold text-success mb-0">👥 สมุดรายนามและทะเบียนบุคลากร ศกศ.ตราด</h4>
           <small class="text-muted">บุคลากรทั้งหมด <span id="staffTotalCount" class="fw-bold text-dark">0</span> คน</small>
         </div>
-        <div class="d-flex gap-2">
-          <button class="btn btn-sm btn-success fw-bold shadow-sm" onclick="openAddStaffForm()">
+        <div class="d-flex flex-wrap gap-2">
+          <!-- ปุ่มส่งออก XML (ใช้ได้ทุกคน) -->
+          <button class="btn btn-sm btn-outline-primary fw-bold shadow-sm" onclick="exportStaffToXML()">
+            📥 ส่งออก XML
+          </button>
+          <!-- ปุ่มเฉพาะ Admin: เปิด Google Sheet, แชร์ลิงก์ และเพิ่มบุคลากร -->
+          <button id="adminOpenSheetBtn" class="btn btn-sm btn-outline-success fw-bold shadow-sm" style="display:none;" onclick="openGoogleSheetStaff()">
+            📊 Google Sheets
+          </button>
+          <button id="adminShareStaffBtn" class="btn btn-sm btn-outline-info text-dark fw-bold shadow-sm" style="display:none;" onclick="shareStaffLink()">
+            🔗 แชร์ลิงก์
+          </button>
+          <button id="adminAddStaffBtn" class="btn btn-sm btn-success fw-bold shadow-sm" style="display:none;" onclick="openAddStaffForm()">
             ➕ เพิ่มบุคลากรใหม่
           </button>
-          <button class="btn btn-sm btn-outline-secondary fw-bold shadow-sm" onclick="switchToSarabanView()">
+          <button id="staffBackBtn" class="btn btn-sm btn-outline-secondary fw-bold shadow-sm" onclick="switchToSarabanView()">
             ⬅️ กลับระบบส่งหนังสือ
           </button>
         </div>
@@ -954,6 +965,12 @@
     document.getElementById('staffView').style.display = 'block';
     document.getElementById('manageStaffBtn').style.display = 'none';
     document.getElementById('backToSarabanBtn').style.display = 'block';
+
+    const isAdmin = (currentUser.role === 'Admin');
+    document.getElementById('adminAddStaffBtn').style.display = isAdmin ? 'inline-block' : 'none';
+    document.getElementById('adminShareStaffBtn').style.display = isAdmin ? 'inline-block' : 'none';
+    document.getElementById('adminOpenSheetBtn').style.display = isAdmin ? 'inline-block' : 'none';
+
     filterStaffDirectory();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -962,9 +979,7 @@
     document.getElementById('staffView').style.display = 'none';
     document.getElementById('sarabanView').style.display = 'block';
     document.getElementById('backToSarabanBtn').style.display = 'none';
-    if (currentUser.role === 'Admin') {
-      document.getElementById('manageStaffBtn').style.display = 'block';
-    }
+    document.getElementById('manageStaffBtn').style.display = 'block';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -1051,11 +1066,39 @@
     const totalCountElem = document.getElementById('staffTotalCount');
     if (totalCountElem) totalCountElem.innerText = list.length;
     
+    const tableElem = document.querySelector('.table-staff-custom');
+    const thead = tableElem.querySelector('thead tr');
     const tbody = document.getElementById('staffTableBody');
-    if (!tbody) return;
+    if (!tbody || !thead) return;
+
+    const isAdmin = (currentUser.role === 'Admin');
+
+    // 🎯 สลับหัวตาราง: Admin แสดง 11 คอลัมน์ | User/บุคคลภายนอก แสดง 4 คอลัมน์
+    if (isAdmin) {
+      thead.innerHTML = `
+        <th>ลำดับ</th>
+        <th>ชื่อ - นามสกุล</th>
+        <th>ตำแหน่ง</th>
+        <th>วัน เดือน ปีเกิด</th>
+        <th>เบอร์โทรศัพท์</th>
+        <th>ที่อยู่</th>
+        <th>เลขบัตรประชาชน</th>
+        <th>ชื่อเล่น</th>
+        <th>e - mail</th>
+        <th>หน่วยบริการ</th>
+        <th>จัดการ</th>
+      `;
+    } else {
+      thead.innerHTML = `
+        <th style="width: 70px;">ลำดับ</th>
+        <th style="min-width: 220px;">ชื่อ - นามสกุล</th>
+        <th style="min-width: 180px;">ตำแหน่ง</th>
+        <th style="min-width: 120px;">หน่วยบริการ</th>
+      `;
+    }
 
     if (list.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="11" class="text-center text-muted p-4">ไม่พบบุคลากรตามเงื่อนไขที่ค้นหา</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="${isAdmin ? 11 : 4}" class="text-center text-muted p-4">ไม่พบบุคลากรตามเงื่อนไขที่ค้นหา</td></tr>`;
       return;
     }
 
@@ -1072,56 +1115,124 @@
       const members = groups[cat];
       html += `
         <tr class="table-success table-opacity-50">
-          <td colspan="11" class="fw-bold py-2 ps-3 text-dark bg-success bg-opacity-10" style="font-size: 0.92rem;">
+          <td colspan="${isAdmin ? 11 : 4}" class="fw-bold py-2 ps-3 text-dark bg-success bg-opacity-10" style="font-size: 0.92rem;">
             📌 ${cat} (${members.length} คน)
           </td>
         </tr>
       `;
 
       members.forEach((s, idx) => {
-        const formattedBirth = formatThaiBirthDate(s.birthDate);
-        
-        html += `
-          <tr class="align-middle text-center">
-            <!-- 1. ลำดับ -->
-            <td class="text-dark fw-bold">${idx + 1}</td>
-            <!-- 2. ชื่อ - นามสกุล -->
-            <td class="text-start text-dark fw-bold">${s.name}</td>
-            <!-- 3. ตำแหน่ง -->
-            <td class="text-start text-dark fw-bold">${s.position || '-'}</td>
-            <!-- 4. วัน เดือน ปีเกิด -->
-            <td class="text-dark fw-bold">${formattedBirth}</td>
-            <!-- 5. เบอร์โทรศัพท์ -->
-            <td>
-              ${s.phone ? `<a href="tel:${s.phone}" class="text-decoration-none text-dark fw-bold">${s.phone}</a>` : '-'}
-            </td>
-            <!-- 6. ที่อยู่ -->
-            <td class="text-start col-address text-dark fw-bold" title="${s.address || ''}">
-              ${s.address || '-'}
-            </td>
-            <!-- 7. เลขบัตรประชาชน -->
-            <td class="text-dark fw-bold">${s.cid || '-'}</td>
-            <!-- 8. ชื่อเล่น -->
-            <td class="text-dark fw-bold">${s.nickname || '-'}</td>
-            <!-- 9. e - mail -->
-            <td class="text-start">
-              ${s.email ? `<a href="mailto:${s.email}" class="text-decoration-none text-dark fw-bold">${s.email}</a>` : '-'}
-            </td>
-            <!-- 10. หน่วยบริการ -->
-            <td class="text-dark fw-bold">${s.serviceUnit || 'เมือง'}</td>
-            <!-- 11. จัดการ -->
-            <td>
-              <div class="d-flex justify-content-center gap-1">
-                <button class="btn btn-sm btn-outline-warning text-dark py-0 px-2 fw-bold shadow-sm" onclick="openEditStaffForm('${encodeURIComponent(s.name)}')">✏️</button>
-                <button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold shadow-sm" onclick="openDeleteStaffModal('${encodeURIComponent(s.name)}')">🗑️</button>
-              </div>
-            </td>
-          </tr>
-        `;
+        if (isAdmin) {
+          // โหมด Admin: 11 คอลัมน์เต็ม
+          const formattedBirth = formatThaiBirthDate(s.birthDate);
+          html += `
+            <tr class="align-middle text-center">
+              <td class="text-dark fw-bold">${idx + 1}</td>
+              <td class="text-start text-dark fw-bold">${s.name}</td>
+              <td class="text-start text-dark fw-bold">${s.position || '-'}</td>
+              <td class="text-dark fw-bold">${formattedBirth}</td>
+              <td>${s.phone ? `<a href="tel:${s.phone}" class="text-decoration-none text-dark fw-bold">${s.phone}</a>` : '-'}</td>
+              <td class="text-start col-address text-dark fw-bold" title="${s.address || ''}">${s.address || '-'}</td>
+              <td class="text-dark fw-bold">${s.cid || '-'}</td>
+              <td class="text-dark fw-bold">${s.nickname || '-'}</td>
+              <td class="text-start">${s.email ? `<a href="mailto:${s.email}" class="text-decoration-none text-dark fw-bold">${s.email}</a>` : '-'}</td>
+              <td class="text-dark fw-bold">${s.serviceUnit || 'เมือง'}</td>
+              <td>
+                <div class="d-flex justify-content-center gap-1">
+                  <button class="btn btn-sm btn-outline-warning text-dark py-0 px-2 fw-bold shadow-sm" onclick="openEditStaffForm('${encodeURIComponent(s.name)}')">✏️</button>
+                  <button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold shadow-sm" onclick="openDeleteStaffModal('${encodeURIComponent(s.name)}')">🗑️</button>
+                </div>
+              </td>
+            </tr>
+          `;
+        } else {
+          // โหมด User ทั่วไป / บุคคลภายนอก: แสดง 4 คอลัมน์สะอาดตา
+          html += `
+            <tr class="align-middle text-center">
+              <td class="text-dark fw-bold">${idx + 1}</td>
+              <td class="text-start text-dark fw-bold">${s.name}</td>
+              <td class="text-start text-dark fw-bold">${s.position || '-'}</td>
+              <td class="text-dark fw-bold">${s.serviceUnit || 'เมือง'}</td>
+            </tr>
+          `;
+        }
       });
     }
 
     tbody.innerHTML = html;
+  }
+
+  // 🔗 ฟังก์ชันคัดลอกลิงก์แชร์รายชื่อให้บุคลากรภายนอกเปิดดูได้ทันที
+  function shareStaffLink() {
+    const shareUrl = `${window.location.origin}${window.location.pathname}?view=staff`;
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      alert("✅ คัดลอกลิงก์แชร์รายชื่อบุคลากรแล้ว! สามารถส่งแชร์ทาง LINE ให้ทุกคนเปิดดู 4 คอลัมน์หลักได้ทันทีโดยไม่ต้องล็อกอิน");
+    }).catch(() => {
+      const t = document.createElement("textarea"); t.value = shareUrl; document.body.appendChild(t); t.select();
+      document.execCommand("copy"); document.body.removeChild(t);
+      alert("✅ คัดลอกลิงก์แชร์รายชื่อบุคลากรแล้ว!");
+    });
+  }
+
+  // 📊 ฟังก์ชันเปิดไฟล์ Google Sheets ฐานข้อมูล
+  function openGoogleSheetStaff() {
+    window.open(`https://docs.google.com/spreadsheets/d/1Ws_3nlmiTO1z6jbgJA4dQIohVLGtD0qgwx7hv3BiHHI/edit`, '_blank');
+  }
+
+  // 📥 ฟังก์ชันส่งออกข้อมูลรายชื่อเป็นไฟล์ XML (.xml)
+  function exportStaffToXML() {
+    if (!fullStaffData || fullStaffData.length === 0) return alert("ไม่มีข้อมูลบุคลากรสำหรับส่งออก");
+
+    let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+    xml += `<StaffDirectory organization="ศูนย์การศึกษาพิเศษประจำจังหวัดตราด" total="${fullStaffData.length}" exportDate="${new Date().toISOString()}">\n`;
+
+    const groups = {};
+    fullStaffData.forEach(item => {
+      const cat = item.category || "ข้าราชการ";
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(item);
+    });
+
+    for (let cat in groups) {
+      xml += `  <Category name="${escapeXML(cat)}" count="${groups[cat].length}">\n`;
+      groups[cat].forEach((s, idx) => {
+        xml += `    <Person id="${idx + 1}">\n`;
+        xml += `      <Name>${escapeXML(s.name)}</Name>\n`;
+        xml += `      <Position>${escapeXML(s.position)}</Position>\n`;
+        xml += `      <ServiceUnit>${escapeXML(s.serviceUnit)}</ServiceUnit>\n`;
+        if (currentUser.role === 'Admin') {
+          xml += `      <BirthDate>${escapeXML(s.birthDate)}</BirthDate>\n`;
+          xml += `      <Phone>${escapeXML(s.phone)}</Phone>\n`;
+          xml += `      <Address>${escapeXML(s.address)}</Address>\n`;
+          xml += `      <CID>${escapeXML(s.cid)}</CID>\n`;
+          xml += `      <Nickname>${escapeXML(s.nickname)}</Nickname>\n`;
+          xml += `      <Email>${escapeXML(s.email)}</Email>\n`;
+        }
+        xml += `    </Person>\n`;
+      });
+      xml += `  </Category>\n`;
+    }
+
+    xml += `</StaffDirectory>`;
+
+    const blob = new Blob([xml], { type: 'application/xml;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `รายชื่อบุคลากร_ศกศ_ตราด_${new Date().getFullYear() + 543}.xml`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
+  function escapeXML(str) {
+    if (!str) return "";
+    return str.toString()
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
   }
 
   // ==========================================
@@ -1490,16 +1601,18 @@
         // แสดงปุ่มออกจากระบบให้ทุกสิทธิ์ (เพื่อให้ User สลับฝ่ายหรือออกจากระบบได้)
         document.getElementById('logoutBtn').style.display = 'block'; 
         setupExitButton(); // 👈 เพิ่มบรรทัดนี้เพื่อปรับข้อความปุ่มตามอุปกรณ์
-        if(currentUser.role === 'Admin') {
+        // แสดงปุ่มรายชื่อบุคลากรให้ทุกสิทธิ์
+        document.getElementById('manageStaffBtn').style.display = 'block';
+        document.getElementById('manageStaffBtn').innerText = (currentUser.role === 'Admin') ? "👥 จัดการบุคลากร" : "👥 รายชื่อบุคลากร";
+
+        if (currentUser.role === 'Admin') {
             document.getElementById('adminView').style.display = 'block';
             document.getElementById('deptFilterContainer').style.display = 'block';
             document.getElementById('editDbBtn').style.display = 'block';
-            document.getElementById('manageStaffBtn').style.display = 'block';
         } else {
             document.getElementById('adminView').style.display = 'none';
             document.getElementById('deptFilterContainer').style.display = 'none';
             document.getElementById('editDbBtn').style.display = 'none';
-            document.getElementById('manageStaffBtn').style.display = 'none';
         }
 
         updateYearOptions();
@@ -1832,16 +1945,16 @@
         // 📱 บันทึกสิทธิ์ลงเครื่องถาวร (เปิดผ่านไอคอนแอปได้ตลอดเวลา ไม่หลุด)
         localStorage.setItem('sarabanUser', JSON.stringify(currentUser));
 
+        document.getElementById('logoutBtn').style.display = 'block';
+        document.getElementById('manageStaffBtn').style.display = 'block';
+        document.getElementById('manageStaffBtn').innerText = (currentUser.role === 'Admin') ? "👥 จัดการบุคลากร" : "👥 รายชื่อบุคลากร";
+
         if (currentUser.role === 'Admin') {
-            document.getElementById('logoutBtn').style.display = 'block';
             document.getElementById('editDbBtn').style.display = 'block';
-            document.getElementById('manageStaffBtn').style.display = 'block';
             document.getElementById('adminView').style.display = 'block';
             document.getElementById('deptFilterContainer').style.display = 'block';
         } else {
-            document.getElementById('logoutBtn').style.display = 'block'; // แสดงปุ่มออกจากระบบเพื่อให้เปลี่ยนผู้ใช้ได้หากจำเป็น
             document.getElementById('editDbBtn').style.display = 'none';
-            document.getElementById('manageStaffBtn').style.display = 'none';
             document.getElementById('adminView').style.display = 'none';
             document.getElementById('deptFilterContainer').style.display = 'none';
         }
@@ -2657,6 +2770,17 @@
     const p = new URLSearchParams(window.location.search);
     
     // 🔗 ระบบ Deep Link: หากมีพารามิเตอร์ view ให้เปิดอ่าน PDF ในแอปทันที
+    // 🔗 หากเปิดจากลิงก์แชร์ ?view=staff ให้แสดงหน้ารายชื่อ 4 คอลัมน์ทันทีโดยไม่ต้องล็อกอิน
+    if (p.get('view') === 'staff') {
+      document.getElementById('loginPage').style.display = 'none';
+      document.getElementById('mainApp').style.display = 'block';
+      document.getElementById('sarabanView').style.display = 'none';
+      document.getElementById('staffView').style.display = 'block';
+      document.getElementById('staffBackBtn').style.display = 'none';
+      document.getElementById('manageStaffBtn').style.display = 'none';
+      return;
+    }
+
     if (p.get('view')) {
       const viewUrl = p.get('view');
       const viewTitle = p.get('title') || "เอกสารหนังสือรับ";

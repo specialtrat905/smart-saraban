@@ -247,11 +247,15 @@
         <div id="userNavContainer" class="d-flex align-items-center gap-2"></div>
       </div>
       <div class="d-flex gap-2 align-items-center">
-        <!-- 👥 ปุ่มจัดการรายชื่อบุคลากร (เฉพาะ Admin) -->
-        <button id="manageStaffBtn" class="btn btn-sm btn-light text-dark shadow-sm fw-bold" style="display:none;" onclick="openStaffManageModal()">
-          👥 จัดการบุคลากร
+        <!-- 👥 ปุ่มสลับไปหน้าจัดการบุคลากร (เฉพาะ Admin) -->
+        <button id="manageStaffBtn" class="btn btn-sm btn-light text-dark shadow-sm fw-bold" style="display:none;" onclick="switchToStaffView()">
+          👥 ทะเบียนบุคลากร
         </button>
-        <!-- ⚙️ ปุ่มแก้ไขฐานข้อมูล (สีมัสตาร์ดทองด้าน ทึบแน่น) -->
+        <!-- ⬅️ ปุ่มย้อนกลับหน้าระบบสารบรรณ -->
+        <button id="backToSarabanBtn" class="btn btn-sm btn-light text-dark shadow-sm fw-bold" style="display:none;" onclick="switchToSarabanView()">
+          ⬅️ กลับระบบส่งหนังสือ
+        </button>
+        <!-- ⚙️ ปุ่มแก้ไขฐานข้อมูล (เฉพาะ Admin) -->
         <button id="editDbBtn" class="btn btn-sm btn-nav-edit shadow-sm" style="display:none;" onclick="handleEditDbBtnClick()">
           ⚙️ แก้ไขฐานข้อมูล
         </button>
@@ -264,83 +268,218 @@
   </nav>
 
   <div class="container mt-4">
-    <!-- 🚀 แถบส่งหนังสือแบบ Compact Action Bar กรอบเขียวธีมระบบ -->
-    <div id="adminView" style="display:none;" class="card card-border-green p-3 mb-3 shadow-sm">
-      <div class="row g-2 align-items-start">
-        <!-- ฝั่งซ้าย (สัดส่วน 3): ปุ่มเลือกกลุ่มงาน (สีชมพูอ่อน) + เลื่อนขึ้นลงเฉพาะแนวตั้ง -->
-        <div class="col-12 col-md-3">
-          <button type="button" class="btn btn-action-dept w-100 py-2 fw-bold text-start d-flex justify-content-between align-items-center shadow-sm" onclick="openDeptModal()">
-            <span class="text-truncate" style="font-size: 0.88rem;">🏢 เลือกกลุ่มงาน</span>
-            <span id="deptCountBadge" class="badge bg-light text-dark">ยังไม่เลือก</span>
-          </button>
-          <!-- แสดงกลุ่มงานใต้ปุ่ม เลื่อนเฉพาะแนวตั้งขึ้นลง ไม่เลื่อนซ้ายขวา -->
-          <div id="selectedDeptsDisplay" class="mt-2 overflow-y-auto overflow-x-hidden" style="max-height: 120px;"></div>
-        </div>
+    <!-- 📄 ส่วนที่ 1: หน้าระบบสารบรรณ (เปิดเริ่มต้น) -->
+    <div id="sarabanView">
+      <!-- 🚀 แถบส่งหนังสือแบบ Compact Action Bar กรอบเขียวธีมระบบ -->
+      <div id="adminView" style="display:none;" class="card card-border-green p-3 mb-3 shadow-sm">
+        <div class="row g-2 align-items-start">
+          <div class="col-12 col-md-3">
+            <button type="button" class="btn btn-action-dept w-100 py-2 fw-bold text-start d-flex justify-content-between align-items-center shadow-sm" onclick="openDeptModal()">
+              <span class="text-truncate" style="font-size: 0.88rem;">🏢 เลือกกลุ่มงาน</span>
+              <span id="deptCountBadge" class="badge bg-light text-dark">ยังไม่เลือก</span>
+            </button>
+            <div id="selectedDeptsDisplay" class="mt-2 overflow-y-auto overflow-x-hidden" style="max-height: 120px;"></div>
+          </div>
 
-        <!-- ตรงกลาง (สัดส่วน 7 กว้างพิเศษ): ปุ่มเลือกหนังสือแบบเดิม (รองรับการลากไฟล์มาวางได้) -->
-        <div class="col-12 col-md-7" id="dropZone">
-          <label for="fileInput" class="btn btn-action-file w-100 py-2 fw-bold text-start d-flex justify-content-between align-items-center shadow-sm mb-0 cursor-pointer">
-            <span class="text-truncate" style="font-size: 0.88rem;">📎 เลือกไฟล์หนังสือ</span>
-            <span id="fileCountBadge" class="badge bg-light text-dark">0 ไฟล์</span>
-          </label>
-          <input type="file" id="fileInput" class="d-none" multiple accept=".pdf">
-          <!-- แสดงรายชื่อไฟล์ใต้ปุ่ม พร้อมแถบเลื่อนเมื่อมีหลายไฟล์ -->
-          <div id="fileChipsContainer" class="mt-2 d-flex flex-column gap-1 overflow-auto" style="max-height: 120px;"></div>
-        </div>
+          <div class="col-12 col-md-7" id="dropZone">
+            <label for="fileInput" class="btn btn-action-file w-100 py-2 fw-bold text-start d-flex justify-content-between align-items-center shadow-sm mb-0 cursor-pointer">
+              <span class="text-truncate" style="font-size: 0.88rem;">📎 เลือกไฟล์หนังสือ</span>
+              <span id="fileCountBadge" class="badge bg-light text-dark">0 ไฟล์</span>
+            </label>
+            <input type="file" id="fileInput" class="d-none" multiple accept=".pdf">
+            <div id="fileChipsContainer" class="mt-2 d-flex flex-column gap-1 overflow-auto" style="max-height: 120px;"></div>
+          </div>
 
-        <!-- ฝั่งขวา (สัดส่วน 2 กระชับ): ปุ่มกดส่ง -->
-        <div class="col-12 col-md-2">
-          <button onclick="handleUpload()" id="uploadBtn" class="btn btn-primary w-100 py-2 fw-bold shadow-sm text-truncate px-1" style="font-size: 0.85rem;">
-            🚀 ส่งหนังสือ
-          </button>
-        </div>
-      </div>
-    </div>
-    <div class="card card-border-green p-4 shadow-sm mb-5">
-      <div class="row g-2 mb-3 align-items-center">
-        <div class="col-12 col-md-2">
-          <h5 class="fw-bold m-0 text-dark" style="font-size: 1.1rem;">รายการหนังสือรับ</h5>
-        </div>
-
-        <div class="col-6 col-md-2">
-          <select id="yearSelect" class="form-select border-success shadow-sm" onchange="resetAndReloadLogs()"></select>
-        </div>
-
-        <div class="col-6 col-md-3" id="deptFilterContainer" style="display:none;">
-          <select id="deptFilter" class="form-select border-success shadow-sm" onchange="resetAndReloadLogs()">
-            <option value="all">🏢 ทุกกลุ่มงาน</option>
-            <option>ฝ่ายบริหารทั่วไป</option>
-            <option>ฝ่ายบริหารงานบุคคล</option>
-            <option>ฝ่ายบริหารวิชาการ</option>
-            <option>ฝ่ายบริหารงบประมาณ</option>
-            <option>รองผู้อำนวยการ</option>
-            <option>ผู้อำนวยการ</option>
-            <option>อื่นๆ</option>
-            <option>ยังไม่ได้ลงระบบ</option>
-          </select>
-        </div>
-
-        <div class="col-12 col-md">
-          <div class="input-group shadow-sm">
-            <span class="input-group-text bg-white border-end-0">🔍</span>
-            <input type="text" id="searchInput" class="form-control border-start-0" placeholder="พิมพ์ชื่อหนังสือเพื่อค้นหาอัตโนมัติ..." oninput="handleSearchInput()">
+          <div class="col-12 col-md-2">
+            <button onclick="handleUpload()" id="uploadBtn" class="btn btn-primary w-100 py-2 fw-bold shadow-sm text-truncate px-1" style="font-size: 0.85rem;">
+              🚀 ส่งหนังสือ
+            </button>
           </div>
         </div>
       </div>
 
+      <div class="card card-border-green p-4 shadow-sm mb-5">
+        <div class="row g-2 mb-3 align-items-center">
+          <div class="col-12 col-md-2">
+            <h5 class="fw-bold m-0 text-dark" style="font-size: 1.1rem;">รายการหนังสือรับ</h5>
+          </div>
+
+          <div class="col-6 col-md-2">
+            <select id="yearSelect" class="form-select border-success shadow-sm" onchange="resetAndReloadLogs()"></select>
+          </div>
+
+          <div class="col-6 col-md-3" id="deptFilterContainer" style="display:none;">
+            <select id="deptFilter" class="form-select border-success shadow-sm" onchange="resetAndReloadLogs()">
+              <option value="all">🏢 ทุกกลุ่มงาน</option>
+              <option>ฝ่ายบริหารทั่วไป</option>
+              <option>ฝ่ายบริหารงานบุคคล</option>
+              <option>ฝ่ายบริหารวิชาการ</option>
+              <option>ฝ่ายบริหารงบประมาณ</option>
+              <option>รองผู้อำนวยการ</option>
+              <option>ผู้อำนวยการ</option>
+              <option>อื่นๆ</option>
+              <option>ยังไม่ได้ลงระบบ</option>
+            </select>
+          </div>
+
+          <div class="col-12 col-md">
+            <div class="input-group shadow-sm">
+              <span class="input-group-text bg-white border-end-0">🔍</span>
+              <input type="text" id="searchInput" class="form-control border-start-0" placeholder="พิมพ์ชื่อหนังสือเพื่อค้นหาอัตโนมัติ..." oninput="handleSearchInput()">
+            </div>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-hover align-middle" style="font-size: 0.9rem;">
+            <thead class="table-light">
+              <tr class="text-center align-middle">
+                <th style="width: 18%;">วันที่</th>
+                <th style="width: 57%;">ชื่อหนังสือ / ฝ่าย</th>
+                <th style="width: 25%;">จัดการ</th>
+              </tr>
+            </thead>
+            <tbody id="bookData"></tbody>
+          </table>
+        </div>
+      </div>
+    </div> <!-- ปิด sarabanView -->
+
+    <!-- 👥 ส่วนที่ 2: หน้าสมุดรายนามและทะเบียนบุคลากรเต็มจอ (Full Table View) -->
+    <div id="staffView" style="display:none;" class="card card-border-green p-3 p-md-4 shadow-sm mb-5">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 pb-2 border-bottom">
+        <div>
+          <h4 class="fw-bold text-success mb-0">👥 สมุดรายนามและทะเบียนบุคลากร ศกศ.ตราด</h4>
+          <small class="text-muted">บุคลากรทั้งหมด <span id="staffTotalCount" class="fw-bold text-dark">0</span> ท่าน</small>
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-sm btn-success fw-bold shadow-sm" onclick="openAddStaffForm()">
+            ➕ เพิ่มบุคลากรใหม่
+          </button>
+          <button class="btn btn-sm btn-outline-secondary fw-bold shadow-sm" onclick="switchToSarabanView()">
+            ⬅️ กลับหน้าระบบสารบรรณ
+          </button>
+        </div>
+      </div>
+
+      <!-- 🔍 แถบตัวกรองและค้นหาบุคลากร -->
+      <div class="row g-2 mb-3">
+        <div class="col-12 col-md-6">
+          <div class="input-group shadow-sm">
+            <span class="input-group-text bg-white">🔍</span>
+            <input type="text" id="staffSearchInput" class="form-control" placeholder="พิมพ์ค้นหา ชื่อ, ชื่อเล่น, ตำแหน่ง, เบอร์โทร, ที่อยู่..." oninput="filterStaffDirectory()">
+          </div>
+        </div>
+        <div class="col-12 col-md-6">
+          <select id="staffCategoryFilter" class="form-select shadow-sm" onchange="filterStaffDirectory()">
+            <option value="all">📂 แสดงทุกประเภทบุคลากร</option>
+            <option value="ข้าราชการ">ข้าราชการ</option>
+            <option value="พนักงานราชการ">พนักงานราชการ</option>
+            <option value="ลูกจ้างชั่วคราวรายเดือน (ครูผู้ช่วย) ห้องเรียนคู่ขนาน">ลูกจ้างชั่วคราว (ครูคู่ขนาน)</option>
+            <option value="ลูกจ้างชั่วคราวรายเดือน (ครูผู้ช่วย) ศูนย์การเรียนเด็กเจ็บป่วยในโรงพยาบาล">ลูกจ้างชั่วคราว (ครู รพ.)</option>
+            <option value="พนักงานธุรการ">พนักงานธุรการ</option>
+            <option value="พี่เลี้ยงเด็กพิการ">พี่เลี้ยงเด็กพิการ</option>
+            <option value="จ้างเหมาบริการ">จ้างเหมาบริการ</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 📝 ฟอร์มเพิ่ม/แก้ไขข้อมูลบุคลากร -->
+      <div id="staffFormContainer" style="display: none;" class="card p-3 mb-3 border-success shadow-sm bg-light">
+        <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+          <h6 id="staffFormTitle" class="fw-bold text-success mb-0">➕ เพิ่มข้อมูลบุคลากร</h6>
+          <button type="button" class="btn btn-sm btn-outline-secondary" onclick="closeStaffForm()">✕ ปิดฟอร์ม</button>
+        </div>
+        <input type="hidden" id="staffFormOldName" value="">
+        <div class="row g-2">
+          <div class="col-12 col-md-4">
+            <label class="form-label small fw-bold mb-1">ประเภทบุคลากร <span class="text-danger">*</span></label>
+            <select id="formStaffCategory" class="form-select form-select-sm">
+              <option value="ข้าราชการ">ข้าราชการ</option>
+              <option value="พนักงานราชการ">พนักงานราชการ</option>
+              <option value="ลูกจ้างชั่วคราวรายเดือน (ครูผู้ช่วย) ห้องเรียนคู่ขนาน">ลูกจ้างชั่วคราวรายเดือน (ครูผู้ช่วย) ห้องเรียนคู่ขนาน</option>
+              <option value="ลูกจ้างชั่วคราวรายเดือน (ครูผู้ช่วย) ศูนย์การเรียนเด็กเจ็บป่วยในโรงพยาบาล">ลูกจ้างชั่วคราวรายเดือน (ครูผู้ช่วย) ศูนย์การเรียนเด็กเจ็บป่วยในโรงพยาบาล</option>
+              <option value="พนักงานธุรการ">พนักงานธุรการ</option>
+              <option value="พี่เลี้ยงเด็กพิการ">พี่เลี้ยงเด็กพิการ</option>
+              <option value="จ้างเหมาบริการ">จ้างเหมาบริการ</option>
+              <option value="อื่นๆ">อื่นๆ</option>
+            </select>
+          </div>
+          <div class="col-12 col-md-5">
+            <label class="form-label small fw-bold mb-1">ชื่อ - นามสกุล <span class="text-danger">*</span></label>
+            <input type="text" id="formStaffName" class="form-control form-control-sm" placeholder="ระบุ คำนำหน้า ชื่อ-นามสกุล">
+          </div>
+          <div class="col-12 col-md-3">
+            <label class="form-label small fw-bold mb-1">ตำแหน่ง</label>
+            <input type="text" id="formStaffPosition" class="form-control form-control-sm" placeholder="เช่น ครู ค.ศ.1">
+          </div>
+          <div class="col-12 col-md-4">
+            <label class="form-label small fw-bold mb-1">วัน เดือน ปีเกิด</label>
+            <input type="text" id="formStaffBirthDate" class="form-control form-control-sm" placeholder="เช่น 15 ม.ค. 2526">
+          </div>
+          <div class="col-12 col-md-4">
+            <label class="form-label small fw-bold mb-1">เบอร์โทรศัพท์</label>
+            <input type="tel" id="formStaffPhone" class="form-control form-control-sm" placeholder="08x-xxxxxxx">
+          </div>
+          <div class="col-12 col-md-4">
+            <label class="form-label small fw-bold mb-1">ที่อยู่</label>
+            <input type="text" id="formStaffAddress" class="form-control form-control-sm" placeholder="ระบุที่อยู่ปัจจุบัน...">
+          </div>
+          <div class="col-12 col-md-4">
+            <label class="form-label small fw-bold mb-1">เลขบัตรประชาชน</label>
+            <input type="text" id="formStaffCid" class="form-control form-control-sm" placeholder="x xxxx xxxxx xx x">
+          </div>
+          <div class="col-12 col-md-2">
+            <label class="form-label small fw-bold mb-1">ชื่อเล่น</label>
+            <input type="text" id="formStaffNickname" class="form-control form-control-sm" placeholder="เช่น ปุ๊">
+          </div>
+          <div class="col-12 col-md-3">
+            <label class="form-label small fw-bold mb-1">e - mail</label>
+            <input type="email" id="formStaffEmail" class="form-control form-control-sm" placeholder="name@gmail.com">
+          </div>
+          <div class="col-12 col-md-3">
+            <label class="form-label small fw-bold mb-1">หน่วยบริการ</label>
+            <select id="formStaffUnit" class="form-select form-select-sm">
+              <option value="เมือง">เมือง</option>
+              <option value="คลองใหญ่">คลองใหญ่</option>
+              <option value="เขาสมิง">เขาสมิง</option>
+              <option value="บ่อไร่">บ่อไร่</option>
+              <option value="แหลมงอบ">แหลมงอบ</option>
+              <option value="เกาะช้าง">เกาะช้าง</option>
+              <option value="เกาะกูด">เกาะกูด</option>
+              <option value="คู่ขนาน">คู่ขนาน</option>
+              <option value="โรงพยาบาล">โรงพยาบาล</option>
+            </select>
+          </div>
+        </div>
+        <div class="d-flex justify-content-end gap-2 mt-3">
+          <button type="button" class="btn btn-sm btn-secondary px-3" onclick="closeStaffForm()">ยกเลิก</button>
+          <button type="button" id="saveStaffBtn" class="btn btn-sm btn-success px-4 fw-bold shadow-sm" onclick="submitStaffForm()">💾 บันทึกข้อมูล</button>
+        </div>
+      </div>
+
+      <!-- 📋 ตารางแสดงรายชื่อบุคลากรเต็มจอแยกหมวดหมู่ -->
       <div class="table-responsive">
-        <table class="table table-hover align-middle" style="font-size: 0.9rem;">
-          <thead class="table-light">
-            <tr class="text-center align-middle">
-              <th style="width: 18%;">วันที่</th>
-              <th style="width: 57%;">ชื่อหนังสือ / ฝ่าย</th>
-              <th style="width: 25%;">จัดการ</th>
+        <table class="table table-hover table-bordered align-middle text-nowrap" style="font-size: 0.85rem;">
+          <thead class="table-light text-center">
+            <tr>
+              <th style="width: 50px;">ลำดับ</th>
+              <th>ชื่อ - นามสกุล</th>
+              <th>ตำแหน่ง</th>
+              <th>วัน เดือน ปีเกิด</th>
+              <th>เบอร์โทรศัพท์</th>
+              <th>ที่อยู่</th>
+              <th>เลขบัตรประชาชน</th>
+              <th>ชื่อเล่น</th>
+              <th>e - mail</th>
+              <th>หน่วยบริการ</th>
+              <th style="width: 100px;">จัดการ</th>
             </tr>
           </thead>
-          <tbody id="bookData"></tbody>
+          <tbody id="staffTableBody"></tbody>
         </table>
       </div>
-    </div> <!-- ปิด card ตาราง -->
+    </div> <!-- ปิด staffView -->
 
     <!-- 🏢 Modal เลือกกลุ่มงานส่งหนังสือ -->
     <div class="modal fade" id="deptSelectModal" tabindex="-1" aria-hidden="true">
@@ -472,127 +611,7 @@
       </div>
     </div>
 
-    <!-- 👥 Modal 6: สมุดรายนามและจัดการบุคลากร (Staff Directory) -->
-    <div class="modal fade" id="staffManageModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-        <div class="modal-content border-0 shadow-lg">
-          <div class="modal-header bg-success text-white py-3">
-            <div class="d-flex align-items-center gap-2">
-              <span class="fs-4">👥</span>
-              <div>
-                <h5 class="modal-title fw-bold mb-0">สมุดรายนามและจัดการบุคลากร</h5>
-                <small class="opacity-75">รวม <span id="staffTotalCount">0</span> ท่าน | ศกศ.ตราด</small>
-              </div>
-            </div>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body p-3 p-md-4 bg-light">
-            <!-- 🔍 แถบควบคุม: ค้นหา / ตัวกรองกลุ่ม / ปุ่มเปิดฟอร์มเพิ่มบุคลากร -->
-            <div class="row g-2 mb-3">
-              <div class="col-12 col-md-5">
-                <div class="input-group shadow-sm">
-                  <span class="input-group-text bg-white">🔍</span>
-                  <input type="text" id="staffSearchInput" class="form-control" placeholder="ค้นหาชื่อ, ชื่อเล่น, ตำแหน่ง, เบอร์โทร..." oninput="filterStaffDirectory()">
-                </div>
-              </div>
-              <div class="col-6 col-md-4">
-                <select id="staffCategoryFilter" class="form-select shadow-sm" onchange="filterStaffDirectory()">
-                  <option value="all">📂 ทุกประเภทบุคลากร</option>
-                  <option value="ข้าราชการ">ข้าราชการ</option>
-                  <option value="พนักงานราชการ">พนักงานราชการ</option>
-                  <option value="ลูกจ้างชั่วคราวรายเดือน (ครูผู้ช่วย) ห้องเรียนคู่ขนาน">ครูคู่ขนาน</option>
-                  <option value="ลูกจ้างชั่วคราวรายเดือน (ครูผู้ช่วย) ศูนย์การเรียนเด็กเจ็บป่วยในโรงพยาบาล">ครู รพ.</option>
-                  <option value="พนักงานธุรการ">พนักงานธุรการ</option>
-                  <option value="พี่เลี้ยงเด็กพิการ">พี่เลี้ยงเด็กพิการ</option>
-                  <option value="จ้างเหมาบริการ">จ้างเหมาบริการ</option>
-                </select>
-              </div>
-              <div class="col-6 col-md-3">
-                <button class="btn btn-success w-100 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-1" type="button" onclick="openAddStaffForm()">
-                  <span>➕</span> <span>เพิ่มบุคลากรใหม่</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- 📝 แบบฟอร์มเพิ่ม/แก้ไขข้อมูลบุคลากร -->
-            <div id="staffFormContainer" style="display: none;" class="card p-3 mb-4 border-success shadow-sm bg-white">
-              <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
-                <h6 id="staffFormTitle" class="fw-bold text-success mb-0">➕ เพิ่มข้อมูลบุคลากรใหม่</h6>
-                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="closeStaffForm()">✕ ปิดฟอร์ม</button>
-              </div>
-              <input type="hidden" id="staffFormOldName" value="">
-              <div class="row g-2">
-                <div class="col-12 col-md-4">
-                  <label class="form-label small fw-bold mb-1">ประเภทบุคลากร <span class="text-danger">*</span></label>
-                  <select id="formStaffCategory" class="form-select form-select-sm">
-                    <option value="ข้าราชการ">ข้าราชการ</option>
-                    <option value="พนักงานราชการ">พนักงานราชการ</option>
-                    <option value="ลูกจ้างชั่วคราวรายเดือน (ครูผู้ช่วย) ห้องเรียนคู่ขนาน">ลูกจ้างชั่วคราวรายเดือน (ครูผู้ช่วย) ห้องเรียนคู่ขนาน</option>
-                    <option value="ลูกจ้างชั่วคราวรายเดือน (ครูผู้ช่วย) ศูนย์การเรียนเด็กเจ็บป่วยในโรงพยาบาล">ลูกจ้างชั่วคราวรายเดือน (ครูผู้ช่วย) ศูนย์การเรียนเด็กเจ็บป่วยในโรงพยาบาล</option>
-                    <option value="พนักงานธุรการ">พนักงานธุรการ</option>
-                    <option value="พี่เลี้ยงเด็กพิการ">พี่เลี้ยงเด็กพิการ</option>
-                    <option value="จ้างเหมาบริการ">จ้างเหมาบริการ</option>
-                    <option value="อื่นๆ">อื่นๆ</option>
-                  </select>
-                </div>
-                <div class="col-12 col-md-5">
-                  <label class="form-label small fw-bold mb-1">ชื่อ - นามสกุล <span class="text-danger">*</span></label>
-                  <input type="text" id="formStaffName" class="form-control form-control-sm" placeholder="ระบุ คำนำหน้า ชื่อ-นามสกุล">
-                </div>
-                <div class="col-12 col-md-3">
-                  <label class="form-label small fw-bold mb-1">ชื่อเล่น</label>
-                  <input type="text" id="formStaffNickname" class="form-control form-control-sm" placeholder="เช่น พี่ปุ๊, แต">
-                </div>
-                <div class="col-12 col-md-4">
-                  <label class="form-label small fw-bold mb-1">ตำแหน่ง</label>
-                  <input type="text" id="formStaffPosition" class="form-control form-control-sm" placeholder="เช่น ครู ค.ศ.1, พี่เลี้ยงเด็กพิการ">
-                </div>
-                <div class="col-12 col-md-4">
-                  <label class="form-label small fw-bold mb-1">หมายเลขโทรศัพท์</label>
-                  <input type="tel" id="formStaffPhone" class="form-control form-control-sm" placeholder="08x-xxxxxxx">
-                </div>
-                <div class="col-12 col-md-4">
-                  <label class="form-label small fw-bold mb-1">หน่วยบริการ</label>
-                  <select id="formStaffUnit" class="form-select form-select-sm">
-                    <option value="เมือง">เมือง</option>
-                    <option value="คลองใหญ่">คลองใหญ่</option>
-                    <option value="เขาสมิง">เขาสมิง</option>
-                    <option value="บ่อไร่">บ่อไร่</option>
-                    <option value="แหลมงอบ">แหลมงอบ</option>
-                    <option value="เกาะช้าง">เกาะช้าง</option>
-                    <option value="เกาะกูด">เกาะกูด</option>
-                    <option value="คู่ขนาน">คู่ขนาน</option>
-                    <option value="โรงพยาบาล">โรงพยาบาล</option>
-                  </select>
-                </div>
-                <div class="col-12 col-md-4">
-                  <label class="form-label small fw-bold mb-1">e - mail</label>
-                  <input type="email" id="formStaffEmail" class="form-control form-control-sm" placeholder="name@gmail.com">
-                </div>
-                <div class="col-12 col-md-4">
-                  <label class="form-label small fw-bold mb-1">วัน เดือน ปีเกิด</label>
-                  <input type="text" id="formStaffBirthDate" class="form-control form-control-sm" placeholder="เช่น 15 ม.ค. 2526">
-                </div>
-                <div class="col-12 col-md-4">
-                  <label class="form-label small fw-bold mb-1">เลขบัตรประจำตัวประชาชน</label>
-                  <input type="text" id="formStaffCid" class="form-control form-control-sm" placeholder="x xxxx xxxxx xx x">
-                </div>
-              </div>
-              <div class="d-flex justify-content-end gap-2 mt-3">
-                <button type="button" class="btn btn-sm btn-secondary px-3" onclick="closeStaffForm()">ยกเลิก</button>
-                <button type="button" id="saveStaffBtn" class="btn btn-sm btn-success px-4 fw-bold shadow-sm" onclick="submitStaffForm()">💾 บันทึกข้อมูล</button>
-              </div>
-            </div>
-
-            <!-- 📋 พื้นที่แสดงการ์ดรายชื่อบุคลากร -->
-            <div id="staffCardsContainer" class="row g-2 overflow-auto" style="max-height: 60vh;"></div>
-          </div>
-          <div class="modal-footer bg-light py-2">
-            <button type="button" class="btn btn-secondary px-4 btn-sm" data-bs-dismiss="modal">ปิดหน้าต่าง</button>
-          </div>
-        </div>
-      </div>
-    </div>
+    
 
     <!-- 🔴 Modal 2: ยืนยันการลบหนังสือออกจากฐานข้อมูล (เพิ่มตัวเลือกส่ง LINE แจ้งยกเลิก) -->
     <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
@@ -777,7 +796,8 @@
   // 💾 คลังจัดเก็บสถิติและผลลัพธ์ข้อมูลการเสิร์ชความเร็วสูง (Client-side Query Cache)
   let dataCache = {};
 
-  // --- 2. ระบบสแกนบุคลากรผ่านเซิร์ฟเวอร์คลาวด์ (10 คอลัมน์) ---
+
+  // --- 2. ระบบสแกนบุคลากรผ่านเซิร์ฟเวอร์คลาวด์ ---
   async function loadStaffList() {
     try {
         const response = await fetch(`${SCRIPT_URL}?type=staff&t=${new Date().getTime()}`);
@@ -792,6 +812,226 @@
         }
         filterStaffDirectory();
     } catch (e) { console.error("โหลดรายชื่อไม่สำเร็จ", e); }
+  }
+
+  // --- 12. ระบบควบคุมหน้าตารางทะเบียนบุคลากรเต็มจอ ---
+  function switchToStaffView() {
+    document.getElementById('sarabanView').style.display = 'none';
+    document.getElementById('staffView').style.display = 'block';
+    document.getElementById('manageStaffBtn').style.display = 'none';
+    document.getElementById('backToSarabanBtn').style.display = 'block';
+    filterStaffDirectory();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function switchToSarabanView() {
+    document.getElementById('staffView').style.display = 'none';
+    document.getElementById('sarabanView').style.display = 'block';
+    document.getElementById('backToSarabanBtn').style.display = 'none';
+    if (currentUser.role === 'Admin') {
+      document.getElementById('manageStaffBtn').style.display = 'block';
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function filterStaffDirectory() {
+    const search = document.getElementById('staffSearchInput') ? document.getElementById('staffSearchInput').value.toLowerCase().trim() : "";
+    const category = document.getElementById('staffCategoryFilter') ? document.getElementById('staffCategoryFilter').value : "all";
+
+    const filtered = fullStaffData.filter(s => {
+      const matchCategory = (category === 'all') ? true : (s.category === category);
+      const matchSearch = search === "" ? true : (
+        (s.name && s.name.toLowerCase().includes(search)) ||
+        (s.nickname && s.nickname.toLowerCase().includes(search)) ||
+        (s.position && s.position.toLowerCase().includes(search)) ||
+        (s.phone && s.phone.toLowerCase().includes(search)) ||
+        (s.address && s.address.toLowerCase().includes(search)) ||
+        (s.serviceUnit && s.serviceUnit.toLowerCase().includes(search)) ||
+        (s.email && s.email.toLowerCase().includes(search))
+      );
+      return matchCategory && matchSearch;
+    });
+
+    renderStaffTable(filtered);
+  }
+
+  function renderStaffTable(list) {
+    const totalCountElem = document.getElementById('staffTotalCount');
+    if (totalCountElem) totalCountElem.innerText = list.length;
+    
+    const tbody = document.getElementById('staffTableBody');
+    if (!tbody) return;
+
+    if (list.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="11" class="text-center text-muted p-4">ไม่พบบุคลากรตามเงื่อนไขที่ค้นหา</td></tr>`;
+      return;
+    }
+
+    const unitColors = {
+      "เมือง": "#00796b", "คลองใหญ่": "#0891b2", "เขาสมิง": "#d97706",
+      "บ่อไร่": "#7c3aed", "แหลมงอบ": "#dc2626", "เกาะช้าง": "#2563eb",
+      "เกาะกูด": "#4f46e5", "คู่ขนาน": "#ea580c", "โรงพยาบาล": "#059669"
+    };
+
+    // จัดกลุ่มตามประเภทบุคลากร
+    const groups = {};
+    list.forEach(item => {
+      const cat = item.category || "ข้าราชการ";
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(item);
+    });
+
+    let html = "";
+
+    for (let cat in groups) {
+      const members = groups[cat];
+      html += `
+        <tr class="table-success table-opacity-50">
+          <td colspan="11" class="fw-bold py-2 ps-3 text-dark bg-success bg-opacity-10" style="font-size: 0.92rem;">
+            📌 ${cat} (${members.length} ท่าน)
+          </td>
+        </tr>
+      `;
+
+      members.forEach((s, idx) => {
+        const unitColor = unitColors[s.serviceUnit] || "#64748b";
+        html += `
+          <tr class="align-middle text-center">
+            <td class="text-muted fw-bold">${idx + 1}</td>
+            <td class="text-start fw-bold text-dark">${s.name}</td>
+            <td class="text-start">${s.position || '-'}</td>
+            <td>${s.birthDate || '-'}</td>
+            <td>
+              ${s.phone ? `<a href="tel:${s.phone}" class="text-decoration-none fw-bold text-primary">${s.phone}</a>` : '-'}
+            </td>
+            <td class="text-start text-truncate" style="max-width: 140px;" title="${s.address || ''}">
+              ${s.address || '-'}
+            </td>
+            <td class="font-monospace small">${s.cid || '-'}</td>
+            <td>${s.nickname ? `<span class="badge bg-warning text-dark">${s.nickname}</span>` : '-'}</td>
+            <td class="text-start">
+              ${s.email ? `<a href="mailto:${s.email}" class="text-decoration-none text-secondary">${s.email}</a>` : '-'}
+            </td>
+            <td>
+              <span class="badge text-white" style="background-color: ${unitColor}; font-size: 0.75rem;">${s.serviceUnit}</span>
+            </td>
+            <td>
+              <div class="d-flex justify-content-center gap-1">
+                <button class="btn btn-sm btn-outline-warning text-dark py-0 px-2 fw-bold" onclick="openEditStaffForm('${encodeURIComponent(s.name)}')">✏️ แก้ไข</button>
+                <button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold" onclick="deleteStaffName('${s.name}')">🗑️</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    tbody.innerHTML = html;
+  }
+
+  function openAddStaffForm() {
+    document.getElementById('staffFormTitle').innerText = "➕ เพิ่มข้อมูลบุคลากรใหม่";
+    document.getElementById('staffFormOldName').value = "";
+    document.getElementById('formStaffName').value = "";
+    document.getElementById('formStaffNickname').value = "";
+    document.getElementById('formStaffPosition').value = "";
+    document.getElementById('formStaffPhone').value = "";
+    document.getElementById('formStaffAddress').value = "";
+    document.getElementById('formStaffEmail').value = "";
+    document.getElementById('formStaffBirthDate').value = "";
+    document.getElementById('formStaffCid').value = "";
+    document.getElementById('formStaffCategory').value = "ข้าราชการ";
+    document.getElementById('formStaffUnit').value = "เมือง";
+    document.getElementById('staffFormContainer').style.display = 'block';
+    window.scrollTo({ top: 150, behavior: 'smooth' });
+  }
+
+  function openEditStaffForm(encodedName) {
+    const targetName = decodeURIComponent(encodedName);
+    const staff = fullStaffData.find(s => s.name === targetName);
+    if (!staff) return;
+
+    document.getElementById('staffFormTitle').innerText = `✏️ แก้ไขข้อมูลบุคลากร: ${staff.name}`;
+    document.getElementById('staffFormOldName').value = staff.name;
+    document.getElementById('formStaffName').value = staff.name;
+    document.getElementById('formStaffNickname').value = staff.nickname;
+    document.getElementById('formStaffPosition').value = staff.position;
+    document.getElementById('formStaffPhone').value = staff.phone;
+    document.getElementById('formStaffAddress').value = staff.address || "";
+    document.getElementById('formStaffEmail').value = staff.email;
+    document.getElementById('formStaffBirthDate').value = staff.birthDate;
+    document.getElementById('formStaffCid').value = staff.cid;
+    document.getElementById('formStaffCategory').value = staff.category || "ข้าราชการ";
+    document.getElementById('formStaffUnit').value = staff.serviceUnit || "เมือง";
+    document.getElementById('staffFormContainer').style.display = 'block';
+    window.scrollTo({ top: 150, behavior: 'smooth' });
+  }
+
+  function closeStaffForm() {
+    document.getElementById('staffFormContainer').style.display = 'none';
+  }
+
+  async function submitStaffForm() {
+    const oldName = document.getElementById('staffFormOldName').value.trim();
+    const name = document.getElementById('formStaffName').value.trim();
+    if (!name) return alert("กรุณาระบุชื่อ-นามสกุลบุคลากร");
+
+    const payload = {
+      action: oldName ? "updateStaff" : "addStaff",
+      oldName: oldName,
+      name: name,
+      nickname: document.getElementById('formStaffNickname').value.trim(),
+      position: document.getElementById('formStaffPosition').value.trim(),
+      phone: document.getElementById('formStaffPhone').value.trim(),
+      address: document.getElementById('formStaffAddress').value.trim(),
+      email: document.getElementById('formStaffEmail').value.trim(),
+      birthDate: document.getElementById('formStaffBirthDate').value.trim(),
+      cid: document.getElementById('formStaffCid').value.trim(),
+      category: document.getElementById('formStaffCategory').value,
+      serviceUnit: document.getElementById('formStaffUnit').value
+    };
+
+    const btn = document.getElementById('saveStaffBtn');
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> กำลังบันทึก...`;
+
+    try {
+      const res = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      const result = await res.json();
+      if (result.success) {
+        alert(oldName ? "✅ อัปเดตข้อมูลบุคลากรเรียบร้อยแล้ว" : "✅ เพิ่มบุคลากรใหม่เรียบร้อยแล้ว");
+        closeStaffForm();
+        loadStaffList();
+      } else {
+        alert("⚠️ เกิดข้อผิดพลาด: " + (result.message || "ไม่สามารถบันทึกข้อมูลได้"));
+      }
+    } catch (e) {
+      alert("❌ เชื่อมต่อเซิร์ฟเวอร์ล้มเหลว กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `💾 บันทึกข้อมูล`;
+    }
+  }
+
+  async function deleteStaffName(name) {
+    if (!confirm(`คุณต้องการลบ "${name}" ออกจากฐานข้อมูลบุคลากรใช่หรือไม่?`)) return;
+
+    try {
+      const res = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: "deleteStaff", name: name })
+      });
+      const result = await res.json();
+      if (result.success) {
+        alert(`✅ ลบ "${name}" ออกจากระบบเรียบร้อยแล้ว`);
+        loadStaffList();
+      }
+    } catch (e) {
+      alert("❌ ไม่สามารถลบรายชื่อได้");
+    }
   }
 
   // --- ระบบควบคุม Modal เลือกกลุ่มงานและแท็กผู้รับ ---

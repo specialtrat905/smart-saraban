@@ -242,8 +242,8 @@
         <button id="editDbBtn" class="btn btn-sm btn-nav-edit shadow-sm" style="display:none;" onclick="handleEditDbBtnClick()">
           ⚙️ แก้ไขฐานข้อมูล
         </button>
-        <!-- 🚪 ปุ่มออกจากระบบ (สีแดงอิฐด้าน ทึบแน่น) -->
-        <button id="logoutBtn" onclick="logout()" class="btn btn-sm btn-nav-logout shadow-sm" style="display:none;">
+        <!-- 🚪 ปุ่มออกจากระบบ (บนคอม) / ปุ่มปิดแอป (บนมือถือ) -->
+        <button id="logoutBtn" class="btn btn-sm btn-nav-logout shadow-sm" style="display:none;">
           ออกจากระบบ
         </button>
       </div>
@@ -798,7 +798,7 @@
 
         // แสดงปุ่มออกจากระบบให้ทุกสิทธิ์ (เพื่อให้ User สลับฝ่ายหรือออกจากระบบได้)
         document.getElementById('logoutBtn').style.display = 'block'; 
-
+        setupExitButton(); // 👈 เพิ่มบรรทัดนี้เพื่อปรับข้อความปุ่มตามอุปกรณ์
         if(currentUser.role === 'Admin') {
             document.getElementById('adminView').style.display = 'block';
             document.getElementById('deptFilterContainer').style.display = 'block';
@@ -920,6 +920,38 @@
           <span role="button" class="text-danger fw-bold cursor-pointer flex-shrink-0" onclick="removeFile(${index})">✕</span>
         </div>
       `).join('');
+    }
+  }
+
+// 📱 ฟังก์ชันปิดแอปสำหรับสมาร์ตโฟน (ไม่ล้างสิทธิ์ล็อกอิน)
+  function closeApp() {
+    window.close();
+    // สำรองสำหรับเบราว์เซอร์มือถือบางรุ่นที่ไม่ยอมให้ปิดแท็บด้วยคำสั่งสคริปต์
+    setTimeout(() => {
+      if (!window.closed) {
+        alert("💡 ท่านสามารถกดปุ่ม Home หรือปัดปิดแอปได้ทันที โดยไม่ต้องล็อกอินใหม่ในครั้งถัดไป");
+      }
+    }, 250);
+  }
+
+  // 🔄 ฟังก์ชันสลับปุ่มระหว่าง "ออกจากระบบ" (บนคอม) กับ "ปิดแอป" (บนมือถือ)
+  function setupExitButton() {
+    const btn = document.getElementById('logoutBtn');
+    if (!btn) return;
+
+    // ตรวจสอบว่าเป็นมือถือหรือเปิดในโหมดแอป PWA (Standalone) หรือไม่
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || 
+                     window.matchMedia('(display-mode: standalone)').matches || 
+                     window.innerWidth <= 768;
+
+    if (isMobile) {
+      btn.innerHTML = "❌ ปิดแอป";
+      btn.onclick = closeApp;
+      btn.title = "ปิดแอปพลิเคชัน";
+    } else {
+      btn.innerHTML = "ออกจากระบบ";
+      btn.onclick = logout;
+      btn.title = "ออกจากระบบและล้างสิทธิ์";
     }
   }
 
@@ -1122,6 +1154,8 @@
             document.getElementById('adminView').style.display = 'none';
             document.getElementById('deptFilterContainer').style.display = 'none';
         }
+
+        setupExitButton(); // 👈 เพิ่มบรรทัดนี้
 
         document.getElementById('loginPage').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';

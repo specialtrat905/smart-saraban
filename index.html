@@ -218,7 +218,7 @@
       box-shadow: 0 8px 18px rgba(0, 77, 64, 0.08);
       border-color: #00796b;
     }
-    /* 📋 สไตล์ตารางทะเบียนบุคลากร: ขนาดคอลัมน์พอดีกับข้อมูลที่ยาวที่สุด + ตัวหนาสีดำล้วน */
+    /* 📋 สไตล์ตารางทะเบียนบุคลากร: ขยายพอดีตามข้อมูลจริง + ตัวหนาสีดำล้วน ไม่มีกรอบครอบ */
     .table-staff-custom {
       table-layout: auto !important;
       width: max-content !important;
@@ -227,7 +227,7 @@
     .table-staff-custom th {
       white-space: nowrap !important;
       vertical-align: middle;
-      padding: 0.5rem 0.75rem !important;
+      padding: 0.5rem 0.8rem !important;
       color: #000000 !important;
       font-weight: bold !important;
       background-color: #f1f5f9 !important;
@@ -235,7 +235,7 @@
     .table-staff-custom td {
       white-space: nowrap !important;
       vertical-align: middle;
-      padding: 0.45rem 0.75rem !important;
+      padding: 0.45rem 0.8rem !important;
       color: #000000 !important;
       font-weight: bold !important;
     }
@@ -244,6 +244,40 @@
       min-width: 160px;
       max-width: 260px;
       word-break: break-word;
+    }
+
+    /* 🗓️ สไตล์ปฏิทิน Google Material Thai Date Picker */
+    .calendar-header {
+      background: linear-gradient(135deg, #004d40 0%, #00796b 100%);
+      color: #ffffff;
+      padding: 16px;
+      border-radius: 12px 12px 0 0;
+    }
+    .cal-day-cell {
+      width: 38px;
+      height: 38px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      cursor: pointer;
+      font-weight: bold;
+      color: #1e293b;
+      transition: all 0.15s ease;
+      margin: 2px auto;
+    }
+    .cal-day-cell:hover {
+      background-color: #e0f2f1;
+      color: #00796b;
+    }
+    .cal-day-cell.selected {
+      background-color: #00796b !important;
+      color: #ffffff !important;
+      box-shadow: 0 4px 10px rgba(0, 121, 107, 0.4);
+    }
+    .cal-day-cell.empty {
+      cursor: default;
+      background: transparent !important;
     }
   </style>
 </head>
@@ -443,9 +477,8 @@
           <div class="col-12 col-md-4">
             <label class="form-label small fw-bold mb-1">วัน เดือน ปีเกิด</label>
             <div class="input-group input-group-sm">
-              <input type="text" id="formStaffBirthDate" class="form-control" placeholder="เช่น 15 มกราคม 2526">
-              <button class="btn btn-outline-secondary" type="button" onclick="triggerDatePicker()" title="เลือกจากปฏิทิน">📅</button>
-              <input type="date" id="formStaffDatePickerHelper" class="d-none" onchange="syncDatePickerToThai(this.value)">
+              <input type="text" id="formStaffBirthDate" class="form-control" placeholder="เช่น 15 มกราคม 2526" onclick="openThaiDatePicker('formStaffBirthDate')">
+              <button class="btn btn-success" type="button" onclick="openThaiDatePicker('formStaffBirthDate')" title="เปิดปฏิทินเลือกวันเดือนปี">📅 เลือกวันที่</button>
             </div>
           </div>
           <div class="col-12 col-md-4">
@@ -672,6 +705,50 @@
         </div>
       </div>
     </div>
+    <!-- 🗓️ Modal ปฏิทิน Google Material Thai Date Picker (ปุ่มตกลงปุ่มเดียว) -->
+    <div class="modal fade" id="thaiDatePickerModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered" style="max-width: 360px;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+          <div class="calendar-header d-flex justify-content-between align-items-center">
+            <div>
+              <div class="small opacity-75 fw-bold">เลือกวัน เดือน ปีเกิด (พ.ศ.)</div>
+              <div id="dpHeaderDateDisplay" class="fs-4 fw-bold mt-1">16 กันยายน 2527</div>
+            </div>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body p-3 bg-white">
+            <!-- แถบเลือกเดือน และ ปี พ.ศ. -->
+            <div class="row g-2 mb-2">
+              <div class="col-7">
+                <select id="dpMonthSelect" class="form-select form-select-sm fw-bold border-success" onchange="changeDatePickerMonthYear()"></select>
+              </div>
+              <div class="col-5">
+                <select id="dpYearSelect" class="form-select form-select-sm fw-bold border-success" onchange="changeDatePickerMonthYear()"></select>
+              </div>
+            </div>
+
+            <!-- วันในสัปดาห์ -->
+            <div class="d-flex text-center text-muted small fw-bold mb-1 py-1 border-bottom">
+              <div style="width: 14.28%; color: #dc2626;">อา.</div>
+              <div style="width: 14.28%;">จ.</div>
+              <div style="width: 14.28%;">อ.</div>
+              <div style="width: 14.28%;">พ.</div>
+              <div style="width: 14.28%;">พฤ.</div>
+              <div style="width: 14.28%;">ศ.</div>
+              <div style="width: 14.28%; color: #2563eb;">ส.</div>
+            </div>
+
+            <!-- ตารางวันที่ -->
+            <div id="dpDaysGrid" class="d-flex flex-wrap text-center"></div>
+          </div>
+          <!-- มีปุ่ม "ตกลง" เพียงปุ่มเดียวตามที่ต้องการ -->
+          <div class="modal-footer bg-light p-2 d-flex justify-content-end">
+            <button type="button" class="btn btn-success px-4 fw-bold shadow-sm" onclick="confirmThaiDatePicker()">ตกลง</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- 🗑️ Modal ยืนยันการลบบุคลากร (พร้อมระบบใส่รหัสผ่านยืนยัน) -->
     <div class="modal fade" id="deleteStaffModal" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
@@ -819,7 +896,7 @@
   // --- 1. การตั้งค่าสิทธิ์พื้นฐานองค์กร ---
   const GH_OWNER = "specialtrat905";
   const GH_REPO = "smart-saraban";
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxssyPjlGs1xEAeltl7ymCp1WFmtBYF-LgL4TGBtH2L_dCPmvyElCWrBHcHKqfLtv-nRQ/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwTbPwzd2D0laGqnm5RWSuSA5EEl_5f99gCTraUyWJaSbX7BJgoytCO08IIQvZPnnqT5A/exec";
 
   let currentUser = {};
   let allLogs = [];
@@ -912,35 +989,7 @@
     renderStaffTable(filtered);
   }
 
-  // 📅 ฟังก์ชันเรียกเปิดปฏิทิน
-  function triggerDatePicker() {
-    const helper = document.getElementById('formStaffDatePickerHelper');
-    if (helper) {
-      if (typeof helper.showPicker === 'function') {
-        helper.showPicker();
-      } else {
-        helper.click();
-      }
-    }
-  }
-
-  // 🔄 แปลงค่าจากปฏิทินสากลเป็น วัน เดือน(ไทยเต็ม) ปี พ.ศ.
-  function syncDatePickerToThai(isoVal) {
-    if (!isoVal) return;
-    const parts = isoVal.split('-');
-    if (parts.length === 3) {
-      const y = parseInt(parts[0]) + 543;
-      const m = parseInt(parts[1]) - 1;
-      const d = parseInt(parts[2]);
-      const thaiMonths = [
-        "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
-        "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
-      ];
-      document.getElementById('formStaffBirthDate').value = `${d} ${thaiMonths[m]} ${y}`;
-    }
-  }
-
-  // 🗓️ ฟังก์ชันแปลงวันเดือนปีเกิดเป็นภาษาไทยเต็ม เช่น "16 กันยายน 2527"
+  // 🗓️ ฟังก์ชันแปลงวันเดือนปีเกิดเป็นภาษาไทยเต็ม "16 กันยายน 2527"
   function formatThaiBirthDate(val) {
     if (!val || val === "-" || val === "nan" || val === "undefined") return "-";
     
@@ -980,20 +1029,18 @@
       }
     }
 
-    if (str.includes('-')) {
+    if (str.includes('-') && /^\d{4}-\d{1,2}-\d{1,2}/.test(str)) {
       const parts = str.split(' ')[0].split('-');
-      if (parts.length === 3) {
-        let y = parseInt(parts[0]);
-        if (y < 2400) y += 543;
-        const m = parseInt(parts[1]) - 1;
-        const d = parseInt(parts[2]);
-        const thaiMonths = [
-          "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
-          "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
-        ];
-        if (m >= 0 && m < 12) {
-          return `${d} ${thaiMonths[m]} ${y}`;
-        }
+      let y = parseInt(parts[0]);
+      if (y < 2400) y += 543;
+      const m = parseInt(parts[1]) - 1;
+      const d = parseInt(parts[2]);
+      const thaiMonths = [
+        "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+        "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+      ];
+      if (m >= 0 && m < 12) {
+        return `${d} ${thaiMonths[m]} ${y}`;
       }
     }
 
@@ -1077,6 +1124,108 @@
     tbody.innerHTML = html;
   }
 
+  // ==========================================
+  // 🗓️ ระบบปฏิทิน Google Material Thai Date Picker
+  // ==========================================
+  let dpYearBE = 2527;
+  let dpMonth = 8; // 0-indexed
+  let dpDay = 16;
+  let dpTargetInputId = "formStaffBirthDate";
+  let dpModalInstance = null;
+
+  const thaiMonthsList = [
+    "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+    "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+  ];
+
+  function openThaiDatePicker(targetInputId) {
+    dpTargetInputId = targetInputId;
+    const currentVal = document.getElementById(targetInputId).value.trim();
+    
+    const formatted = formatThaiBirthDate(currentVal);
+    if (formatted && formatted !== "-") {
+      const parts = formatted.split(' ');
+      if (parts.length >= 3) {
+        dpDay = parseInt(parts[0]) || 1;
+        const mIdx = thaiMonthsList.indexOf(parts[1]);
+        dpMonth = mIdx !== -1 ? mIdx : 0;
+        dpYearBE = parseInt(parts[2]) || 2535;
+      }
+    } else {
+      dpDay = 1;
+      dpMonth = 0;
+      dpYearBE = 2535;
+    }
+
+    // สร้างตัวเลือกเดือน
+    const mSelect = document.getElementById('dpMonthSelect');
+    mSelect.innerHTML = thaiMonthsList.map((m, idx) => `<option value="${idx}" ${idx === dpMonth ? 'selected' : ''}>${m}</option>`).join('');
+
+    // สร้างตัวเลือกปี พ.ศ. (2480 - 2575)
+    const ySelect = document.getElementById('dpYearSelect');
+    let yOpts = "";
+    for (let y = 2575; y >= 2480; y--) {
+      yOpts += `<option value="${y}" ${y === dpYearBE ? 'selected' : ''}>พ.ศ. ${y}</option>`;
+    }
+    ySelect.innerHTML = yOpts;
+
+    renderDatePickerGrid();
+
+    if (!dpModalInstance) {
+      dpModalInstance = new bootstrap.Modal(document.getElementById('thaiDatePickerModal'));
+    }
+    dpModalInstance.show();
+  }
+
+  function changeDatePickerMonthYear() {
+    dpMonth = parseInt(document.getElementById('dpMonthSelect').value);
+    dpYearBE = parseInt(document.getElementById('dpYearSelect').value);
+    renderDatePickerGrid();
+  }
+
+  function renderDatePickerGrid() {
+    const yearCE = dpYearBE - 543;
+    const firstDayIndex = new Date(yearCE, dpMonth, 1).getDay(); // 0 = Sun, 1 = Mon ...
+    const totalDays = new Date(yearCE, dpMonth + 1, 0).getDate();
+
+    if (dpDay > totalDays) dpDay = totalDays;
+
+    document.getElementById('dpHeaderDateDisplay').innerText = `${dpDay} ${thaiMonthsList[dpMonth]} ${dpYearBE}`;
+
+    const grid = document.getElementById('dpDaysGrid');
+    let gridHTML = "";
+
+    // ช่องว่างก่อนวันที่ 1
+    for (let i = 0; i < firstDayIndex; i++) {
+      gridHTML += `<div style="width: 14.28%; height: 42px;"><div class="cal-day-cell empty"></div></div>`;
+    }
+
+    // วันที่ 1 ถึงสิ้นเดือน
+    for (let d = 1; d <= totalDays; d++) {
+      const isSelected = (d === dpDay);
+      gridHTML += `
+        <div style="width: 14.28%; height: 42px;">
+          <div class="cal-day-cell ${isSelected ? 'selected' : ''}" onclick="selectDatePickerDay(${d})">${d}</div>
+        </div>
+      `;
+    }
+
+    grid.innerHTML = gridHTML;
+  }
+
+  function selectDatePickerDay(d) {
+    dpDay = d;
+    renderDatePickerGrid();
+  }
+
+  function confirmThaiDatePicker() {
+    document.getElementById(dpTargetInputId).value = `${dpDay} ${thaiMonthsList[dpMonth]} ${dpYearBE}`;
+    if (dpModalInstance) dpModalInstance.hide();
+  }
+
+  // ==========================================
+  // 📝 ระบบฟอร์มเพิ่ม/แก้ไขข้อมูลบุคลากร
+  // ==========================================
   function openAddStaffForm() {
     document.getElementById('staffFormTitle').innerText = "➕ เพิ่มข้อมูลบุคลากรใหม่";
     document.getElementById('staffFormOldName').value = "";
@@ -1107,7 +1256,6 @@
     document.getElementById('formStaffPhone').value = staff.phone || "";
     document.getElementById('formStaffAddress').value = staff.address || "";
     document.getElementById('formStaffEmail').value = staff.email || "";
-    // ✨ แปลงวันที่เกิดให้เป็นรูปแบบไทยเต็มในช่องกรอกแก้ไข
     document.getElementById('formStaffBirthDate').value = formatThaiBirthDate(staff.birthDate);
     document.getElementById('formStaffCid').value = staff.cid || "";
     document.getElementById('formStaffCategory').value = staff.category || "ข้าราชการ";
@@ -1165,7 +1313,9 @@
     }
   }
 
-  // --- 🔒 ระบบยืนยันการลบบุคลากรพร้อมรหัสผ่าน Admin ---
+  // ==========================================
+  // 🔒 ระบบยืนยันการลบบุคลากรพร้อมรหัสผ่าน Admin
+  // ==========================================
   let staffNameToDelete = "";
   let deleteStaffModalInstance = null;
 

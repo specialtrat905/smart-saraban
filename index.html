@@ -218,6 +218,23 @@
       box-shadow: 0 8px 18px rgba(0, 77, 64, 0.08);
       border-color: #00796b;
     }
+    /* 📋 สไตล์ตารางทะเบียนบุคลากรเต็มจอ กำหนดขนาดคอลัมน์ให้อ่านง่าย ไม่บีบอัด ไม่ซ้อนทับ */
+    .table-staff-custom {
+      table-layout: auto !important;
+      width: max-content !important;
+      min-width: 100% !important;
+    }
+    .table-staff-custom th, .table-staff-custom td {
+      white-space: nowrap !important;
+      vertical-align: middle;
+      padding: 0.55rem 0.65rem !important;
+    }
+    .table-staff-custom td.col-address {
+      white-space: normal !important;
+      min-width: 200px;
+      max-width: 280px;
+      word-break: break-word;
+    }
   </style>
 </head>
 <body>
@@ -458,22 +475,22 @@
         </div>
       </div>
 
-      <!-- 📋 ตารางแสดงรายชื่อบุคลากรเต็มจอแยกหมวดหมู่ -->
-      <div class="table-responsive">
-        <table class="table table-hover table-bordered align-middle text-nowrap" style="font-size: 0.85rem;">
-          <thead class="table-light text-center">
+      <!-- 📋 ตารางแสดงรายชื่อบุคลากรเต็มจอแยกหมวดหมู่ (กำหนดความกว้างคอลัมน์แบบไม่อึดอัด) -->
+      <div class="table-responsive border rounded shadow-sm bg-white" style="max-height: 72vh;">
+        <table class="table table-hover table-bordered align-middle table-staff-custom mb-0" style="font-size: 0.86rem;">
+          <thead class="table-light text-center sticky-top shadow-sm" style="z-index: 5;">
             <tr>
-              <th style="width: 50px;">ลำดับ</th>
-              <th>ชื่อ - นามสกุล</th>
-              <th>ตำแหน่ง</th>
-              <th>วัน เดือน ปีเกิด</th>
-              <th>เบอร์โทรศัพท์</th>
-              <th>ที่อยู่</th>
-              <th>เลขบัตรประชาชน</th>
-              <th>ชื่อเล่น</th>
-              <th>e - mail</th>
-              <th>หน่วยบริการ</th>
-              <th style="width: 100px;">จัดการ</th>
+              <th style="min-width: 55px; width: 55px;">ลำดับ</th>
+              <th style="min-width: 210px;">ชื่อ - นามสกุล</th>
+              <th style="min-width: 155px;">ตำแหน่ง</th>
+              <th style="min-width: 145px;">วัน เดือน ปีเกิด</th>
+              <th style="min-width: 120px;">เบอร์โทรศัพท์</th>
+              <th style="min-width: 200px;">ที่อยู่</th>
+              <th style="min-width: 160px;">เลขบัตรประชาชน</th>
+              <th style="min-width: 85px;">ชื่อเล่น</th>
+              <th style="min-width: 220px;">e - mail</th>
+              <th style="min-width: 105px;">หน่วยบริการ</th>
+              <th style="min-width: 100px; width: 100px;">จัดการ</th>
             </tr>
           </thead>
           <tbody id="staffTableBody"></tbody>
@@ -855,6 +872,69 @@
     renderStaffTable(filtered);
   }
 
+  // 🗓️ ฟังก์ชันแปลงวันเดือนปีเกิดให้เป็นรูปแบบภาษาไทย "13 มีนาคม 2523"
+  function formatThaiBirthDate(val) {
+    if (!val || val === "-" || val === "nan" || val === "undefined") return "-";
+    
+    let str = val.toString().trim();
+
+    // กรณีได้รับค่าเป็นสตริงวันเวลา เช่น "Sat Mar 13 2523..." หรือรูปแบบสากล
+    if (str.includes("GMT") || str.includes("T") || str.includes("Indochina")) {
+      const d = new Date(str);
+      if (!isNaN(d.getTime())) {
+        let y = d.getFullYear();
+        if (y < 2400) y += 543;
+        const thaiMonths = [
+          "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+          "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+        ];
+        return `${d.getDate()} ${thaiMonths[d.getMonth()]} ${y}`;
+      }
+    }
+
+    // แปลงตัวย่อเดือนภาษาไทยเป็นตัวเต็ม
+    const shortMonthsMap = {
+      "ม.ค.": "มกราคม", "ก.พ.": "กุมภาพันธ์", "ก.พ": "กุมภาพันธ์",
+      "มี.ค.": "มีนาคม", "มี.ค": "มีนาคม",
+      "เม.ย.": "เมษายน", "เม.ย": "เมษายน",
+      "พ.ค.": "พฤษภาคม", "พ.ค": "พฤษภาคม",
+      "มิ.ย.": "มิถุนายน", "มิ.ย": "มิถุนายน",
+      "ก.ค.": "กรกฎาคม", "ก.ค": "กรกฎาคม",
+      "ส.ค.": "สิงหาคม", "ส.ค": "สิงหาคม",
+      "ก.ย.": "กันยายน", "ก.ย": "กันยายน",
+      "ต.ค.": "ตุลาคม", "ต.ค": "ตุลาคม",
+      "พ.ย.": "พฤศจิกายน", "พ.ย": "พฤศจิกายน",
+      "ธ.ค.": "ธันวาคม", "ธ.ค": "ธันวาคม",
+      "ม.ย.": "มิถุนายน", "ม.ย": "มิถุนายน"
+    };
+
+    for (let s in shortMonthsMap) {
+      if (str.includes(s)) {
+        return str.replace(s, shortMonthsMap[s]).replace(/\s+/g, ' ').trim();
+      }
+    }
+
+    // กรณีได้รับเป็นรูปแบบ YYYY-MM-DD
+    if (str.includes('-')) {
+      const parts = str.split(' ')[0].split('-');
+      if (parts.length === 3) {
+        let y = parseInt(parts[0]);
+        if (y < 2400) y += 543;
+        const m = parseInt(parts[1]) - 1;
+        const d = parseInt(parts[2]);
+        const thaiMonths = [
+          "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+          "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+        ];
+        if (m >= 0 && m < 12) {
+          return `${d} ${thaiMonths[m]} ${y}`;
+        }
+      }
+    }
+
+    return str;
+  }
+
   function renderStaffTable(list) {
     const totalCountElem = document.getElementById('staffTotalCount');
     if (totalCountElem) totalCountElem.innerText = list.length;
@@ -895,30 +975,43 @@
 
       members.forEach((s, idx) => {
         const unitColor = unitColors[s.serviceUnit] || "#64748b";
+        const formattedBirth = formatThaiBirthDate(s.birthDate);
+        
         html += `
           <tr class="align-middle text-center">
+            <!-- 1. ลำดับ -->
             <td class="text-muted fw-bold">${idx + 1}</td>
+            <!-- 2. ชื่อ - นามสกุล -->
             <td class="text-start fw-bold text-dark">${s.name}</td>
-            <td class="text-start">${s.position || '-'}</td>
-            <td>${s.birthDate || '-'}</td>
+            <!-- 3. ตำแหน่ง -->
+            <td class="text-start text-secondary">${s.position || '-'}</td>
+            <!-- 4. วัน เดือน ปีเกิด -->
+            <td>${formattedBirth}</td>
+            <!-- 5. เบอร์โทรศัพท์ -->
             <td>
               ${s.phone ? `<a href="tel:${s.phone}" class="text-decoration-none fw-bold text-primary">${s.phone}</a>` : '-'}
             </td>
-            <td class="text-start text-truncate" style="max-width: 140px;" title="${s.address || ''}">
+            <!-- 6. ที่อยู่ -->
+            <td class="text-start col-address" title="${s.address || ''}">
               ${s.address || '-'}
             </td>
-            <td class="font-monospace small">${s.cid || '-'}</td>
-            <td>${s.nickname ? `<span class="badge bg-warning text-dark">${s.nickname}</span>` : '-'}</td>
+            <!-- 7. เลขบัตรประชาชน -->
+            <td class="font-monospace small text-dark">${s.cid || '-'}</td>
+            <!-- 8. ชื่อเล่น -->
+            <td>${s.nickname ? `<span class="badge bg-warning text-dark fw-bold">${s.nickname}</span>` : '-'}</td>
+            <!-- 9. e - mail -->
             <td class="text-start">
               ${s.email ? `<a href="mailto:${s.email}" class="text-decoration-none text-secondary">${s.email}</a>` : '-'}
             </td>
+            <!-- 10. หน่วยบริการ -->
             <td>
-              <span class="badge text-white" style="background-color: ${unitColor}; font-size: 0.75rem;">${s.serviceUnit}</span>
+              <span class="badge text-white shadow-sm" style="background-color: ${unitColor}; font-size: 0.75rem;">${s.serviceUnit || 'เมือง'}</span>
             </td>
+            <!-- 11. จัดการ -->
             <td>
               <div class="d-flex justify-content-center gap-1">
-                <button class="btn btn-sm btn-outline-warning text-dark py-0 px-2 fw-bold" onclick="openEditStaffForm('${encodeURIComponent(s.name)}')">✏️ แก้ไข</button>
-                <button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold" onclick="deleteStaffName('${s.name}')">🗑️</button>
+                <button class="btn btn-sm btn-outline-warning text-dark py-0 px-2 fw-bold shadow-sm" onclick="openEditStaffForm('${encodeURIComponent(s.name)}')">✏️</button>
+                <button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold shadow-sm" onclick="deleteStaffName('${s.name}')">🗑️</button>
               </div>
             </td>
           </tr>

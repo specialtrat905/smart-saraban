@@ -205,6 +205,19 @@
     /* เพิ่มต่อท้ายในส่วน <style> */
     .row-missing { background-color: #ffeea8 !important; /* สีเหลืองนวลจางๆ */}
     .text-missing { color: #d93025; /* สีแดงเข้มแบบ Google เพื่อให้ดู Soft ลงแต่ยังเด่น */ font-weight: bold; }
+
+    /* 👤 สไตล์การ์ดข้อมูลบุคลากร */
+    .staff-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      transition: all 0.2s ease;
+      background: #ffffff;
+    }
+    .staff-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 18px rgba(0, 77, 64, 0.08);
+      border-color: #00796b;
+    }
   </style>
 </head>
 <body>
@@ -552,7 +565,34 @@
                     <option value="โรงพยาบาล">โรงพยาบาล</option>
                   </select>
                 </div>
-                <div class="col-ฉันเป็น AI ที่ทำงานตามข้อความโต้ตอบเท่านั้น และไม่สามารถให้ความช่วยเหลือในเรื่องนี้ได้
+                <div class="col-12 col-md-4">
+                  <label class="form-label small fw-bold mb-1">e - mail</label>
+                  <input type="email" id="formStaffEmail" class="form-control form-control-sm" placeholder="name@gmail.com">
+                </div>
+                <div class="col-12 col-md-4">
+                  <label class="form-label small fw-bold mb-1">วัน เดือน ปีเกิด</label>
+                  <input type="text" id="formStaffBirthDate" class="form-control form-control-sm" placeholder="เช่น 15 ม.ค. 2526">
+                </div>
+                <div class="col-12 col-md-4">
+                  <label class="form-label small fw-bold mb-1">เลขบัตรประจำตัวประชาชน</label>
+                  <input type="text" id="formStaffCid" class="form-control form-control-sm" placeholder="x xxxx xxxxx xx x">
+                </div>
+              </div>
+              <div class="d-flex justify-content-end gap-2 mt-3">
+                <button type="button" class="btn btn-sm btn-secondary px-3" onclick="closeStaffForm()">ยกเลิก</button>
+                <button type="button" id="saveStaffBtn" class="btn btn-sm btn-success px-4 fw-bold shadow-sm" onclick="submitStaffForm()">💾 บันทึกข้อมูล</button>
+              </div>
+            </div>
+
+            <!-- 📋 พื้นที่แสดงการ์ดรายชื่อบุคลากร -->
+            <div id="staffCardsContainer" class="row g-2 overflow-auto" style="max-height: 60vh;"></div>
+          </div>
+          <div class="modal-footer bg-light py-2">
+            <button type="button" class="btn btn-secondary px-4 btn-sm" data-bs-dismiss="modal">ปิดหน้าต่าง</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- 🔴 Modal 2: ยืนยันการลบหนังสือออกจากฐานข้อมูล (เพิ่มตัวเลือกส่ง LINE แจ้งยกเลิก) -->
     <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
@@ -709,6 +749,9 @@
   let allLogs = [];
   let selectedFilesArray = [];
   let currentYearBE = new Date().getFullYear() + 543;
+  
+  // 👥 ตัวแปรจัดเก็บข้อมูลบุคลากรแบบเต็ม 10 คอลัมน์
+  let fullStaffData = [];
   let staffNames = [];
 
   // ⚙️ ตัวแปรควบคุมกลุ่มงานและรายชื่อผู้รับ
@@ -734,15 +777,20 @@
   // 💾 คลังจัดเก็บสถิติและผลลัพธ์ข้อมูลการเสิร์ชความเร็วสูง (Client-side Query Cache)
   let dataCache = {};
 
-  // --- 2. ระบบสแกนบุคลากรผ่านเซิร์ฟเวอร์คลาวด์ ---
+  // --- 2. ระบบสแกนบุคลากรผ่านเซิร์ฟเวอร์คลาวด์ (10 คอลัมน์) ---
   async function loadStaffList() {
     try {
         const response = await fetch(`${SCRIPT_URL}?type=staff&t=${new Date().getTime()}`);
-        staffNames = await response.json(); 
+        fullStaffData = await response.json(); 
+        staffNames = fullStaffData.map(s => s.name);
+
         const list = document.getElementById('staffList');
         if (list) {
-            list.innerHTML = staffNames.map(name => `<option value="${name}">`).join('');
+            list.innerHTML = fullStaffData.map(s => `
+              <option value="${s.name}">${s.nickname ? `[${s.nickname}] ` : ''}${s.position} (${s.serviceUnit})</option>
+            `).join('');
         }
+        filterStaffDirectory();
     } catch (e) { console.error("โหลดรายชื่อไม่สำเร็จ", e); }
   }
 
@@ -1679,30 +1727,188 @@
     pdfModalInstance.show();
   }
 
-  // --- 12. ระบบจัดการรายชื่อบุคลากร (Staff Management) ---
+  // --- 12. ระบบจัดการสมุดรายนามบุคลากรแบบเต็ม 10 คอลัมน์ (Staff Directory) ---
   let staffManageModalInstance = null;
 
   function openStaffManageModal() {
-    renderStaffManageList();
+    closeStaffForm();
+    filterStaffDirectory();
     if (!staffManageModalInstance) {
       staffManageModalInstance = new bootstrap.Modal(document.getElementById('staffManageModal'));
     }
     staffManageModalInstance.show();
   }
 
-  function renderStaffManageList() {
-    document.getElementById('staffTotalCount').innerText = staffNames.length;
-    const container = document.getElementById('staffManageListContainer');
-    if (staffNames.length === 0) {
-      container.innerHTML = `<div class="text-center text-muted small p-3">ยังไม่มีรายชื่อบุคลากร</div>`;
+  function filterStaffDirectory() {
+    const search = document.getElementById('staffSearchInput') ? document.getElementById('staffSearchInput').value.toLowerCase().trim() : "";
+    const category = document.getElementById('staffCategoryFilter') ? document.getElementById('staffCategoryFilter').value : "all";
+
+    const filtered = fullStaffData.filter(s => {
+      const matchCategory = (category === 'all') ? true : (s.category === category);
+      const matchSearch = search === "" ? true : (
+        (s.name && s.name.toLowerCase().includes(search)) ||
+        (s.nickname && s.nickname.toLowerCase().includes(search)) ||
+        (s.position && s.position.toLowerCase().includes(search)) ||
+        (s.phone && s.phone.toLowerCase().includes(search)) ||
+        (s.serviceUnit && s.serviceUnit.toLowerCase().includes(search)) ||
+        (s.email && s.email.toLowerCase().includes(search))
+      );
+      return matchCategory && matchSearch;
+    });
+
+    renderStaffCards(filtered);
+  }
+
+  function renderStaffCards(list) {
+    const totalCountElem = document.getElementById('staffTotalCount');
+    if (totalCountElem) totalCountElem.innerText = list.length;
+    
+    const container = document.getElementById('staffCardsContainer');
+    if (!container) return;
+
+    if (list.length === 0) {
+      container.innerHTML = `<div class="col-12 text-center text-muted p-4">ไม่พบบุคลากรตามเงื่อนไขที่ค้นหา</div>`;
       return;
     }
-    container.innerHTML = staffNames.map((name, idx) => `
-      <div class="p-2 bg-white rounded border d-flex justify-content-between align-items-center shadow-sm" style="font-size: 0.85rem;">
-        <span><span class="badge bg-secondary me-2">${idx + 1}</span>${name}</span>
-        <button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold" onclick="deleteStaffName('${name}')">🗑️ ลบ</button>
-      </div>
-    `).join('');
+
+    const unitColors = {
+      "เมือง": "#00796b", "คลองใหญ่": "#0891b2", "เขาสมิง": "#d97706",
+      "บ่อไร่": "#7c3aed", "แหลมงอบ": "#dc2626", "เกาะช้าง": "#2563eb",
+      "เกาะกูด": "#4f46e5", "คู่ขนาน": "#ea580c", "โรงพยาบาล": "#059669"
+    };
+
+    container.innerHTML = list.map((s) => {
+      const unitColor = unitColors[s.serviceUnit] || "#64748b";
+      return `
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="card staff-card p-3 h-100 shadow-sm">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div class="text-truncate me-2">
+                <span class="badge bg-secondary me-1" style="font-size:0.65rem;">${s.id}</span>
+                <span class="fw-bold text-dark" style="font-size:0.95rem;">${s.name}</span>
+                ${s.nickname ? `<span class="badge bg-warning text-dark ms-1" style="font-size:0.7rem;">${s.nickname}</span>` : ''}
+              </div>
+              <span class="badge text-white flex-shrink-0" style="background-color: ${unitColor}; font-size:0.68rem;">${s.serviceUnit}</span>
+            </div>
+
+            <div class="small text-muted mb-1">
+              <div><strong>💼 ตำแหน่ง:</strong> ${s.position || '-'}</div>
+              <div><strong>🏷️ ประเภท:</strong> <span class="badge bg-light text-dark border">${s.category}</span></div>
+            </div>
+
+            <div class="small text-muted mb-2">
+              ${s.phone ? `<div><strong>📞 โทร:</strong> <a href="tel:${s.phone}" class="text-decoration-none fw-bold text-primary">${s.phone}</a></div>` : ''}
+              ${s.email ? `<div><strong>✉️ อีเมล:</strong> <a href="mailto:${s.email}" class="text-decoration-none text-secondary text-truncate d-inline-block" style="max-width:180px;">${s.email}</a></div>` : ''}
+            </div>
+
+            <div class="mt-auto pt-2 border-top d-flex justify-content-end gap-1">
+              <button class="btn btn-sm btn-outline-warning text-dark py-0 px-2 fw-bold" onclick="openEditStaffForm('${encodeURIComponent(s.name)}')">✏️ แก้ไข</button>
+              <button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold" onclick="deleteStaffName('${s.name}')">🗑️ ลบ</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function openAddStaffForm() {
+    document.getElementById('staffFormTitle').innerText = "➕ เพิ่มข้อมูลบุคลากรใหม่";
+    document.getElementById('staffFormOldName').value = "";
+    document.getElementById('formStaffName').value = "";
+    document.getElementById('formStaffNickname').value = "";
+    document.getElementById('formStaffPosition').value = "";
+    document.getElementById('formStaffPhone').value = "";
+    document.getElementById('formStaffEmail').value = "";
+    document.getElementById('formStaffBirthDate').value = "";
+    document.getElementById('formStaffCid').value = "";
+    document.getElementById('formStaffCategory').value = "ข้าราชการ";
+    document.getElementById('formStaffUnit').value = "เมือง";
+    document.getElementById('staffFormContainer').style.display = 'block';
+  }
+
+  function openEditStaffForm(encodedName) {
+    const targetName = decodeURIComponent(encodedName);
+    const staff = fullStaffData.find(s => s.name === targetName);
+    if (!staff) return;
+
+    document.getElementById('staffFormTitle').innerText = `✏️ แก้ไขข้อมูลบุคลากร: ${staff.name}`;
+    document.getElementById('staffFormOldName').value = staff.name;
+    document.getElementById('formStaffName').value = staff.name;
+    document.getElementById('formStaffNickname').value = staff.nickname;
+    document.getElementById('formStaffPosition').value = staff.position;
+    document.getElementById('formStaffPhone').value = staff.phone;
+    document.getElementById('formStaffEmail').value = staff.email;
+    document.getElementById('formStaffBirthDate').value = staff.birthDate;
+    document.getElementById('formStaffCid').value = staff.cid;
+    document.getElementById('formStaffCategory').value = staff.category || "ข้าราชการ";
+    document.getElementById('formStaffUnit').value = staff.serviceUnit || "เมือง";
+    document.getElementById('staffFormContainer').style.display = 'block';
+  }
+
+  function closeStaffForm() {
+    document.getElementById('staffFormContainer').style.display = 'none';
+  }
+
+  async function submitStaffForm() {
+    const oldName = document.getElementById('staffFormOldName').value.trim();
+    const name = document.getElementById('formStaffName').value.trim();
+    if (!name) return alert("กรุณาระบุชื่อ-นามสกุลบุคลากร");
+
+    const payload = {
+      action: oldName ? "updateStaff" : "addStaff",
+      oldName: oldName,
+      name: name,
+      nickname: document.getElementById('formStaffNickname').value.trim(),
+      position: document.getElementById('formStaffPosition').value.trim(),
+      phone: document.getElementById('formStaffPhone').value.trim(),
+      email: document.getElementById('formStaffEmail').value.trim(),
+      birthDate: document.getElementById('formStaffBirthDate').value.trim(),
+      cid: document.getElementById('formStaffCid').value.trim(),
+      category: document.getElementById('formStaffCategory').value,
+      serviceUnit: document.getElementById('formStaffUnit').value
+    };
+
+    const btn = document.getElementById('saveStaffBtn');
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> กำลังบันทึก...`;
+
+    try {
+      const res = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      const result = await res.json();
+      if (result.success) {
+        alert(oldName ? "✅ อัปเดตข้อมูลบุคลากรเรียบร้อยแล้ว" : "✅ เพิ่มบุคลากรใหม่เรียบร้อยแล้ว");
+        closeStaffForm();
+        loadStaffList();
+      } else {
+        alert("⚠️ เกิดข้อผิดพลาด: " + (result.message || "ไม่สามารถบันทึกข้อมูลได้"));
+      }
+    } catch (e) {
+      alert("❌ เชื่อมต่อเซิร์ฟเวอร์ล้มเหลว กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `💾 บันทึกข้อมูล`;
+    }
+  }
+
+  async function deleteStaffName(name) {
+    if (!confirm(`คุณต้องการลบ "${name}" ออกจากฐานข้อมูลบุคลากรใช่หรือไม่?`)) return;
+
+    try {
+      const res = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: "deleteStaff", name: name })
+      });
+      const result = await res.json();
+      if (result.success) {
+        alert(`✅ ลบ "${name}" ออกจากระบบเรียบร้อยแล้ว`);
+        loadStaffList();
+      }
+    } catch (e) {
+      alert("❌ ไม่สามารถลบรายชื่อได้");
+    }
   }
 
 // --- 13. ระบบ In-App Deep Linking & คัดลอกลิงก์เปิดอ่านในแอป ---

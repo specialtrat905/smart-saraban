@@ -414,17 +414,15 @@
           <small class="text-muted">บุคลากรทั้งหมด <span id="staffTotalCount" class="fw-bold text-dark">0</span> คน</small>
         </div>
         <div class="d-flex flex-wrap gap-2">
-          <!-- ปุ่มส่งออก XML (ใช้ได้ทุกคน) -->
-          <button class="btn btn-sm btn-outline-primary fw-bold shadow-sm" onclick="exportStaffToXML()">
-            📥 ส่งออก XML
-          </button>
-          <!-- ปุ่มเฉพาะ Admin: เปิด Google Sheet, แชร์ลิงก์ และเพิ่มบุคลากร -->
-          <button id="adminOpenSheetBtn" class="btn btn-sm btn-outline-success fw-bold shadow-sm" style="display:none;" onclick="openGoogleSheetStaff()">
+          <!-- 📊 ปุ่มเปิดดูบน Google Sheets (ใช้ได้ทั้ง Admin และ User) -->
+          <button class="btn btn-sm btn-outline-success fw-bold shadow-sm" onclick="openGoogleSheetStaff()">
             📊 Google Sheets
           </button>
+          <!-- 🔗 ปุ่มแชร์ลิงก์ (เฉพาะ Admin) -->
           <button id="adminShareStaffBtn" class="btn btn-sm btn-outline-info text-dark fw-bold shadow-sm" style="display:none;" onclick="shareStaffLink()">
             🔗 แชร์ลิงก์
           </button>
+          <!-- ➕ ปุ่มเพิ่มบุคลากรใหม่ (เฉพาะ Admin) -->
           <button id="adminAddStaffBtn" class="btn btn-sm btn-success fw-bold shadow-sm" style="display:none;" onclick="openAddStaffForm()">
             ➕ เพิ่มบุคลากรใหม่
           </button>
@@ -967,9 +965,10 @@
     document.getElementById('backToSarabanBtn').style.display = 'block';
 
     const isAdmin = (currentUser.role === 'Admin');
-    document.getElementById('adminAddStaffBtn').style.display = isAdmin ? 'inline-block' : 'none';
-    document.getElementById('adminShareStaffBtn').style.display = isAdmin ? 'inline-block' : 'none';
-    document.getElementById('adminOpenSheetBtn').style.display = isAdmin ? 'inline-block' : 'none';
+    const addBtn = document.getElementById('adminAddStaffBtn');
+    const shareBtn = document.getElementById('adminShareStaffBtn');
+    if (addBtn) addBtn.style.display = isAdmin ? 'inline-block' : 'none';
+    if (shareBtn) shareBtn.style.display = isAdmin ? 'inline-block' : 'none';
 
     filterStaffDirectory();
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1067,13 +1066,13 @@
     if (totalCountElem) totalCountElem.innerText = list.length;
     
     const tableElem = document.querySelector('.table-staff-custom');
-    const thead = tableElem.querySelector('thead tr');
+    const thead = tableElem ? tableElem.querySelector('thead tr') : null;
     const tbody = document.getElementById('staffTableBody');
     if (!tbody || !thead) return;
 
     const isAdmin = (currentUser.role === 'Admin');
 
-    // 🎯 สลับหัวตาราง: Admin แสดง 11 คอลัมน์ | User/บุคคลภายนอก แสดง 4 คอลัมน์
+    // 🎯 สลับหัวตาราง: Admin แสดงครบ 11 คอลัมน์ | User / ลิงก์แชร์ แสดง 6 คอลัมน์
     if (isAdmin) {
       thead.innerHTML = `
         <th>ลำดับ</th>
@@ -1090,15 +1089,17 @@
       `;
     } else {
       thead.innerHTML = `
-        <th style="width: 70px;">ลำดับ</th>
-        <th style="min-width: 220px;">ชื่อ - นามสกุล</th>
-        <th style="min-width: 180px;">ตำแหน่ง</th>
-        <th style="min-width: 120px;">หน่วยบริการ</th>
+        <th style="width: 60px;">ลำดับ</th>
+        <th style="min-width: 200px;">ชื่อ - นามสกุล</th>
+        <th style="min-width: 150px;">ตำแหน่ง</th>
+        <th style="min-width: 120px;">เบอร์โทรศัพท์</th>
+        <th style="min-width: 180px;">e - mail</th>
+        <th style="min-width: 110px;">หน่วยบริการ</th>
       `;
     }
 
     if (list.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="${isAdmin ? 11 : 4}" class="text-center text-muted p-4">ไม่พบบุคลากรตามเงื่อนไขที่ค้นหา</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="${isAdmin ? 11 : 6}" class="text-center text-muted p-4">ไม่พบบุคลากรตามเงื่อนไขที่ค้นหา</td></tr>`;
       return;
     }
 
@@ -1115,7 +1116,7 @@
       const members = groups[cat];
       html += `
         <tr class="table-success table-opacity-50">
-          <td colspan="${isAdmin ? 11 : 4}" class="fw-bold py-2 ps-3 text-dark bg-success bg-opacity-10" style="font-size: 0.92rem;">
+          <td colspan="${isAdmin ? 11 : 6}" class="fw-bold py-2 ps-3 text-dark bg-success bg-opacity-10" style="font-size: 0.92rem;">
             📌 ${cat} (${members.length} คน)
           </td>
         </tr>
@@ -1123,7 +1124,7 @@
 
       members.forEach((s, idx) => {
         if (isAdmin) {
-          // โหมด Admin: 11 คอลัมน์เต็ม
+          // โหมด Admin: แสดงครบ 11 คอลัมน์
           const formattedBirth = formatThaiBirthDate(s.birthDate);
           html += `
             <tr class="align-middle text-center">
@@ -1146,12 +1147,14 @@
             </tr>
           `;
         } else {
-          // โหมด User ทั่วไป / บุคคลภายนอก: แสดง 4 คอลัมน์สะอาดตา
+          // โหมด User ทั่วไป / ลิงก์แชร์: แสดง 6 คอลัมน์ (ลำดับ, ชื่อ-สกุล, ตำแหน่ง, เบอร์โทร, e-mail, หน่วยบริการ)
           html += `
             <tr class="align-middle text-center">
               <td class="text-dark fw-bold">${idx + 1}</td>
               <td class="text-start text-dark fw-bold">${s.name}</td>
               <td class="text-start text-dark fw-bold">${s.position || '-'}</td>
+              <td>${s.phone ? `<a href="tel:${s.phone}" class="text-decoration-none text-dark fw-bold">${s.phone}</a>` : '-'}</td>
+              <td class="text-start">${s.email ? `<a href="mailto:${s.email}" class="text-decoration-none text-dark fw-bold">${s.email}</a>` : '-'}</td>
               <td class="text-dark fw-bold">${s.serviceUnit || 'เมือง'}</td>
             </tr>
           `;
@@ -1162,11 +1165,11 @@
     tbody.innerHTML = html;
   }
 
-  // 🔗 ฟังก์ชันคัดลอกลิงก์แชร์รายชื่อให้บุคลากรภายนอกเปิดดูได้ทันที
+  // 🔗 ฟังก์ชันคัดลอกลิงก์แชร์รายชื่อให้เปิดดู 6 คอลัมน์ได้ทันทีโดยไม่ต้องล็อกอิน
   function shareStaffLink() {
     const shareUrl = `${window.location.origin}${window.location.pathname}?view=staff`;
     navigator.clipboard.writeText(shareUrl).then(() => {
-      alert("✅ คัดลอกลิงก์แชร์รายชื่อบุคลากรแล้ว! สามารถส่งแชร์ทาง LINE ให้ทุกคนเปิดดู 4 คอลัมน์หลักได้ทันทีโดยไม่ต้องล็อกอิน");
+      alert("✅ คัดลอกลิงก์แชร์รายชื่อบุคลากรแล้ว! สามารถส่งแชร์ทาง LINE ให้ทุกคนเปิดดูได้ทันทีโดยไม่ต้องล็อกอิน (แสดงข้อมูล: ลำดับ, ชื่อ-สกุล, ตำแหน่ง, เบอร์โทร, อีเมล, หน่วยบริการ)");
     }).catch(() => {
       const t = document.createElement("textarea"); t.value = shareUrl; document.body.appendChild(t); t.select();
       document.execCommand("copy"); document.body.removeChild(t);
@@ -1174,9 +1177,9 @@
     });
   }
 
-  // 📊 ฟังก์ชันเปิดไฟล์ Google Sheets ฐานข้อมูล
+  // 📊 ฟังก์ชันเปิดไฟล์ Google Sheets ฐานข้อมูลแท็บ staff
   function openGoogleSheetStaff() {
-    window.open(`https://docs.google.com/spreadsheets/d/1Ws_3nlmiTO1z6jbgJA4dQIohVLGtD0qgwx7hv3BiHHI/edit`, '_blank');
+    window.open(`https://docs.google.com/spreadsheets/d/1Ws_3nlmiTO1z6jbgJA4dQIohVLGtD0qgwx7hv3BiHHI/edit#gid=0`, '_blank');
   }
 
   // 📥 ฟังก์ชันส่งออกข้อมูลรายชื่อเป็นไฟล์ XML (.xml)
@@ -2769,8 +2772,7 @@
 
     const p = new URLSearchParams(window.location.search);
     
-    // 🔗 ระบบ Deep Link: หากมีพารามิเตอร์ view ให้เปิดอ่าน PDF ในแอปทันที
-    // 🔗 หากเปิดจากลิงก์แชร์ ?view=staff ให้แสดงหน้ารายชื่อ 4 คอลัมน์ทันทีโดยไม่ต้องล็อกอิน
+    // 🔗 หากเปิดจากลิงก์แชร์ ?view=staff ให้แสดงหน้ารายชื่อ 6 คอลัมน์ทันทีโดยไม่ต้องล็อกอิน
     if (p.get('view') === 'staff') {
       document.getElementById('loginPage').style.display = 'none';
       document.getElementById('mainApp').style.display = 'block';
@@ -2778,6 +2780,10 @@
       document.getElementById('staffView').style.display = 'block';
       document.getElementById('staffBackBtn').style.display = 'none';
       document.getElementById('manageStaffBtn').style.display = 'none';
+      const addBtn = document.getElementById('adminAddStaffBtn');
+      const shareBtn = document.getElementById('adminShareStaffBtn');
+      if (addBtn) addBtn.style.display = 'none';
+      if (shareBtn) shareBtn.style.display = 'none';
       return;
     }
 

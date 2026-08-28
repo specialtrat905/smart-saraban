@@ -659,6 +659,7 @@
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body p-4 bg-light">
+            <input type="hidden" id="staffFormId" value="">
             <input type="hidden" id="staffFormOldName" value="">
             <div class="row g-3">
               <div class="col-12 col-md-4">
@@ -924,7 +925,7 @@
   // --- 1. การตั้งค่าสิทธิ์พื้นฐานองค์กร ---
   const GH_OWNER = "specialtrat905";
   const GH_REPO = "smart-saraban";
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwTbPwzd2D0laGqnm5RWSuSA5EEl_5f99gCTraUyWJaSbX7BJgoytCO08IIQvZPnnqT5A/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyUeEgLfsMwQWuUPdVWtWjaiYDHyGe7a-uScB1d0JuQdgEdO_inP2ANeQddSvF8XNe-Hg/exec";
 
   let currentUser = {};
   let allLogs = [];
@@ -1383,6 +1384,7 @@
 
   function openAddStaffForm() {
     document.getElementById('staffFormTitle').innerText = "➕ เพิ่มข้อมูลบุคลากรใหม่";
+    document.getElementById('staffFormId').value = "";
     document.getElementById('staffFormOldName').value = "";
     document.getElementById('formStaffName').value = "";
     document.getElementById('formStaffNickname').value = "";
@@ -1403,15 +1405,17 @@
 
   function openEditStaffForm(encodedName) {
     const targetName = decodeURIComponent(encodedName).trim();
-    const staff = fullStaffData.find(s => (s.name || "").trim() === targetName);
+    // ค้นหาแบบตัดวรรคส่วนเกินออก เพื่อป้องกันปัญหาชื่อไม่ตรงกัน
+    const staff = fullStaffData.find(s => (s.name || "").replace(/\s+/g, ' ').trim() === targetName.replace(/\s+/g, ' ').trim());
     if (!staff) {
       alert("⚠️ ไม่พบข้อมูลบุคลากร: " + targetName);
       return;
     }
 
     document.getElementById('staffFormTitle').innerText = `✏️ แก้ไขข้อมูลบุคลากร: ${staff.name}`;
-    document.getElementById('staffFormOldName').value = staff.name;
-    document.getElementById('formStaffName').value = staff.name;
+    document.getElementById('staffFormId').value = staff.id || "";
+    document.getElementById('staffFormOldName').value = staff.name || "";
+    document.getElementById('formStaffName').value = staff.name || "";
     document.getElementById('formStaffNickname').value = staff.nickname || "";
     document.getElementById('formStaffPosition').value = staff.position || "";
     document.getElementById('formStaffPhone').value = staff.phone || "";
@@ -1428,14 +1432,15 @@
     staffFormModalInstance.show();
   }
 
-
   async function submitStaffForm() {
+    const id = document.getElementById('staffFormId').value.trim();
     const oldName = document.getElementById('staffFormOldName').value.trim();
     const name = document.getElementById('formStaffName').value.trim();
     if (!name) return alert("กรุณาระบุชื่อ-นามสกุลบุคลากร");
 
     const payload = {
       action: oldName ? "updateStaff" : "addStaff",
+      id: id,
       oldName: oldName,
       name: name,
       nickname: document.getElementById('formStaffNickname').value.trim(),
@@ -1462,7 +1467,7 @@
       if (result.success) {
         if (staffFormModalInstance) staffFormModalInstance.hide();
         alert(oldName ? "✅ อัปเดตข้อมูลบุคลากรเรียบร้อยแล้ว" : "✅ เพิ่มบุคลากรใหม่เรียบร้อยแล้ว");
-        await loadStaffList(); // โหลดข้อมูลสดใหม่จาก Google Sheet ทันที
+        await loadStaffList(); // โหลดข้อมูลสดใหม่จาก Google Sheet มาแสดงทันที
       } else {
         alert("⚠️ เกิดข้อผิดพลาด: " + (result.message || "ไม่สามารถบันทึกข้อมูลได้"));
       }

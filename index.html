@@ -2214,16 +2214,53 @@ function loadLogsFromFirebase(year) {
     });
   }
 
+  let currentFilteredExportRows = []; // ตัวแปรเก็บรายการที่กำลังแสดงผลตามตัวกรอง
+
   function filterExportTable() {
     const search = document.getElementById('exportSearchInput') ? document.getElementById('exportSearchInput').value.toLowerCase().trim() : "";
-    
-    const filtered = exportLogsData.filter(row => {
+    const dept = document.getElementById('exportDeptSelector') ? document.getElementById('exportDeptSelector').value : "";
+    const staff = document.getElementById('exportStaffSelector') ? document.getElementById('exportStaffSelector').value.trim() : "";
+
+    const deptAliasMap = {
+      "ฝ่ายบริหารวิชาการ": "บริหารงานวิชาการ", "บริหารงานวิชาการ": "ฝ่ายบริหารวิชาการ",
+      "ฝ่ายบริหารงานบุคคล": "บริหารงานบุคคล", "บริหารงานบุคคล": "ฝ่ายบริหารงานบุคคล",
+      "ฝ่ายบริหารงบประมาณ": "บริหารแผนงานและงบประมาณ", "บริหารแผนงานและงบประมาณ": "ฝ่ายบริหารงบประมาณ",
+      "ฝ่ายบริหารทั่วไป": "บริหารงานทั่วไป", "บริหารงานทั่วไป": "ฝ่ายบริหารทั่วไป"
+    };
+
+    currentFilteredExportRows = exportLogsData.filter(row => {
       if (!row || row[0] === "❌") return false;
-      if (search === "") return true;
-      return (row[2] && row[2].toLowerCase().includes(search)) || (row[3] && row[3].toLowerCase().includes(search));
+
+      // 1. กรองคำค้นหา
+      let matchSearch = true;
+      if (search !== "") {
+        matchSearch = (row[2] && row[2].toLowerCase().includes(search)) || (row[3] && row[3].toLowerCase().includes(search));
+      }
+
+      // 2. กรองกลุ่มงาน / รายชื่อ
+      let matchDept = true;
+      const rowDept = row[3] || "";
+      const rawFileName = row[2] || "";
+
+      if (dept && dept !== "all") {
+        if (dept === "อื่นๆ") {
+          if (staff !== "") {
+            // กรณีเลือกรายชื่อเฉพาะ: แสดงเฉพาะหนังสือที่มีชื่อคนนั้น
+            matchDept = rawFileName.includes(staff);
+          } else {
+            // กรณีไม่ได้เลือกรายชื่อ: แสดงของกลุ่มอื่นๆ ทั้งหมด (ทั้งที่มีชื่อและไม่มีชื่อ)
+            matchDept = rowDept.includes("อื่นๆ") || /\[(.*?)\]/.test(rawFileName);
+          }
+        } else {
+          // กลุ่มงานทั่วไป
+          matchDept = rowDept.includes(dept) || (deptAliasMap[dept] && rowDept.includes(deptAliasMap[dept]));
+        }
+      }
+
+      return matchSearch && matchDept;
     });
 
-    renderExportTableRows(filtered);
+    renderExportTableRows(currentFilteredExportRows);
   }
 
   function renderExportTableRows(rows) {
@@ -2288,7 +2325,7 @@ function loadLogsFromFirebase(year) {
 
   function toggleMasterExportCheck(masterChecked) {
     document.querySelectorAll('.export-row-check').forEach(cb => cb.checked = masterChecked);
-    exportLogsData.forEach(row => {
+    currentFilteredExportRows.forEach(row => {
       if (!row || row[0] === "❌") return;
       if (masterChecked) {
         selectedExportFileNames.add(row[2]);
@@ -2304,49 +2341,28 @@ function loadLogsFromFirebase(year) {
     if (master) master.checked = select;
     document.querySelectorAll('.export-row-check').forEach(cb => cb.checked = select);
 
-    exportLogsData.forEach(row => {
-      if (!row || row[0] === "❌") return;
-      if (select) {
-        selectedExportFileNames.add(row[2]);
-      } else {
-        selectedExportFileNames.delete(row[2]);
-      }
-    });
+    if (select) {
+      currentFilteredExportRows.forEach(row => {
+        if (row && row[0] !== "❌") selectedExportFileNames.add(row[2]);
+      });
+    } else {
+      selectedExportFileNames.clear();
+    }
     updateExportSelectedCount();
   }
 
   function handleExportDeptSelect(dept) {
-    if (!dept) return;
-
     const staffContainer = document.getElementById('exportStaffSelectorContainer');
+    const staffSelector = document.getElementById('exportStaffSelector');
+
     if (dept === "อื่นๆ") {
-      staffContainer.style.display = 'block';
+      if (staffContainer) staffContainer.style.display = 'block';
     } else {
-      staffContainer.style.display = 'none';
+      if (staffContainer) staffContainer.style.display = 'none';
     }
 
-    const deptAliasMap = {
-      "ฝ่ายบริหารวิชาการ": "บริหารงานวิชาการ", "บริหารงานวิชาการ": "ฝ่ายบริหารวิชาการ",
-      "ฝ่ายบริหารงานบุคคล": "บริหารงานบุคคล", "บริหารงานบุคคล": "ฝ่ายบริหารงานบุคคล",
-      "ฝ่ายบริหารงบประมาณ": "บริหารแผนงานและงบประมาณ", "บริหารแผนงานและงบประมาณ": "ฝ่ายบริหารงบประมาณ",
-      "ฝ่ายบริหารทั่วไป": "บริหารงานทั่วไป", "บริหารงานทั่วไป": "ฝ่ายบริหารทั่วไป"
-    };
-
-    exportLogsData.forEach(row => {
-      if (!row || row[0] === "❌") return;
-      const rowDept = row[3] || "";
-      let isMatch = false;
-
-      if (dept === "all") {
-        isMatch = true;
-      } else if (dept === "อื่นๆ") {
-        isMatch = rowDept.includes("อื่นๆ") || /\[(.*?)\]/.test(row[2]);
-      } else {
-        isMatch = rowDept.includes(dept) || (deptAliasMap[dept] && rowDept.includes(deptAliasMap[dept]));
-      }
-
-      if (isMatch) selectedExportFileNames.add(row[2]);
-    });
+    // ล้างการเลือกรายชื่อเมื่อเปลี่ยนกลุ่มงาน
+    if (staffSelector) staffSelector.value = "";
 
     filterExportTable();
   }
@@ -2359,15 +2375,6 @@ function loadLogsFromFirebase(year) {
   }
 
   function handleExportStaffSelect(staffName) {
-    if (!staffName) return;
-
-    exportLogsData.forEach(row => {
-      if (!row || row[0] === "❌") return;
-      if (row[2].includes(staffName)) {
-        selectedExportFileNames.add(row[2]);
-      }
-    });
-
     filterExportTable();
   }
 

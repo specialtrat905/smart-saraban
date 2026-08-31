@@ -587,11 +587,11 @@
         <!-- ปุ่มเลือกโหมดการทำงาน -->
         <div class="d-flex flex-wrap gap-2">
           <button id="btnModeDelete" class="btn btn-sm btn-outline-danger fw-bold shadow-sm bg-white" onclick="switchDbManageSubMode('delete')">
-            🗑️ โหมดลบหนังสือ
-          </button>
-          <button id="btnModeEditDept" class="btn btn-sm btn-outline-warning text-dark fw-bold shadow-sm bg-white" onclick="switchDbManageSubMode('editDept')">
-            ✏️ โหมดแก้ไขกลุ่มงาน
-          </button>
+          🗑️ ลบหนังสือ
+        </button>
+        <button id="btnModeEditDept" class="btn btn-sm btn-outline-warning text-dark fw-bold shadow-sm bg-white" onclick="switchDbManageSubMode('editDept')">
+          ✏️ แก้ไขกลุ่มงาน/ผู้รับ
+        </button>
         </div>
       </div>
 
@@ -1264,7 +1264,7 @@ function loadLogsFromFirebase(year) {
   // ==========================================
   let dbManageLogsData = [];
   let currentDbManageYear = currentYearBE;
-  let currentDbManageSubMode = 'delete'; // 'delete' | 'editDept'
+  let currentDbManageSubMode = null; // null | 'delete' | 'editDept'
 
   function initDbManageView() {
     const ySelect = document.getElementById('dbManageYearSelect');
@@ -1276,7 +1276,8 @@ function loadLogsFromFirebase(year) {
       ySelect.innerHTML = opts;
     }
     selectedBooksToDelete = [];
-    switchDbManageSubMode('delete');
+    currentDbManageSubMode = null; // เริ่มต้นยังไม่เลือกโหมด
+    updateDbManageButtonUI();
     loadDbManageDataForYear(currentDbManageYear);
   }
 
@@ -1287,25 +1288,36 @@ function loadLogsFromFirebase(year) {
   }
 
   function switchDbManageSubMode(mode) {
-    currentDbManageSubMode = mode;
+    // กดปุ่มเดิมซ้ำเพื่อยกเลิกโหมด
+    if (currentDbManageSubMode === mode) {
+      currentDbManageSubMode = null;
+    } else {
+      currentDbManageSubMode = mode;
+    }
     selectedBooksToDelete = [];
-    
+    updateDbManageButtonUI();
+    filterDbManageTable();
+  }
+
+function updateDbManageButtonUI() {
     const btnDel = document.getElementById('btnModeDelete');
     const btnEdit = document.getElementById('btnModeEditDept');
     const titleCol = document.getElementById('dbManageActionColTitle');
 
-    if (mode === 'delete') {
+    if (currentDbManageSubMode === 'delete') {
       btnDel.className = "btn btn-sm btn-danger text-white fw-bold shadow-sm";
       btnEdit.className = "btn btn-sm btn-outline-warning text-dark fw-bold shadow-sm bg-white";
-      titleCol.innerText = "เลือกลบ";
-    } else {
+      if (titleCol) titleCol.innerText = "เลือกลบ";
+    } else if (currentDbManageSubMode === 'editDept') {
       btnDel.className = "btn btn-sm btn-outline-danger fw-bold shadow-sm bg-white";
       btnEdit.className = "btn btn-sm btn-warning text-dark fw-bold shadow-sm";
-      titleCol.innerText = "แก้ไข";
+      if (titleCol) titleCol.innerText = "แก้ไข";
+    } else {
+      btnDel.className = "btn btn-sm btn-outline-danger fw-bold shadow-sm bg-white";
+      btnEdit.className = "btn btn-sm btn-outline-warning text-dark fw-bold shadow-sm bg-white";
+      if (titleCol) titleCol.innerText = "จัดการ";
     }
-
     updateDbManageDeleteUI();
-    filterDbManageTable();
   }
 
   function loadDbManageDataForYear(year) {
@@ -1358,7 +1370,8 @@ function loadLogsFromFirebase(year) {
       if (numMatch) bookTitle = bookTitle.substring(numMatch[1].length).trim();
       bookTitle = bookTitle.replace(/\[.*?\]/g, "").trim();
 
-      let actionHTML = "";
+      // สลับแสดง Checkbox หรือ ปุ่มแก้ไข หรือ ขีดว่างตามโหมดที่เลือก
+      let actionHTML = '<span class="text-muted small">-</span>';
       if (currentDbManageSubMode === 'delete') {
         const isChecked = selectedBooksToDelete.some(b => b.fileName === row[2]);
         actionHTML = `
@@ -1367,7 +1380,7 @@ function loadLogsFromFirebase(year) {
               ${isChecked ? 'checked' : ''} onchange="toggleSelectBookForDelete('${encodeURIComponent(row[2])}', this.checked)">
           </div>
         `;
-      } else {
+      } else if (currentDbManageSubMode === 'editDept') {
         actionHTML = `
           <button class="btn btn-sm btn-warning text-dark fw-bold shadow-sm py-0 px-2" onclick="openEditBookDeptFromDbManage(${idx})">
             ✏️ แก้ไข
@@ -1375,14 +1388,24 @@ function loadLogsFromFirebase(year) {
         `;
       }
 
+      let rawDate = row[0].split(/[T\s,]+/)[0];
+      let dateDisplay = rawDate;
+      if (rawDate.includes("-")) {
+        const d = rawDate.split("-");
+        if (d.length === 3) {
+          let y = parseInt(d[0]); if (y < 2500) y += 543;
+          dateDisplay = `${parseInt(d[2])}/${parseInt(d[1])}/${y}`;
+        }
+      }
+
       html += `
         <tr class="align-middle">
-          <td class="text-center">${actionHTML}</td>
           <td class="text-center text-muted fw-bold">${idx + 1}</td>
-          <td class="text-center text-muted" style="font-size: 0.8rem;">${row[0]}</td>
+          <td class="text-center text-muted" style="font-size: 0.8rem;">${dateDisplay}</td>
           <td class="text-center fw-bold text-success">${bookNumber}</td>
           <td class="text-start text-dark fw-bold">${bookTitle}</td>
           <td class="text-start">${row[3] || "-"}</td>
+          <td class="text-center">${actionHTML}</td>
         </tr>
       `;
     });

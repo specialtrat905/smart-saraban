@@ -449,9 +449,6 @@
           <button id="adminAddStaffBtn" class="btn btn-sm btn-success fw-bold shadow-sm" style="display:none;" onclick="openAddStaffForm()">
             ➕ เพิ่มบุคลากรใหม่
           </button>
-          <button id="staffBackBtn" class="btn btn-sm btn-outline-secondary fw-bold shadow-sm" onclick="switchToSarabanView()">
-            ⬅️ กลับระบบส่งหนังสือ
-          </button>
         </div>
       </div>
 
@@ -518,9 +515,6 @@
           <button class="btn btn-sm btn-outline-dark fw-bold shadow-sm bg-white" onclick="printExportTable()">
             🖨️ พิมพ์ / PDF
           </button>
-          <button class="btn btn-sm btn-outline-secondary fw-bold shadow-sm" onclick="switchToSarabanView()">
-            ⬅️ กลับระบบส่งหนังสือ
-          </button>
         </div>
       </div>
 
@@ -582,6 +576,61 @@
         </table>
       </div>
     </div> <!-- ปิด exportView -->
+
+<!-- ⚙️ ส่วนที่ 4: หน้าจัดการฐานข้อมูลแบบเต็มจอ (DB Manage View) -->
+    <div id="dbManageView" style="display:none;" class="card card-border-green p-3 p-md-4 shadow-sm mb-5">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 pb-2 border-bottom">
+        <div>
+          <h4 class="fw-bold text-success mb-0">⚙️ จัดการฐานข้อมูลสารบรรณ ศกศ.ตราด</h4>
+          <small class="text-muted">เลือกโหมดการจัดการเพื่อ ลบหนังสือ หรือ แก้ไขกลุ่มงาน/ผู้รับ</small>
+        </div>
+        <!-- ปุ่มเลือกโหมดการทำงาน -->
+        <div class="d-flex flex-wrap gap-2">
+          <button id="btnModeDelete" class="btn btn-sm btn-outline-danger fw-bold shadow-sm bg-white" onclick="switchDbManageSubMode('delete')">
+            🗑️ โหมดลบหนังสือ
+          </button>
+          <button id="btnModeEditDept" class="btn btn-sm btn-outline-warning text-dark fw-bold shadow-sm bg-white" onclick="switchDbManageSubMode('editDept')">
+            ✏️ โหมดแก้ไขกลุ่มงาน
+          </button>
+        </div>
+      </div>
+
+      <!-- แถบตัวกรองและปุ่มสั่งการ -->
+      <div class="row g-2 mb-3 align-items-center">
+        <div class="col-6 col-md-2">
+          <select id="dbManageYearSelect" class="form-select form-select-sm border-success shadow-sm" onchange="changeDbManageYear(this.value)"></select>
+        </div>
+        <div class="col-6 col-md-4">
+          <div class="input-group input-group-sm shadow-sm">
+            <span class="input-group-text bg-white">🔍</span>
+            <input type="text" id="dbManageSearchInput" class="form-control" placeholder="พิมพ์ค้นหาเลข หรือ ชื่อหนังสือ..." oninput="filterDbManageTable()">
+          </div>
+        </div>
+        <div class="col-12 col-md-6 d-flex justify-content-md-end align-items-center gap-2">
+          <!-- ปุ่มยืนยันลบเมื่อเลือกรายการ -->
+          <button id="btnExecuteDeleteModal" type="button" class="btn btn-sm btn-danger fw-bold shadow-sm" style="display:none;" onclick="openDeleteConfirmModal()">
+            🗑️ ยืนยันลบที่เลือก (<span id="dbManageDeleteCount">0</span>)
+          </button>
+        </div>
+      </div>
+
+      <!-- ตารางจัดการฐานข้อมูล -->
+      <div class="table-responsive border rounded shadow-sm bg-white" style="max-height: 68vh;">
+        <table class="table table-hover table-bordered align-middle mb-0" style="font-size: 0.88rem;">
+          <thead class="table-light text-center sticky-top shadow-sm" style="z-index: 5;">
+            <tr>
+              <th id="dbManageActionColTitle" style="width: 80px;">เลือก</th>
+              <th style="width: 60px;">ลำดับ</th>
+              <th style="width: 110px;">วันที่</th>
+              <th style="width: 130px;">เลขหนังสือ</th>
+              <th style="min-width: 250px;">ชื่อเรื่อง / หนังสือ</th>
+              <th style="min-width: 200px;">กลุ่มงานปลายทาง</th>
+            </tr>
+          </thead>
+          <tbody id="dbManageTableBody"></tbody>
+        </table>
+      </div>
+    </div> <!-- ปิด dbManageView -->
 
     <!-- 🏢 Modal เลือกกลุ่มงานส่งหนังสือ -->
     <div class="modal fade" id="deptSelectModal" tabindex="-1" aria-hidden="true">
@@ -1152,13 +1201,18 @@ function loadLogsFromFirebase(year) {
   }
 
   // --- 12. ระบบควบคุมหน้าตารางทะเบียนบุคลากรเต็มจอ ---
+  // 👥 สลับไปหน้าบุคลากร
+  // 👥 สลับไปหน้าบุคลากร
   function switchToStaffView() {
     document.getElementById('sarabanView').style.display = 'none';
     document.getElementById('exportView').style.display = 'none';
+    document.getElementById('dbManageView').style.display = 'none';
     document.getElementById('staffView').style.display = 'block';
 
+    // บน Navbar ซ่อนทุกปุ่ม เหลือแค่ กลับระบบส่งหนังสือ + ออกจากระบบ
     document.getElementById('manageStaffBtn').style.display = 'none';
     document.getElementById('toggleExportModeBtn').style.display = 'none';
+    document.getElementById('editDbBtn').style.display = 'none';
     document.getElementById('backToSarabanBtn').style.display = 'block';
 
     const isAdmin = (currentUser.role === 'Admin');
@@ -1171,29 +1225,204 @@ function loadLogsFromFirebase(year) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  // 📤 สลับไปหน้าส่งออกรายการหนังสือ
   function switchToExportView() {
     document.getElementById('sarabanView').style.display = 'none';
     document.getElementById('staffView').style.display = 'none';
+    document.getElementById('dbManageView').style.display = 'none';
     document.getElementById('exportView').style.display = 'block';
 
+    // บน Navbar ซ่อนทุกปุ่ม เหลือแค่ กลับระบบส่งหนังสือ + ออกจากระบบ
     document.getElementById('manageStaffBtn').style.display = 'none';
     document.getElementById('toggleExportModeBtn').style.display = 'none';
+    document.getElementById('editDbBtn').style.display = 'none';
     document.getElementById('backToSarabanBtn').style.display = 'block';
 
     initExportView();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  // ⚙️ สลับไปหน้าจัดการฐานข้อมูล
+  function switchToDbManageView() {
+    document.getElementById('sarabanView').style.display = 'none';
+    document.getElementById('staffView').style.display = 'none';
+    document.getElementById('exportView').style.display = 'none';
+    document.getElementById('dbManageView').style.display = 'block';
+
+    // บน Navbar ซ่อนทุกปุ่ม เหลือแค่ กลับระบบส่งหนังสือ + ออกจากระบบ
+    document.getElementById('manageStaffBtn').style.display = 'none';
+    document.getElementById('toggleExportModeBtn').style.display = 'none';
+    document.getElementById('editDbBtn').style.display = 'none';
+    document.getElementById('backToSarabanBtn').style.display = 'block';
+
+    initDbManageView();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ==========================================
+  // ⚙️ ระบบหน้าจัดการฐานข้อมูลเต็มจอ (DB Manage Module)
+  // ==========================================
+  let dbManageLogsData = [];
+  let currentDbManageYear = currentYearBE;
+  let currentDbManageSubMode = 'delete'; // 'delete' | 'editDept'
+
+  function initDbManageView() {
+    const ySelect = document.getElementById('dbManageYearSelect');
+    if (ySelect) {
+      let opts = "";
+      for (let y = currentYearBE + 1; y >= 2568; y--) {
+        opts += `<option value="${y}" ${y === currentDbManageYear ? 'selected' : ''}>ปี พ.ศ. ${y}</option>`;
+      }
+      ySelect.innerHTML = opts;
+    }
+    selectedBooksToDelete = [];
+    switchDbManageSubMode('delete');
+    loadDbManageDataForYear(currentDbManageYear);
+  }
+
+  function changeDbManageYear(val) {
+    currentDbManageYear = parseInt(val);
+    selectedBooksToDelete = [];
+    loadDbManageDataForYear(currentDbManageYear);
+  }
+
+  function switchDbManageSubMode(mode) {
+    currentDbManageSubMode = mode;
+    selectedBooksToDelete = [];
+    
+    const btnDel = document.getElementById('btnModeDelete');
+    const btnEdit = document.getElementById('btnModeEditDept');
+    const titleCol = document.getElementById('dbManageActionColTitle');
+
+    if (mode === 'delete') {
+      btnDel.className = "btn btn-sm btn-danger text-white fw-bold shadow-sm";
+      btnEdit.className = "btn btn-sm btn-outline-warning text-dark fw-bold shadow-sm bg-white";
+      titleCol.innerText = "เลือกลบ";
+    } else {
+      btnDel.className = "btn btn-sm btn-outline-danger fw-bold shadow-sm bg-white";
+      btnEdit.className = "btn btn-sm btn-warning text-dark fw-bold shadow-sm";
+      titleCol.innerText = "แก้ไข";
+    }
+
+    updateDbManageDeleteUI();
+    filterDbManageTable();
+  }
+
+  function loadDbManageDataForYear(year) {
+    const tbody = document.getElementById('dbManageTableBody');
+    tbody.innerHTML = `<tr><td colspan="6" class="text-center p-4"><div class="spinner-border spinner-border-sm text-success me-2"></div> กำลังโหลดข้อมูลปี ${year}...</td></tr>`;
+
+    rtdb.ref('logs_' + year).once('value', (snapshot) => {
+      const rawData = snapshot.val();
+      if (rawData && rawData.length > 0) {
+        dbManageLogsData = Array.isArray(rawData) ? rawData : Object.values(rawData);
+        filterDbManageTable();
+      } else {
+        fetch(`${SCRIPT_URL}?year=${year}&dept=all&search=&offset=0&limit=500&t=${new Date().getTime()}`)
+          .then(res => res.json())
+          .then(data => {
+            dbManageLogsData = data;
+            filterDbManageTable();
+          }).catch(() => {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center p-4 text-danger">⚠️ โหลดข้อมูลไม่สำเร็จ</td></tr>`;
+          });
+      }
+    });
+  }
+
+  function filterDbManageTable() {
+    const search = document.getElementById('dbManageSearchInput') ? document.getElementById('dbManageSearchInput').value.toLowerCase().trim() : "";
+    const filtered = dbManageLogsData.filter(row => {
+      if (!row || row[0] === "❌") return false;
+      if (search === "") return true;
+      return (row[2] && row[2].toLowerCase().includes(search)) || (row[3] && row[3].toLowerCase().includes(search));
+    });
+    renderDbManageTableRows(filtered);
+  }
+
+  function renderDbManageTableRows(rows) {
+    const tbody = document.getElementById('dbManageTableBody');
+    if (rows.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center p-4 text-muted">ไม่พบข้อมูลหนังสือ</td></tr>`;
+      return;
+    }
+
+    let html = "";
+    rows.forEach((row, idx) => {
+      const rawFileName = (row[2] || "").trim();
+      const cleanNoExt = rawFileName.replace(/\.pdf$/i, "").trim();
+      const numMatch = cleanNoExt.match(/^(\d+[-/]\d+)/);
+      const bookNumber = numMatch ? numMatch[1] : (cleanNoExt.split(" ")[0] || "-");
+
+      let bookTitle = cleanNoExt;
+      if (numMatch) bookTitle = bookTitle.substring(numMatch[1].length).trim();
+      bookTitle = bookTitle.replace(/\[.*?\]/g, "").trim();
+
+      let actionHTML = "";
+      if (currentDbManageSubMode === 'delete') {
+        const isChecked = selectedBooksToDelete.some(b => b.fileName === row[2]);
+        actionHTML = `
+          <div class="form-check d-flex justify-content-center m-0">
+            <input class="form-check-input border-danger" type="checkbox" style="width: 1.3rem; height: 1.3rem; cursor: pointer;"
+              ${isChecked ? 'checked' : ''} onchange="toggleSelectBookForDelete('${encodeURIComponent(row[2])}', this.checked)">
+          </div>
+        `;
+      } else {
+        actionHTML = `
+          <button class="btn btn-sm btn-warning text-dark fw-bold shadow-sm py-0 px-2" onclick="openEditBookDeptFromDbManage(${idx})">
+            ✏️ แก้ไข
+          </button>
+        `;
+      }
+
+      html += `
+        <tr class="align-middle">
+          <td class="text-center">${actionHTML}</td>
+          <td class="text-center text-muted fw-bold">${idx + 1}</td>
+          <td class="text-center text-muted" style="font-size: 0.8rem;">${row[0]}</td>
+          <td class="text-center fw-bold text-success">${bookNumber}</td>
+          <td class="text-start text-dark fw-bold">${bookTitle}</td>
+          <td class="text-start">${row[3] || "-"}</td>
+        </tr>
+      `;
+    });
+
+    tbody.innerHTML = html;
+  }
+
+  function updateDbManageDeleteUI() {
+    const btnDelModal = document.getElementById('btnExecuteDeleteModal');
+    const countSpan = document.getElementById('dbManageDeleteCount');
+    if (!btnDelModal) return;
+
+    if (currentDbManageSubMode === 'delete' && selectedBooksToDelete.length > 0) {
+      btnDelModal.style.display = 'inline-block';
+      countSpan.innerText = selectedBooksToDelete.length;
+    } else {
+      btnDelModal.style.display = 'none';
+    }
+  }
+
+  // เรียก Modal แก้ไขกลุ่มงานจากหน้านี้
+  function openEditBookDeptFromDbManage(index) {
+    allLogs = dbManageLogsData;
+    openEditBookDeptModal(index);
+  }
+
+  // ⬅️ สลับกลับหน้าระบบส่งหนังสือหลัก
   function switchToSarabanView() {
     document.getElementById('staffView').style.display = 'none';
     document.getElementById('exportView').style.display = 'none';
+    document.getElementById('dbManageView').style.display = 'none';
     document.getElementById('sarabanView').style.display = 'block';
 
     document.getElementById('backToSarabanBtn').style.display = 'none';
     document.getElementById('manageStaffBtn').style.display = 'block';
     
-    // 👈 เช็กสิทธิ์ก่อนแสดงปุ่มตอนกดย้อนกลับ
-    document.getElementById('toggleExportModeBtn').style.display = (currentUser.role === 'Admin') ? 'block' : 'none';
+    // คืนค่าปุ่มเฉพาะ Admin
+    const isAdmin = (currentUser.role === 'Admin');
+    document.getElementById('editDbBtn').style.display = isAdmin ? 'block' : 'none';
+    document.getElementById('toggleExportModeBtn').style.display = isAdmin ? 'block' : 'none';
     
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -2844,21 +3073,7 @@ function loadLogsFromFirebase(year) {
   let editBookDeptModalInstance = null;
 
   function handleEditDbBtnClick() {
-    if (currentDbMode === 'delete' && selectedBooksToDelete.length > 0) {
-      openDeleteConfirmModal();
-    } else if (currentDbMode !== null) {
-      // หากอยู่ในโหมดใดโหมดหนึ่งแล้วกดซ้ำ จะเป็นการปิดโหมด
-      currentDbMode = null;
-      selectedBooksToDelete = [];
-      updateEditDbButtonUI();
-      displayTable(allLogs);
-    } else {
-      // เปิดหน้าต่างเลือกคำสั่งจัดการฐานข้อมูล
-      if (!dbActionModalInstance) {
-        dbActionModalInstance = new bootstrap.Modal(document.getElementById('dbActionModal'));
-      }
-      dbActionModalInstance.show();
-    }
+    switchToDbManageView();
   }
 
   function setDbMode(mode) {
@@ -2899,6 +3114,7 @@ function loadLogsFromFirebase(year) {
       selectedBooksToDelete = selectedBooksToDelete.filter(b => b.fileName !== fileName);
     }
     updateEditDbButtonUI();
+    updateDbManageDeleteUI();
   }
 
   function openDeleteConfirmModal() {

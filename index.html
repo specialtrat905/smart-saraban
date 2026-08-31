@@ -1083,20 +1083,21 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const rtdb = firebase.database();
 
-// ⚡ ฟังก์ชันโหลดข้อมูลหนังสือแบบ Realtime ไวระดับ 0.05 วินาที
+// ⚡ โหลดข้อมูลทั้งปีจาก Firebase ครั้งเดียว (ดึงครบ 100% ไม่ต้องแบ่งทีละ 200)
+let currentFirebaseYear = null;
+
 function loadLogsFromFirebase(year) {
-  const tableBody = document.getElementById('bookData');
+  currentFirebaseYear = year;
   
-  // ดึงข้อมูลจากโหนดปีนั้นๆ ทันที
   rtdb.ref('logs_' + year).on('value', (snapshot) => {
     const rawData = snapshot.val();
     if (rawData && rawData.length > 0) {
-      console.log(`🔥 [Firebase SUCCESS] ดึงข้อมูลปี ${year} สำเร็จจำนวน ${rawData.length} รายการ (0.03s)`);
+      console.log(`🔥 [Firebase SUCCESS] ซิงก์ข้อมูลปี ${year} ครบทั้งปี (${rawData.length} รายการ)`);
       allLogs = Array.isArray(rawData) ? rawData : Object.values(rawData);
-      displayTable(allLogs);
+      applyClientSideFilter(); // กรองข้อมูลบนเครื่องทันที 0ms
     } else {
-      console.warn(`⚠️ [Firebase EMPTY] ไม่พบข้อมูลปี ${year} ใน Firebase กำลังสลับไปดึงจาก Apps Script สำรอง...`);
-      fetchLogsFromScript(false);
+      allLogs = [];
+      displayTable([]);
     }
   });
 }
@@ -2217,7 +2218,7 @@ function loadLogsFromFirebase(year) {
     });
   }
 
-  let currentFilteredExportRows = []; // ตัวแปรเก็บรายการที่กำลังแสดงผลตามตัวกรอง
+  let currentFilteredExportRows = [];
 
   function filterExportTable() {
     const search = document.getElementById('exportSearchInput') ? document.getElementById('exportSearchInput').value.toLowerCase().trim() : "";
@@ -2225,38 +2226,40 @@ function loadLogsFromFirebase(year) {
     const staff = document.getElementById('exportStaffSelector') ? document.getElementById('exportStaffSelector').value.trim() : "";
 
     const deptAliasMap = {
-      "ฝ่ายบริหารวิชาการ": "บริหารงานวิชาการ", "บริหารงานวิชาการ": "ฝ่ายบริหารวิชาการ",
-      "ฝ่ายบริหารงานบุคคล": "บริหารงานบุคคล", "บริหารงานบุคคล": "ฝ่ายบริหารงานบุคคล",
-      "ฝ่ายบริหารงบประมาณ": "บริหารแผนงานและงบประมาณ", "บริหารแผนงานและงบประมาณ": "ฝ่ายบริหารงบประมาณ",
-      "ฝ่ายบริหารทั่วไป": "บริหารงานทั่วไป", "บริหารงานทั่วไป": "ฝ่ายบริหารทั่วไป"
+      "ฝ่ายบริหารวิชาการ": ["ฝ่ายบริหารวิชาการ", "บริหารงานวิชาการ"],
+      "ฝ่ายบริหารงานบุคคล": ["ฝ่ายบริหารงานบุคคล", "บริหารงานบุคคล"],
+      "ฝ่ายบริหารงบประมาณ": ["ฝ่ายบริหารงบประมาณ", "บริหารแผนงานและงบประมาณ"],
+      "ฝ่ายบริหารทั่วไป": ["ฝ่ายบริหารทั่วไป", "บริหารงานทั่วไป"],
+      "รองผู้อำนวยการ": ["รองผู้อำนวยการ"],
+      "ผู้อำนวยการ": ["ผู้อำนวยการ"]
     };
 
     currentFilteredExportRows = exportLogsData.filter(row => {
       if (!row || row[0] === "❌") return false;
 
+      const rawFileName = (row[2] || "").toString();
+      const rowDept = (row[3] || "").toString();
+
       // 1. กรองคำค้นหา
       let matchSearch = true;
       if (search !== "") {
-        matchSearch = (row[2] && row[2].toLowerCase().includes(search)) || (row[3] && row[3].toLowerCase().includes(search));
+        matchSearch = rawFileName.toLowerCase().includes(search) || rowDept.toLowerCase().includes(search);
       }
 
-      // 2. กรองกลุ่มงาน / รายชื่อ
+      // 2. กรองกลุ่มงาน / รายชื่อบุคคล
       let matchDept = true;
-      const rowDept = row[3] || "";
-      const rawFileName = row[2] || "";
-
       if (dept && dept !== "all") {
         if (dept === "อื่นๆ") {
           if (staff !== "") {
-            // กรณีเลือกรายชื่อเฉพาะ: แสดงเฉพาะหนังสือที่มีชื่อคนนั้น
+            // ถ้าระบุรายชื่อ: ต้องมีชื่อคนนั้นในวงเล็บ [ ... ]
             matchDept = rawFileName.includes(staff);
           } else {
-            // กรณีไม่ได้เลือกรายชื่อ: แสดงของกลุ่มอื่นๆ ทั้งหมด (ทั้งที่มีชื่อและไม่มีชื่อ)
+            // ถ้าไม่ระบุชื่อ: แสดงของกลุ่มอื่นๆ ทั้งหมด (มีคำว่าอื่นๆ หรือมีรายชื่อในวงเล็บ)
             matchDept = rowDept.includes("อื่นๆ") || /\[(.*?)\]/.test(rawFileName);
           }
         } else {
-          // กลุ่มงานทั่วไป
-          matchDept = rowDept.includes(dept) || (deptAliasMap[dept] && rowDept.includes(deptAliasMap[dept]));
+          const targets = deptAliasMap[dept] || [dept];
+          matchDept = targets.some(target => rowDept.includes(target));
         }
       }
 
@@ -2580,137 +2583,64 @@ function loadLogsFromFirebase(year) {
     }, 1000); // ⏱️ ตั้งหน่วงเวลา 1 วินาทีเมื่อหยุดพิมพ์เพื่อเริ่มค้นหา
   }
 
-  // 🚀 ฟังก์ชันดาวน์โหลดข้อมูลอิงตามสิทธิ์และจัดสรรพารามิเตอร์คัดกรองจากต้นทาง (เวอร์ชันสมบูรณ์)
-  async function loadLogs(isAppend = false, retryCount = 0) {
-    const selectedYear = document.getElementById('yearSelect').value;
+  // ⚡ ฟังก์ชันกรองข้อมูลในหน่วยความจำเครื่อง (Client-Side In-Memory Filter) เร็ว 0.00 วิ
+  function applyClientSideFilter() {
     const selectedDept = (currentUser.role === 'Admin') ? document.getElementById('deptFilter').value : currentUser.role;
-    const searchTerm = document.getElementById('searchInput').value.trim();
-    const targetYear = (selectedYear === "all") ? currentScrollYear : selectedYear;
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
 
-    // ⚡ ดึงจาก Firebase ทันทีเมื่อเปิดดูรายปีปกติ (ไม่มีคำค้นหา)
-    if (selectedYear !== "all" && !isAppend && searchTerm === "" && selectedDept === "all") {
+    const deptAliasMap = {
+      "ฝ่ายบริหารวิชาการ": ["ฝ่ายบริหารวิชาการ", "บริหารงานวิชาการ"],
+      "ฝ่ายบริหารงานบุคคล": ["ฝ่ายบริหารงานบุคคล", "บริหารงานบุคคล"],
+      "ฝ่ายบริหารงบประมาณ": ["ฝ่ายบริหารงบประมาณ", "บริหารแผนงานและงบประมาณ"],
+      "ฝ่ายบริหารทั่วไป": ["ฝ่ายบริหารทั่วไป", "บริหารงานทั่วไป"],
+      "รองผู้อำนวยการ": ["รองผู้อำนวยการ"],
+      "ผู้อำนวยการ": ["ผู้อำนวยการ"]
+    };
+
+    const filtered = allLogs.filter(row => {
+      if (!row) return false;
+      if (row[0] === "❌") return selectedDept === "all" && searchTerm === "";
+
+      const rawFileName = (row[2] || "").toString();
+      const rowDept = (row[3] || "").toString();
+
+      let matchSearch = (searchTerm === "") ? true : (
+        rawFileName.toLowerCase().includes(searchTerm) || rowDept.toLowerCase().includes(searchTerm)
+      );
+
+      let matchDept = true;
+      if (selectedDept && selectedDept !== "all") {
+        if (selectedDept === "ยังไม่ได้ลงระบบ") {
+          matchDept = rowDept.includes("ยังไม่ได้ลงระบบ") || rowDept === "";
+        } else if (selectedDept === "อื่นๆ") {
+          matchDept = rowDept.includes("อื่นๆ") || /\[(.*?)\]/.test(rawFileName);
+        } else {
+          const targets = deptAliasMap[selectedDept] || [selectedDept];
+          matchDept = targets.some(t => rowDept.includes(t));
+        }
+      }
+
+      return matchSearch && matchDept;
+    });
+
+    displayTable(filtered);
+  }
+
+  // 🚀 ฟังก์ชันสั่งโหลดข้อมูล (สลับปี หรือ กรองข้อมูล)
+  function loadLogs() {
+    const selectedYear = document.getElementById('yearSelect').value;
+    const targetYear = (selectedYear === "all") ? currentYearBE.toString() : selectedYear;
+
+    if (currentFirebaseYear !== targetYear) {
       loadLogsFromFirebase(targetYear);
-      return;
-    }
-
-    const cacheKey = `${targetYear}_${selectedDept}_${searchTerm}_${currentOffset}`;
-
-    if (!isAppend && retryCount === 0 && dataCache[cacheKey]) {
-      const cached = dataCache[cacheKey];
-      allLogs = cached.rows;
-      isExhausted = cached.isExhausted;
-      currentScrollYear = cached.currentScrollYear;
-      currentOffset = cached.currentOffset;
-      displayTable(allLogs);
-      return;
-    }
-
-    if (isLoading) return;
-    isLoading = true;
-
-    const tableBody = document.getElementById('bookData');
-    
-    if (!isAppend && retryCount === 0) {
-      tableBody.style.opacity = "0.5"; // UX สลับนุ่มนวล: ปรับจางตารางเดิมเมื่อสั่งอัปเดตคำค้นหา
-      
-      // แทรกแถววงกลมหมุนสวยๆ ไว้ที่แถวบนสุดของตารางทันทีโดยไม่ล้างข้อมูลเก่า
-      const oldSearchSpinner = document.getElementById('search-loading-spinner');
-      if (!oldSearchSpinner) {
-        tableBody.insertAdjacentHTML('afterbegin', `
-          <tr id="search-loading-spinner">
-            <td colspan="3" class="text-center p-3" style="background-color: rgba(255, 255, 255, 0.85);">
-              <div class="spinner-border text-success spinner-border-sm me-2" role="status"></div>
-              <small class="text-success fw-bold">กำลังค้นหาและอัปเดตรายการ...</small>
-            </td>
-          </tr>
-        `);
-      }
-    } else if (isAppend && retryCount === 0) {
-      const loadingRow = document.createElement('tr');
-      loadingRow.id = 'infinite-scroll-loading';
-      loadingRow.innerHTML = `<td colspan="3" class="text-center p-3 bg-light"><div class="spinner-border text-success spinner-border-sm me-2" role="status"></div> <small class="text-muted fw-bold">กำลังโหลดข้อมูลปีเก่าเพิ่มเติม...</small></td>`;
-      tableBody.appendChild(loadingRow);
-    }
-
-    try {
-      // 🎯 ปรับปรุงจุดที่ A: เปลี่ยนช่วงท้ายลิงก์จาก limit=100 เป็น limit=200 เพื่อดึงข้อมูลได้จุใจขึ้น
-      const url = `${SCRIPT_URL}?year=${targetYear}&dept=${encodeURIComponent(selectedDept)}&search=${encodeURIComponent(searchTerm)}&offset=${currentOffset}&limit=200&t=${new Date().getTime()}`;
-      const response = await fetch(url);
-      
-      if (!response.ok) throw new Error(`HTTP Status ${response.status}`);
-      
-      const textData = await response.text();
-      if (textData.trim().startsWith("<!DOCTYPE") || textData.trim().startsWith("<html")) {
-        throw new SyntaxError("Google Infrastructure Timeout");
-      }
-      
-      const newRows = JSON.parse(textData);
-      
-      const oldLoadingRow = document.getElementById('infinite-scroll-loading');
-      if (oldLoadingRow) oldLoadingRow.remove();
-
-      // ✨ เพิ่มเติม: ลบแถวตัวหมุนค้นหาเมื่อดึงข้อมูลสำเร็จ
-      const oldSearchSpinner = document.getElementById('search-loading-spinner');
-      if (oldSearchSpinner) oldSearchSpinner.remove();
-
-      if (isAppend) {
-        allLogs = allLogs.concat(newRows);
-      } else {
-        allLogs = newRows;
-      }
-
-      // 🎯 ปรับปรุงจุดที่ B: ขยับเกณฑ์ตัวเลขเป็น 200 แถว และนำตัวดักความยาวเลขศูนย์ออก 
-      // เพื่อให้ระบบวิ่งไปควบรวมดึงข้อมูลปีเก่า (2568) มาเติมต่อท้ายให้ผู้ใช้เห็นทันทีอย่างไร้รอยต่อ
-      if (newRows.length < 200 && selectedYear === "all" && currentScrollYear > 2568) {
-        currentScrollYear--; 
-        currentOffset = 0;   
-        isLoading = false;
-        return loadLogs(true); // 🔄 ยิงคำขอต่อเนื่องไปเอาปีเก่ามาเติมตารางให้เต็มทันที ป้องกันอาการหยุดชะงัก
-      } else if (newRows.length < 200) {
-        isExhausted = true; 
-      } else {
-        currentOffset += newRows.length; 
-      }
-
-      tableBody.style.opacity = "1";
-
-      dataCache[cacheKey] = {
-        rows: JSON.parse(JSON.stringify(allLogs)),
-        isExhausted: isExhausted,
-        currentScrollYear: currentScrollYear,
-        currentOffset: currentOffset
-      };
-
-      displayTable(allLogs);
-      isLoading = false;
-      
-    } catch(e) {
-      console.warn("Load Logs Failed, Retrying...", e.message);
-      isLoading = false;
-      tableBody.style.opacity = "1";
-      const oldLoadingRow = document.getElementById('infinite-scroll-loading');
-      if (oldLoadingRow) oldLoadingRow.remove();
-
-      // ✨ เพิ่มเติม: ลบแถวตัวหมุนค้นหาออกหากเกิดข้อผิดพลาดในการโหลด
-      const oldSearchSpinner = document.getElementById('search-loading-spinner');
-      if (oldSearchSpinner) oldSearchSpinner.remove();
-
-      if (retryCount < 2) {
-        setTimeout(() => loadLogs(isAppend, retryCount + 1), 1500);
-      } else if (!isAppend) {
-        tableBody.innerHTML = '<tr><td colspan="3" class="text-center p-4 text-danger">⚠️ สัญญาณหน่วง กรุณาพิมพ์ตัวอักษรใหม่อีกครั้งเพื่อค้นหา</td></tr>';
-      }
+    } else {
+      applyClientSideFilter();
     }
   }
 
-  // 🖱️ ตรวจจับเมื่อเลื่อนหน้าจอลงใกล้ถึงขอบตารางล่างสุด ให้ไหลหน้าข้อมูลต่อเนื่อง
-  window.addEventListener('scroll', () => {
-    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 150) {
-      if (!isLoading && !isExhausted) {
-        loadLogs(true);
-      }
-    }
-  });
+  function handleSearchInput() {
+    applyClientSideFilter(); // พิมพ์แล้วกรองทันที 0ms
+  }
 
   // --- 9. ระบบอัปโหลดหลายกลุ่มงานพร้อม Progress Bar และยกเลิกกลุ่มงานอัตโนมัติ ---
   function handleUpload() {

@@ -1115,7 +1115,7 @@
  // --- 1. การตั้งค่าสิทธิ์พื้นฐานองค์กร ---
   const GH_OWNER = "specialtrat905";
   const GH_REPO = "smart-saraban";
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxW4Phre12aHrbgS37DyC53iwP6hxyZGXprZYYDkp-HNAwsF_dcEJeO7cMlfhLXKuFvqQ/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8sIJ2xTGwxRhzK4P1KRJbyd34lOMn105MEhUQGJt2ieL_bRHDShkaLhRM6vK8nuA2yQ/exec";
 // ⚡ กำหนดค่าเชื่อมต่อ Firebase (ตาม Config ของคุณ)
 const firebaseConfig = {
   apiKey: "AIzaSyBL_Jv3x_UxEkzcVnN6lpQpZdWoIaJvMNM",
@@ -2819,13 +2819,10 @@ function updateDbManageButtonUI() {
 
   // --- 8. ฟังก์ชันจัดคิวและดาวน์โหลดข้อมูลสลับหน้าความเสถียรสูง ---
   function resetAndReloadLogs() {
-    isLoading = false; // 🔓 บังคับปลดล็อกคิวค้างเพื่อแก้ไขอาการปุ่มเปลี่ยนปีค้าง
-    currentOffset = 0;
-    isExhausted = false;
+    isLoading = false;
+    currentFirebaseYear = null; // 👈 รีเซ็ตเพื่อให้โหลดข้อมูลอัปเดตล่าสุด
     allLogs = [];
-    const selectedYear = document.getElementById('yearSelect').value;
-    currentScrollYear = (selectedYear === "all") ? currentYearBE : parseInt(selectedYear);
-    loadLogs(false);
+    loadLogs();
   }
 
   function handleSearchInput() {

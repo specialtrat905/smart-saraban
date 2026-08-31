@@ -1997,23 +1997,9 @@ function loadLogsFromFirebase(year) {
     let tableHTML = filtered.map((col, index) => {
       const isMissing = col[0] === "❌";
       let rawDate = isMissing ? "❌" : col[0].split(/[T\s,]+/)[0];
-      // 🎯 สลับการแสดงผลคอลัมน์แรก: โหมดส่งออกแสดง Checkbox | โหมดปกติแสดง วันที่
-      let firstColHTML = "";
-      if (isMissing) {
-        firstColHTML = `<span style="font-size: 1.1rem; color: #ff4d4d;">❌</span>`;
-      } else if (isExportMode) {
-        const isChecked = selectedExportFileNames.has(col[2]);
-        firstColHTML = `
-          <div class="form-check d-flex justify-content-center align-items-center m-0">
-            <input class="form-check-input border-success" type="checkbox" style="width: 1.35rem; height: 1.35rem; cursor: pointer;" 
-              ${isChecked ? 'checked' : ''} onchange="toggleExportItem('${encodeURIComponent(col[2])}', this.checked)">
-          </div>
-        `;
-      } else {
-        firstColHTML = `<span style="font-size: 0.75rem; color: gray;">${dateDisplay}</span>`;
-      }
       let dateDisplay = rawDate;
 
+      // 1. คำนวณรูปแบบวันที่ให้เรียบร้อยก่อน
       if (!isMissing) {
           if (rawDate.includes("-")) {
               const d = rawDate.split("-"); 
@@ -2030,6 +2016,22 @@ function loadLogsFromFirebase(year) {
                   dateDisplay = `${parseInt(d[0])}/${parseInt(d[1])}/${year}`;
               }
           }
+      }
+
+      // 2. สลับการแสดงผลคอลัมน์แรก: โหมดส่งออกแสดง Checkbox | โหมดปกติแสดง วันที่
+      let firstColHTML = "";
+      if (isMissing) {
+        firstColHTML = `<span style="font-size: 1.1rem; color: #ff4d4d;">❌</span>`;
+      } else if (isExportMode) {
+        const isChecked = selectedExportFileNames.has(col[2]);
+        firstColHTML = `
+          <div class="form-check d-flex justify-content-center align-items-center m-0">
+            <input class="form-check-input border-success" type="checkbox" style="width: 1.35rem; height: 1.35rem; cursor: pointer;" 
+              ${isChecked ? 'checked' : ''} onchange="toggleExportItem('${encodeURIComponent(col[2])}', this.checked)">
+          </div>
+        `;
+      } else {
+        firstColHTML = `<span style="font-size: 0.75rem; color: gray;">${dateDisplay}</span>`;
       }
 
       let fullFileName = col[2];

@@ -2832,8 +2832,10 @@ function updateDbManageButtonUI() {
     }, 1000); // ⏱️ ตั้งหน่วงเวลา 1 วินาทีเมื่อหยุดพิมพ์เพื่อเริ่มค้นหา
   }
 
-  // ⚡ ฟังก์ชันกรองข้อมูลในหน่วยความจำเครื่อง (Client-Side In-Memory Filter) เร็ว 0.00 วิ
+  // ⚡ ฟังก์ชันกรองข้อมูลในหน่วยความจำเครื่อง (พร้อมระบบคำนวณเลขที่ยังไม่ลงระบบ ❌)
   function applyClientSideFilter() {
+    const selectedYear = document.getElementById('yearSelect').value;
+    const targetYear = (selectedYear === "all") ? currentYearBE.toString() : selectedYear;
     const selectedDept = (currentUser.role === 'Admin') ? document.getElementById('deptFilter').value : currentUser.role;
     const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
 
@@ -2846,9 +2848,48 @@ function updateDbManageButtonUI() {
       "ผู้อำนวยการ": ["ผู้อำนวยการ"]
     };
 
-    const filtered = allLogs.filter(row => {
-      if (!row) return false;
-      if (row[0] === "❌") return selectedDept === "all" && searchTerm === "";
+    // 1. คำนวณหาเลขหนังสือที่ยังไม่ลงระบบ (Missing Numbers)
+    let missingRows = [];
+    if ((selectedDept === "all" || selectedDept === "ยังไม่ได้ลงระบบ") && searchTerm === "") {
+      const existingNumbers = allLogs.map(row => {
+        if (!row || row.length < 3 || row[0] === "❌") return null;
+        const m = row[2].toString().match(/^(\d+)-25\d{2}/);
+        return m ? parseInt(m[1]) : null;
+      }).filter(n => n !== null);
+
+      if (existingNumbers.length > 0) {
+        const maxNum = Math.max(...existingNumbers);
+        let minBound = 1;
+        if (targetYear === "2568") minBound = 891;
+
+        for (let i = minBound; i <= maxNum; i++) {
+          if (!existingNumbers.includes(i)) {
+            missingRows.push([
+              "❌",
+              "SYSTEM",
+              `<span style="color: red; font-weight: bold;">${i}-${targetYear}</span>`,
+              "ยังไม่มีข้อมูล",
+              "#"
+            ]);
+          }
+        }
+      }
+    }
+
+    // 2. หากเลือกตัวกรอง "ยังไม่ได้ลงระบบ" ให้แสดงเฉพาะรายการสีแดง
+    if (selectedDept === "ยังไม่ได้ลงระบบ") {
+      missingRows.sort((a, b) => {
+        const matchA = a[2].match(/(\d+)-\d+/);
+        const matchB = b[2].match(/(\d+)-\d+/);
+        return (matchB ? parseInt(matchB[1]) : 0) - (matchA ? parseInt(matchA[1]) : 0);
+      });
+      displayTable(missingRows);
+      return;
+    }
+
+    // 3. กรองรายการหนังสือปกติ
+    let filtered = allLogs.filter(row => {
+      if (!row || row[0] === "❌") return false;
 
       const rawFileName = (row[2] || "").toString();
       const rowDept = (row[3] || "").toString();
@@ -2859,9 +2900,7 @@ function updateDbManageButtonUI() {
 
       let matchDept = true;
       if (selectedDept && selectedDept !== "all") {
-        if (selectedDept === "ยังไม่ได้ลงระบบ") {
-          matchDept = rowDept.includes("ยังไม่ได้ลงระบบ") || rowDept === "";
-        } else if (selectedDept === "อื่นๆ") {
+        if (selectedDept === "อื่นๆ") {
           matchDept = rowDept.includes("อื่นๆ") || /\[(.*?)\]/.test(rawFileName);
         } else {
           const targets = deptAliasMap[selectedDept] || [selectedDept];
@@ -2870,6 +2909,24 @@ function updateDbManageButtonUI() {
       }
 
       return matchSearch && matchDept;
+    });
+
+    // นำรายการที่ยังไม่ลงระบบมารวมแสดงผล (กรณีเลือกทุกกลุ่มงานและไม่ได้ค้นหา)
+    if (selectedDept === "all" && searchTerm === "") {
+      filtered = filtered.concat(missingRows);
+    }
+
+    // 4. เรียงลำดับเลขหนังสือจากมากไปน้อย
+    filtered.sort((a, b) => {
+      const textA = a[2].toString().replace(/<[^>]*>?/gm, '');
+      const textB = b[2].toString().replace(/<[^>]*>?/gm, '');
+      const matchA = textA.match(/^(\d+)-(\d+)/);
+      const matchB = textB.match(/^(\d+)-(\d+)/);
+
+      if (matchA && matchB) {
+        return parseInt(matchB[1]) - parseInt(matchA[1]);
+      }
+      return b[0].toString().localeCompare(a[0].toString());
     });
 
     displayTable(filtered);

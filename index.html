@@ -329,8 +329,8 @@
         <button id="manageStaffBtn" class="btn btn-sm btn-light text-dark shadow-sm fw-bold" style="display:none;" onclick="switchToStaffView()">
           👥 รายชื่อบุคลากร
         </button>
-        <!-- 📤 ปุ่มโหมดเลือกส่งออกรายการหนังสือ -->
-        <button id="toggleExportModeBtn" class="btn btn-sm btn-light text-success shadow-sm fw-bold" style="display:none;" onclick="toggleExportMode()">
+        <!-- 📤 ปุ่มสลับไปหน้าส่งออกรายการหนังสือ -->
+        <button id="toggleExportModeBtn" class="btn btn-sm btn-light text-success shadow-sm fw-bold" style="display:none;" onclick="switchToExportView()">
           📤 ส่งออกรายการ
         </button>
         <!-- ⬅️ ปุ่มย้อนกลับหน้าระบบสารบรรณ -->
@@ -380,51 +380,7 @@
         </div>
       </div>
 
-<!-- 📤 แถบควบคุมโหมดเลือกหนังสือส่งออก (Export Toolbar) -->
-      <div id="exportToolbar" style="display:none;" class="card card-border-green p-3 mb-3 shadow-sm bg-white">
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-          <div class="d-flex flex-wrap align-items-center gap-2">
-            <span class="badge bg-success fs-6 py-2 px-3 shadow-sm">
-              เลือกแล้ว: <span id="exportSelectedCount">0</span> เล่ม
-            </span>
-            <!-- ปุ่มเลือกทั้งหมด -->
-            <button type="button" class="btn btn-sm btn-outline-success fw-bold shadow-sm" onclick="selectAllForExport(true)">
-              ✅ เลือกทั้งหมดในหน้านี้
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-secondary fw-bold shadow-sm" onclick="selectAllForExport(false)">
-              ◻️ ล้างที่เลือก
-            </button>
-          </div>
 
-          <!-- ตัวกรองเลือกติ๊กตามกลุ่มงาน / รายชื่อ -->
-          <div class="d-flex flex-wrap align-items-center gap-2">
-            <select id="exportDeptSelector" class="form-select form-select-sm border-success shadow-sm" style="max-width: 220px;" onchange="handleExportDeptSelect(this.value)">
-              <option value="">🏢 เลือกติ๊กตามกลุ่มงาน...</option>
-              <option value="all">-- เลือกทุกกลุ่มงาน --</option>
-              <option value="ฝ่ายบริหารทั่วไป">ฝ่ายบริหารทั่วไป</option>
-              <option value="ฝ่ายบริหารงานบุคคล">ฝ่ายบริหารงานบุคคล</option>
-              <option value="ฝ่ายบริหารวิชาการ">ฝ่ายบริหารวิชาการ</option>
-              <option value="ฝ่ายบริหารงบประมาณ">ฝ่ายบริหารงบประมาณ</option>
-              <option value="รองผู้อำนวยการ">รองผู้อำนวยการ</option>
-              <option value="ผู้อำนวยการ">ผู้อำนวยการ</option>
-              <option value="อื่นๆ">อื่นๆ (ระบุรายชื่อ)</option>
-            </select>
-
-            <!-- กล่องเลือกรายชื่อเฉพาะเมื่อเลือก 'อื่นๆ' -->
-            <select id="exportStaffSelector" class="form-select form-select-sm border-info shadow-sm" style="display:none; max-width: 200px;" onchange="handleExportStaffSelect(this.value)">
-              <option value="">👤 เลือกรายชื่อบุคคล...</option>
-            </select>
-
-            <!-- ปุ่มเปิดตารางสรุปการส่งออก -->
-            <button type="button" class="btn btn-sm btn-success fw-bold px-3 shadow-sm" onclick="openExportSummaryModal()">
-              📑 สรุปและส่งออกข้อมูล
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-danger fw-bold shadow-sm" onclick="toggleExportMode()">
-              ✕ ปิดโหมด
-            </button>
-          </div>
-        </div>
-      </div>
 
       <div class="card card-border-green p-4 shadow-sm mb-5">
         <div class="row g-2 mb-3 align-items-center">
@@ -544,6 +500,88 @@
         </table>
       </div>
     </div> <!-- ปิด staffView -->
+
+    <!-- 📤 ส่วนที่ 3: หน้าส่งออกรายการหนังสือแบบเต็มจอ (Export View) -->
+    <div id="exportView" style="display:none;" class="card card-border-green p-3 p-md-4 shadow-sm mb-5">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 pb-2 border-bottom">
+        <div>
+          <h4 class="fw-bold text-success mb-0">📤 ระบบส่งออกรายการหนังสือรับ ศกศ.ตราด</h4>
+          <small class="text-muted">เลือกแล้ว <span id="exportViewSelectedCount" class="fw-bold text-success fs-6">0</span> เล่ม (จากรายการที่แสดงทั้งหมด <span id="exportViewTotalCount" class="fw-bold text-dark">0</span> เล่ม)</small>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+          <button class="btn btn-sm btn-outline-primary fw-bold shadow-sm bg-white" onclick="copyExportTableToClipboard()">
+            📋 คัดลอกตาราง
+          </button>
+          <button class="btn btn-sm btn-outline-success fw-bold shadow-sm bg-white" onclick="exportSelectedToCSV()">
+            📊 ดาวน์โหลด Excel
+          </button>
+          <button class="btn btn-sm btn-outline-dark fw-bold shadow-sm bg-white" onclick="printExportTable()">
+            🖨️ พิมพ์ / PDF
+          </button>
+          <button class="btn btn-sm btn-outline-secondary fw-bold shadow-sm" onclick="switchToSarabanView()">
+            ⬅️ กลับระบบส่งหนังสือ
+          </button>
+        </div>
+      </div>
+
+      <!-- แถบตัวกรองและตัวช่วยเลือกของหน้า Export -->
+      <div class="row g-2 mb-3 align-items-center">
+        <div class="col-6 col-md-2">
+          <select id="exportYearSelect" class="form-select form-select-sm border-success shadow-sm" onchange="changeExportYear(this.value)"></select>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="input-group input-group-sm shadow-sm">
+            <span class="input-group-text bg-white">🔍</span>
+            <input type="text" id="exportSearchInput" class="form-control" placeholder="ค้นหาเลข หรือ ชื่อหนังสือ..." oninput="filterExportTable()">
+          </div>
+        </div>
+        <div class="col-12 col-md-3">
+          <select id="exportDeptSelector" class="form-select form-select-sm border-success shadow-sm" onchange="handleExportDeptSelect(this.value)">
+            <option value="">🏢 เลือกติ๊กตามกลุ่มงาน...</option>
+            <option value="all">-- เลือกทุกกลุ่มงาน --</option>
+            <option value="ฝ่ายบริหารทั่วไป">ฝ่ายบริหารทั่วไป</option>
+            <option value="ฝ่ายบริหารงานบุคคล">ฝ่ายบริหารงานบุคคล</option>
+            <option value="ฝ่ายบริหารวิชาการ">ฝ่ายบริหารวิชาการ</option>
+            <option value="ฝ่ายบริหารงบประมาณ">ฝ่ายบริหารงบประมาณ</option>
+            <option value="รองผู้อำนวยการ">รองผู้อำนวยการ</option>
+            <option value="ผู้อำนวยการ">ผู้อำนวยการ</option>
+            <option value="อื่นๆ">อื่นๆ (ระบุรายชื่อ)</option>
+          </select>
+        </div>
+        <div class="col-12 col-md-2" id="exportStaffSelectorContainer" style="display:none;">
+          <select id="exportStaffSelector" class="form-select form-select-sm border-info shadow-sm" onchange="handleExportStaffSelect(this.value)">
+            <option value="">👤 เลือกรายชื่อบุคคล...</option>
+          </select>
+        </div>
+        <div class="col-auto ms-auto d-flex gap-1">
+          <button type="button" class="btn btn-sm btn-outline-success fw-bold shadow-sm" onclick="selectAllForExport(true)">
+            ✅ เลือกทั้งหมด
+          </button>
+          <button type="button" class="btn btn-sm btn-outline-secondary fw-bold shadow-sm" onclick="selectAllForExport(false)">
+            ◻️ ล้างที่เลือก
+          </button>
+        </div>
+      </div>
+
+      <!-- ตารางแสดงรายการส่งออกเต็มจอ -->
+      <div id="exportPrintArea" class="table-responsive border rounded shadow-sm bg-white" style="max-height: 68vh;">
+        <table class="table table-hover table-bordered align-middle mb-0" id="exportResultTable" style="font-size: 0.88rem;">
+          <thead class="table-light text-center sticky-top shadow-sm" style="z-index: 5;">
+            <tr>
+              <th style="width: 50px;">
+                <input class="form-check-input" type="checkbox" id="masterExportCheck" onchange="toggleMasterExportCheck(this.checked)" title="เลือกทั้งหมด">
+              </th>
+              <th style="width: 60px;">ลำดับ</th>
+              <th style="width: 110px;">วันที่</th>
+              <th style="width: 130px;">เลขหนังสือ</th>
+              <th style="min-width: 250px;">ชื่อเรื่อง / หนังสือ</th>
+              <th style="min-width: 200px;">ผู้รับผิดชอบ (กลุ่มงาน / รายชื่อ)</th>
+            </tr>
+          </thead>
+          <tbody id="exportViewTableBody"></tbody>
+        </table>
+      </div>
+    </div> <!-- ปิด exportView -->
 
     <!-- 🏢 Modal เลือกกลุ่มงานส่งหนังสือ -->
     <div class="modal fade" id="deptSelectModal" tabindex="-1" aria-hidden="true">
@@ -1115,8 +1153,11 @@ function loadLogsFromFirebase(year) {
   // --- 12. ระบบควบคุมหน้าตารางทะเบียนบุคลากรเต็มจอ ---
   function switchToStaffView() {
     document.getElementById('sarabanView').style.display = 'none';
+    document.getElementById('exportView').style.display = 'none';
     document.getElementById('staffView').style.display = 'block';
+
     document.getElementById('manageStaffBtn').style.display = 'none';
+    document.getElementById('toggleExportModeBtn').style.display = 'none';
     document.getElementById('backToSarabanBtn').style.display = 'block';
 
     const isAdmin = (currentUser.role === 'Admin');
@@ -1129,11 +1170,28 @@ function loadLogsFromFirebase(year) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  function switchToExportView() {
+    document.getElementById('sarabanView').style.display = 'none';
+    document.getElementById('staffView').style.display = 'none';
+    document.getElementById('exportView').style.display = 'block';
+
+    document.getElementById('manageStaffBtn').style.display = 'none';
+    document.getElementById('toggleExportModeBtn').style.display = 'none';
+    document.getElementById('backToSarabanBtn').style.display = 'block';
+
+    initExportView();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   function switchToSarabanView() {
     document.getElementById('staffView').style.display = 'none';
+    document.getElementById('exportView').style.display = 'none';
     document.getElementById('sarabanView').style.display = 'block';
+
     document.getElementById('backToSarabanBtn').style.display = 'none';
     document.getElementById('manageStaffBtn').style.display = 'block';
+    document.getElementById('toggleExportModeBtn').style.display = 'block';
+    
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -1999,7 +2057,6 @@ function loadLogsFromFirebase(year) {
       let rawDate = isMissing ? "❌" : col[0].split(/[T\s,]+/)[0];
       let dateDisplay = rawDate;
 
-      // 1. คำนวณรูปแบบวันที่ให้เรียบร้อยก่อน
       if (!isMissing) {
           if (rawDate.includes("-")) {
               const d = rawDate.split("-"); 
@@ -2018,21 +2075,6 @@ function loadLogsFromFirebase(year) {
           }
       }
 
-      // 2. สลับการแสดงผลคอลัมน์แรก: โหมดส่งออกแสดง Checkbox | โหมดปกติแสดง วันที่
-      let firstColHTML = "";
-      if (isMissing) {
-        firstColHTML = `<span style="font-size: 1.1rem; color: #ff4d4d;">❌</span>`;
-      } else if (isExportMode) {
-        const isChecked = selectedExportFileNames.has(col[2]);
-        firstColHTML = `
-          <div class="form-check d-flex justify-content-center align-items-center m-0">
-            <input class="form-check-input border-success" type="checkbox" style="width: 1.35rem; height: 1.35rem; cursor: pointer;" 
-              ${isChecked ? 'checked' : ''} onchange="toggleExportItem('${encodeURIComponent(col[2])}', this.checked)">
-          </div>
-        `;
-      } else {
-        firstColHTML = `<span style="font-size: 0.75rem; color: gray;">${dateDisplay}</span>`;
-      }
 
       let fullFileName = col[2];
       let cleanFileName = fullFileName;
@@ -2103,8 +2145,8 @@ function loadLogsFromFirebase(year) {
 
       return `
       <tr class="${isMissing ? 'row-missing' : ''} align-middle">
-        <td class="text-center">
-          ${firstColHTML}
+        <td class="text-center" style="font-size: ${isMissing ? '1.1rem' : '0.75rem'}; color: ${isMissing ? '#ff4d4d' : 'gray'};">
+          ${dateDisplay}
         </td>
         <td class="thai-wrap text-start">
            <span class="${isMissing ? '' : 'text-dark'} fw-bold d-block mb-1" style="font-size: 0.85rem;">${cleanFileName}</span>
@@ -2124,43 +2166,118 @@ function loadLogsFromFirebase(year) {
   }
 
 // ==========================================
-  // 📤 ระบบส่งออกรายการหนังสือ (Export Module)
+  // 📤 ระบบส่งออกรายการหนังสือเต็มจอ (Export View Module)
   // ==========================================
-  let isExportMode = false;
+  let exportLogsData = [];
   let selectedExportFileNames = new Set();
-  let exportSummaryModalInstance = null;
+  let currentExportYear = currentYearBE;
 
-  // 1. สลับเข้า-ออก โหมดส่งออกหนังสือ
-  function toggleExportMode() {
-    isExportMode = !isExportMode;
-    selectedExportFileNames.clear();
-
-    const toolbar = document.getElementById('exportToolbar');
-    const toggleBtn = document.getElementById('toggleExportModeBtn');
-
-    if (isExportMode) {
-      toolbar.style.display = 'block';
-      toggleBtn.className = "btn btn-sm btn-success text-white shadow-sm fw-bold";
-      toggleBtn.innerText = "✕ ปิดโหมดส่งออก";
-      populateExportStaffDropdown();
-    } else {
-      toolbar.style.display = 'none';
-      toggleBtn.className = "btn btn-sm btn-light text-success shadow-sm fw-bold";
-      toggleBtn.innerText = "📤 ส่งออกรายการ";
+  function initExportView() {
+    const ySelect = document.getElementById('exportYearSelect');
+    if (ySelect) {
+      let opts = "";
+      for (let y = currentYearBE + 1; y >= 2568; y--) {
+        opts += `<option value="${y}" ${y === currentExportYear ? 'selected' : ''}>ปี พ.ศ. ${y}</option>`;
+      }
+      ySelect.innerHTML = opts;
     }
 
-    updateExportSelectedCount();
-    displayTable(allLogs);
+    populateExportStaffDropdown();
+    loadExportDataForYear(currentExportYear);
   }
 
-  // 2. อัปเดตตัวเลขจำนวนที่เลือก
+  function changeExportYear(val) {
+    currentExportYear = parseInt(val);
+    selectedExportFileNames.clear();
+    loadExportDataForYear(currentExportYear);
+  }
+
+  function loadExportDataForYear(year) {
+    const tbody = document.getElementById('exportViewTableBody');
+    tbody.innerHTML = `<tr><td colspan="6" class="text-center p-4"><div class="spinner-border spinner-border-sm text-success me-2"></div> กำลังโหลดข้อมูลปี ${year}...</td></tr>`;
+
+    rtdb.ref('logs_' + year).once('value', (snapshot) => {
+      const rawData = snapshot.val();
+      if (rawData && rawData.length > 0) {
+        exportLogsData = Array.isArray(rawData) ? rawData : Object.values(rawData);
+        filterExportTable();
+      } else {
+        fetch(`${SCRIPT_URL}?year=${year}&dept=all&search=&offset=0&limit=500&t=${new Date().getTime()}`)
+          .then(res => res.json())
+          .then(data => {
+            exportLogsData = data;
+            filterExportTable();
+          }).catch(err => {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center p-4 text-danger">⚠️ โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง</td></tr>`;
+          });
+      }
+    });
+  }
+
+  function filterExportTable() {
+    const search = document.getElementById('exportSearchInput') ? document.getElementById('exportSearchInput').value.toLowerCase().trim() : "";
+    
+    const filtered = exportLogsData.filter(row => {
+      if (!row || row[0] === "❌") return false;
+      if (search === "") return true;
+      return (row[2] && row[2].toLowerCase().includes(search)) || (row[3] && row[3].toLowerCase().includes(search));
+    });
+
+    renderExportTableRows(filtered);
+  }
+
+  function renderExportTableRows(rows) {
+    const tbody = document.getElementById('exportViewTableBody');
+    const totalElem = document.getElementById('exportViewTotalCount');
+    if (totalElem) totalElem.innerText = rows.length;
+
+    if (rows.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center p-4 text-muted">ไม่พบข้อมูลหนังสือ</td></tr>`;
+      updateExportSelectedCount();
+      return;
+    }
+
+    let html = "";
+    rows.forEach((row, idx) => {
+      const details = extractBookExportDetails(row);
+      const isChecked = selectedExportFileNames.has(row[2]);
+
+      let rawDate = row[0].split(/[T\s,]+/)[0];
+      let dateDisplay = rawDate;
+      if (rawDate.includes("-")) {
+        const d = rawDate.split("-");
+        if (d.length === 3) {
+          let y = parseInt(d[0]); if (y < 2500) y += 543;
+          dateDisplay = `${parseInt(d[2])}/${parseInt(d[1])}/${y}`;
+        }
+      }
+
+      html += `
+        <tr class="align-middle">
+          <td class="text-center">
+            <input class="form-check-input border-success export-row-check" type="checkbox" style="width: 1.25rem; height: 1.25rem; cursor: pointer;"
+              ${isChecked ? 'checked' : ''} onchange="toggleExportItem('${encodeURIComponent(row[2])}', this.checked)">
+          </td>
+          <td class="text-center text-muted fw-bold">${idx + 1}</td>
+          <td class="text-center text-muted" style="font-size: 0.8rem;">${dateDisplay}</td>
+          <td class="text-center fw-bold text-success">${details.bookNumber}</td>
+          <td class="text-start text-dark fw-bold">${details.title}</td>
+          <td class="text-start">${details.responsible}</td>
+        </tr>
+      `;
+    });
+
+    tbody.innerHTML = html;
+    updateExportSelectedCount();
+  }
+
   function updateExportSelectedCount() {
-    const countElem = document.getElementById('exportSelectedCount');
+    const countElem = document.getElementById('exportViewSelectedCount');
     if (countElem) countElem.innerText = selectedExportFileNames.size;
   }
 
-  // 3. จัดการการติ๊กเลือกแต่ละแถว
-  function toggleExportItem(fileName, isChecked) {
+  function toggleExportItem(encodedFileName, isChecked) {
+    const fileName = decodeURIComponent(encodedFileName);
     if (isChecked) {
       selectedExportFileNames.add(fileName);
     } else {
@@ -2169,9 +2286,25 @@ function loadLogsFromFirebase(year) {
     updateExportSelectedCount();
   }
 
-  // 4. เลือกทั้งหมด / ล้างที่เลือก
+  function toggleMasterExportCheck(masterChecked) {
+    document.querySelectorAll('.export-row-check').forEach(cb => cb.checked = masterChecked);
+    exportLogsData.forEach(row => {
+      if (!row || row[0] === "❌") return;
+      if (masterChecked) {
+        selectedExportFileNames.add(row[2]);
+      } else {
+        selectedExportFileNames.delete(row[2]);
+      }
+    });
+    updateExportSelectedCount();
+  }
+
   function selectAllForExport(select) {
-    allLogs.forEach(row => {
+    const master = document.getElementById('masterExportCheck');
+    if (master) master.checked = select;
+    document.querySelectorAll('.export-row-check').forEach(cb => cb.checked = select);
+
+    exportLogsData.forEach(row => {
       if (!row || row[0] === "❌") return;
       if (select) {
         selectedExportFileNames.add(row[2]);
@@ -2180,18 +2313,16 @@ function loadLogsFromFirebase(year) {
       }
     });
     updateExportSelectedCount();
-    displayTable(allLogs);
   }
 
-  // 5. เลือกติ๊กตามกลุ่มงาน
   function handleExportDeptSelect(dept) {
     if (!dept) return;
 
-    const staffSelector = document.getElementById('exportStaffSelector');
+    const staffContainer = document.getElementById('exportStaffSelectorContainer');
     if (dept === "อื่นๆ") {
-      staffSelector.style.display = 'inline-block';
+      staffContainer.style.display = 'block';
     } else {
-      staffSelector.style.display = 'none';
+      staffContainer.style.display = 'none';
     }
 
     const deptAliasMap = {
@@ -2201,7 +2332,7 @@ function loadLogsFromFirebase(year) {
       "ฝ่ายบริหารทั่วไป": "บริหารงานทั่วไป", "บริหารงานทั่วไป": "ฝ่ายบริหารทั่วไป"
     };
 
-    allLogs.forEach(row => {
+    exportLogsData.forEach(row => {
       if (!row || row[0] === "❌") return;
       const rowDept = row[3] || "";
       let isMatch = false;
@@ -2217,11 +2348,9 @@ function loadLogsFromFirebase(year) {
       if (isMatch) selectedExportFileNames.add(row[2]);
     });
 
-    updateExportSelectedCount();
-    displayTable(allLogs);
+    filterExportTable();
   }
 
-  // 6. ดึงรายชื่อบุคลากรใส่ Dropdown เพื่อเลือกเฉพาะบุคคล
   function populateExportStaffDropdown() {
     const selector = document.getElementById('exportStaffSelector');
     if (!selector || fullStaffData.length === 0) return;
@@ -2229,37 +2358,31 @@ function loadLogsFromFirebase(year) {
       fullStaffData.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
   }
 
-  // 7. เลือกติ๊กเฉพาะรายชื่อบุคคล
   function handleExportStaffSelect(staffName) {
     if (!staffName) return;
 
-    allLogs.forEach(row => {
+    exportLogsData.forEach(row => {
       if (!row || row[0] === "❌") return;
       if (row[2].includes(staffName)) {
         selectedExportFileNames.add(row[2]);
       }
     });
 
-    updateExportSelectedCount();
-    displayTable(allLogs);
+    filterExportTable();
   }
 
-  // 8. สกัดข้อมูล 3 ฟิลด์ (เลขหนังสือ, ชื่อเรื่อง, ผู้รับผิดชอบ)
   function extractBookExportDetails(row) {
     const rawFileName = (row[2] || "").trim();
     const cleanNoExt = rawFileName.replace(/\.pdf$/i, "").trim();
 
-    // 1. เลขหนังสือ
     const numMatch = cleanNoExt.match(/^(\d+[-/]\d+)/);
     const bookNumber = numMatch ? numMatch[1] : (cleanNoExt.split(" ")[0] || "-");
 
-    // 2. ชื่อหนังสือ (ตัดเลขนำหน้า และตัด [ชื่อบุคคล] ออก)
     let bookTitle = cleanNoExt;
     if (numMatch) bookTitle = bookTitle.substring(numMatch[1].length).trim();
     bookTitle = bookTitle.replace(/\[.*?\]/g, "").trim();
     if (!bookTitle) bookTitle = cleanNoExt;
 
-    // 3. ผู้รับผิดชอบ (รวมกลุ่มงาน + รายชื่อในวงเล็บ)
     let responsible = row[3] || "";
     const nameMatch = rawFileName.match(/\[(.*?)\]/);
     if (nameMatch && nameMatch[1]) {
@@ -2276,43 +2399,11 @@ function loadLogsFromFirebase(year) {
     };
   }
 
-  // 9. เปิดหน้าต่าง Modal ตารางสรุปข้อมูล
-  function openExportSummaryModal() {
-    if (selectedExportFileNames.size === 0) {
-      alert("⚠️ กรุณาติ๊กเลือกหนังสือที่ต้องการส่งออกอย่างน้อย 1 รายการ");
-      return;
-    }
-
-    const selectedRows = allLogs.filter(row => row && row[0] !== "❌" && selectedExportFileNames.has(row[2]));
-    document.getElementById('summaryModalCount').innerText = selectedRows.length;
-    document.getElementById('exportPrintDate').innerText = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
-
-    const tbody = document.getElementById('exportResultTableBody');
-    tbody.innerHTML = selectedRows.map((row, idx) => {
-      const details = extractBookExportDetails(row);
-      return `
-        <tr>
-          <td class="text-center fw-bold">${idx + 1}</td>
-          <td class="text-center fw-bold text-success">${details.bookNumber}</td>
-          <td class="text-start text-dark">${details.title}</td>
-          <td class="text-start">${details.responsible}</td>
-        </tr>
-      `;
-    }).join('');
-
-    if (!exportSummaryModalInstance) {
-      exportSummaryModalInstance = new bootstrap.Modal(document.getElementById('exportSummaryModal'));
-    }
-    exportSummaryModalInstance.show();
-  }
-
-  // 10. ส่งออกไฟล์ CSV / Excel
   function exportSelectedToCSV() {
-    const selectedRows = allLogs.filter(row => row && row[0] !== "❌" && selectedExportFileNames.has(row[2]));
-    if (selectedRows.length === 0) return;
+    const selectedRows = exportLogsData.filter(row => row && row[0] !== "❌" && selectedExportFileNames.has(row[2]));
+    if (selectedRows.length === 0) return alert("⚠️ กรุณาเลือกรายการหนังสืออย่างน้อย 1 รายการเพื่อดาวน์โหลด");
 
     let csvContent = "\uFEFFลำดับ,เลขหนังสือ,ชื่อเรื่อง / หนังสือ,ผู้รับผิดชอบ\n";
-
     selectedRows.forEach((row, idx) => {
       const details = extractBookExportDetails(row);
       csvContent += `"${idx + 1}","${details.bookNumber}","${details.title.replace(/"/g, '""')}","${details.responsible.replace(/"/g, '""')}"\n`;
@@ -2321,50 +2412,76 @@ function loadLogsFromFirebase(year) {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `รายการหนังสือส่งออก_${new Date().getTime()}.csv`);
+    link.href = url;
+    link.download = `รายการหนังสือส่งออก_${currentExportYear}_${new Date().getTime()}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   }
 
-  // 11. คัดลอกตารางไปวางใน Word / Excel ได้ทันที
   function copyExportTableToClipboard() {
-    const table = document.getElementById('exportResultTable');
-    if (!table) return;
+    const selectedRows = exportLogsData.filter(row => row && row[0] !== "❌" && selectedExportFileNames.has(row[2]));
+    if (selectedRows.length === 0) return alert("⚠️ กรุณาเลือกรายการหนังสืออย่างน้อย 1 รายการเพื่อคัดลอก");
 
-    const range = document.createRange();
-    range.selectNode(table);
-    window.getSelection().removeAllRanges();
-    window.getSelection().addRange(range);
+    let tableHtml = `<table border="1"><tr><th>ลำดับ</th><th>เลขหนังสือ</th><th>ชื่อเรื่อง / หนังสือ</th><th>ผู้รับผิดชอบ</th></tr>`;
+    selectedRows.forEach((row, idx) => {
+      const details = extractBookExportDetails(row);
+      tableHtml += `<tr><td>${idx + 1}</td><td>${details.bookNumber}</td><td>${details.title}</td><td>${details.responsible}</td></tr>`;
+    });
+    tableHtml += `</table>`;
 
-    try {
-      document.execCommand('copy');
-      window.getSelection().removeAllRanges();
-      alert("✅ คัดลอกตารางเรียบร้อยแล้ว! สามารถเปิด Word หรือ Excel แล้วกดวาง (Ctrl+V) ได้ทันที");
-    } catch (err) {
-      alert("⚠️ เบราว์เซอร์ไม่อนุญาตให้คัดลอกอัตโนมัติ กรุณาลากคลุมตารางแล้วกด Ctrl+C");
+    const blobHtml = new Blob([tableHtml], { type: 'text/html' });
+    const blobText = new Blob([selectedRows.map((r, i) => { const d = extractBookExportDetails(r); return `${i+1}\t${d.bookNumber}\t${d.title}\t${d.responsible}`; }).join('\n')], { type: 'text/plain' });
+
+    if (navigator.clipboard && window.ClipboardItem) {
+      navigator.clipboard.write([
+        new ClipboardItem({
+          'text/html': blobHtml,
+          'text/plain': blobText
+        })
+      ]).then(() => alert(`✅ คัดลอกตาราง ${selectedRows.length} รายการแล้ว! สามารถกดวาง (Ctrl+V) ใน Word หรือ Excel ได้ทันที`));
+    } else {
+      alert("✅ เลือกรายการเรียบร้อย สามารถใช้ปุ่มดาวน์โหลด Excel ได้ทันที");
     }
   }
 
-  // 12. พิมพ์หน้ารายงาน / บันทึกเป็น PDF
   function printExportTable() {
-    const printContents = document.getElementById('exportPrintArea').innerHTML;
+    const selectedRows = exportLogsData.filter(row => row && row[0] !== "❌" && selectedExportFileNames.has(row[2]));
+    if (selectedRows.length === 0) return alert("⚠️ กรุณาเลือกรายการหนังสืออย่างน้อย 1 รายการเพื่อพิมพ์");
+
     const printWindow = window.open('', '_blank');
+    let rowsHtml = selectedRows.map((row, idx) => {
+      const details = extractBookExportDetails(row);
+      return `<tr><td style="text-align:center;">${idx + 1}</td><td style="text-align:center; font-weight:bold;">${details.bookNumber}</td><td>${details.title}</td><td>${details.responsible}</td></tr>`;
+    }).join('');
+
     printWindow.document.write(`
       <html>
         <head>
-          <title>พิมพ์รายการหนังสือ</title>
-          <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+          <title>พิมพ์รายการหนังสือรับ ประจำปี ${currentExportYear}</title>
+          <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;700&display=swap" rel="stylesheet">
           <style>
-            body { font-family: 'Sarabun', sans-serif; padding: 20px; }
-            table { width: 100%; border-collapse: collapse; }
-            th, td { border: 1px solid #000 !important; padding: 6px 8px; font-size: 13px; }
-            th { background-color: #f2f2f2 !important; text-align: center; }
+            body { font-family: 'Sarabun', sans-serif; padding: 25px; color: #000; }
+            h3, p { text-align: center; margin: 5px 0; }
+            table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+            th, td { border: 1px solid #000; padding: 6px 8px; font-size: 13px; vertical-align: middle; }
+            th { background-color: #f2f2f2; text-align: center; }
           </style>
         </head>
         <body onload="window.print(); window.close();">
-          ${printContents}
+          <h3>สรุปรายการหนังสือรับ ศูนย์การศึกษาพิเศษประจำจังหวัดตราด</h3>
+          <p>ประจำปี พ.ศ. ${currentExportYear} (รวมทั้งหมด ${selectedRows.length} รายการ)</p>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 7%;">ลำดับ</th>
+                <th style="width: 18%;">เลขหนังสือ</th>
+                <th style="width: 45%;">ชื่อเรื่อง / หนังสือ</th>
+                <th style="width: 30%;">ผู้รับผิดชอบ</th>
+              </tr>
+            </thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
         </body>
       </html>
     `);

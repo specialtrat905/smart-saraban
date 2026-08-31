@@ -951,18 +951,17 @@ const rtdb = firebase.database();
 // ⚡ ฟังก์ชันโหลดข้อมูลหนังสือแบบ Realtime ไวระดับ 0.05 วินาที
 function loadLogsFromFirebase(year) {
   const tableBody = document.getElementById('bookData');
-  tableBody.innerHTML = `<tr><td colspan="3" class="text-center p-3"><div class="spinner-border text-success spinner-border-sm me-2"></div><small class="text-success fw-bold">กำลังซิงก์ข้อมูลด่วนจาก Firebase...</small></td></tr>`;
-
+  
   // ดึงข้อมูลจากโหนดปีนั้นๆ ทันที
   rtdb.ref('logs_' + year).on('value', (snapshot) => {
     const rawData = snapshot.val();
-    if (rawData) {
-      // แปลงข้อมูลจาก Object/Array ของ Firebase ให้เข้ากับฟังก์ชัน displayTable เดิม
+    if (rawData && rawData.length > 0) {
+      console.log(`🔥 [Firebase SUCCESS] ดึงข้อมูลปี ${year} สำเร็จจำนวน ${rawData.length} รายการ (0.03s)`);
       allLogs = Array.isArray(rawData) ? rawData : Object.values(rawData);
       displayTable(allLogs);
     } else {
-      allLogs = [];
-      displayTable([]);
+      console.warn(`⚠️ [Firebase EMPTY] ไม่พบข้อมูลปี ${year} ใน Firebase กำลังสลับไปดึงจาก Apps Script สำรอง...`);
+      fetchLogsFromScript(false);
     }
   });
 }
@@ -2095,6 +2094,12 @@ function loadLogsFromFirebase(year) {
     const selectedDept = (currentUser.role === 'Admin') ? document.getElementById('deptFilter').value : currentUser.role;
     const searchTerm = document.getElementById('searchInput').value.trim();
     const targetYear = (selectedYear === "all") ? currentScrollYear : selectedYear;
+
+    // ⚡ ดึงจาก Firebase ทันทีเมื่อเปิดดูรายปีปกติ (ไม่มีคำค้นหา)
+    if (selectedYear !== "all" && !isAppend && searchTerm === "" && selectedDept === "all") {
+      loadLogsFromFirebase(targetYear);
+      return;
+    }
 
     const cacheKey = `${targetYear}_${selectedDept}_${searchTerm}_${currentOffset}`;
 

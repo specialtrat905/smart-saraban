@@ -14,6 +14,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <style>
+
+
+    
     /* ✨ กรอบโลโก้ 3D Acrylic Badge สำหรับหน้าแรก */
     .logo-3d-wrapper {
       display: inline-flex;
@@ -291,6 +294,9 @@
       background: transparent !important;
     }
   </style>
+  <!-- ⚡ Firebase App & Realtime Database SDK (Compat Version) -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 </head>
 <body>
 
@@ -922,11 +928,44 @@
 </div> <!-- ปิด mainApp -->
 
 <script>
-  // --- 1. การตั้งค่าสิทธิ์พื้นฐานองค์กร ---
+ // --- 1. การตั้งค่าสิทธิ์พื้นฐานองค์กร ---
   const GH_OWNER = "specialtrat905";
   const GH_REPO = "smart-saraban";
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxJdOaYGK8TygK8D_b1OxEwrgju0fZ0Ij268xrshf91WKT6vGaUpvvsx-UxDThT9vM3qA/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxW4Phre12aHrbgS37DyC53iwP6hxyZGXprZYYDkp-HNAwsF_dcEJeO7cMlfhLXKuFvqQ/exec";
+// ⚡ กำหนดค่าเชื่อมต่อ Firebase (ตาม Config ของคุณ)
+const firebaseConfig = {
+  apiKey: "AIzaSyBL_Jv3x_UxEkzcVnN6lpQpZdWoIaJvMNM",
+  authDomain: "smart-sarabun-trat.firebaseapp.com",
+  databaseURL: "https://smart-sarabun-trat-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "smart-sarabun-trat",
+  storageBucket: "smart-sarabun-trat.firebasestorage.app",
+  messagingSenderId: "904216918380",
+  appId: "1:904216918380:web:c67b1a49b5f83667abdb49",
+  measurementId: "G-SMLH76DN3C"
+};
 
+// เริ่มต้นใช้งาน Firebase
+firebase.initializeApp(firebaseConfig);
+const rtdb = firebase.database();
+
+// ⚡ ฟังก์ชันโหลดข้อมูลหนังสือแบบ Realtime ไวระดับ 0.05 วินาที
+function loadLogsFromFirebase(year) {
+  const tableBody = document.getElementById('bookData');
+  tableBody.innerHTML = `<tr><td colspan="3" class="text-center p-3"><div class="spinner-border text-success spinner-border-sm me-2"></div><small class="text-success fw-bold">กำลังซิงก์ข้อมูลด่วนจาก Firebase...</small></td></tr>`;
+
+  // ดึงข้อมูลจากโหนดปีนั้นๆ ทันที
+  rtdb.ref('logs_' + year).on('value', (snapshot) => {
+    const rawData = snapshot.val();
+    if (rawData) {
+      // แปลงข้อมูลจาก Object/Array ของ Firebase ให้เข้ากับฟังก์ชัน displayTable เดิม
+      allLogs = Array.isArray(rawData) ? rawData : Object.values(rawData);
+      displayTable(allLogs);
+    } else {
+      allLogs = [];
+      displayTable([]);
+    }
+  });
+}
   let currentUser = {};
   let allLogs = [];
   let selectedFilesArray = [];

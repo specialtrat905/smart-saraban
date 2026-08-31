@@ -329,6 +329,10 @@
         <button id="manageStaffBtn" class="btn btn-sm btn-light text-dark shadow-sm fw-bold" style="display:none;" onclick="switchToStaffView()">
           👥 รายชื่อบุคลากร
         </button>
+        <!-- 📤 ปุ่มโหมดเลือกส่งออกรายการหนังสือ -->
+        <button id="toggleExportModeBtn" class="btn btn-sm btn-light text-success shadow-sm fw-bold" style="display:none;" onclick="toggleExportMode()">
+          📤 ส่งออกรายการ
+        </button>
         <!-- ⬅️ ปุ่มย้อนกลับหน้าระบบสารบรรณ -->
         <button id="backToSarabanBtn" class="btn btn-sm btn-light text-dark shadow-sm fw-bold" style="display:none;" onclick="switchToSarabanView()">
           ⬅️ กลับระบบส่งหนังสือ
@@ -371,6 +375,52 @@
           <div class="col-12 col-md-2">
             <button onclick="handleUpload()" id="uploadBtn" class="btn btn-primary w-100 py-2 fw-bold shadow-sm text-truncate px-1" style="font-size: 0.85rem;">
               🚀 ส่งหนังสือ
+            </button>
+          </div>
+        </div>
+      </div>
+
+<!-- 📤 แถบควบคุมโหมดเลือกหนังสือส่งออก (Export Toolbar) -->
+      <div id="exportToolbar" style="display:none;" class="card card-border-green p-3 mb-3 shadow-sm bg-white">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+          <div class="d-flex flex-wrap align-items-center gap-2">
+            <span class="badge bg-success fs-6 py-2 px-3 shadow-sm">
+              เลือกแล้ว: <span id="exportSelectedCount">0</span> เล่ม
+            </span>
+            <!-- ปุ่มเลือกทั้งหมด -->
+            <button type="button" class="btn btn-sm btn-outline-success fw-bold shadow-sm" onclick="selectAllForExport(true)">
+              ✅ เลือกทั้งหมดในหน้านี้
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary fw-bold shadow-sm" onclick="selectAllForExport(false)">
+              ◻️ ล้างที่เลือก
+            </button>
+          </div>
+
+          <!-- ตัวกรองเลือกติ๊กตามกลุ่มงาน / รายชื่อ -->
+          <div class="d-flex flex-wrap align-items-center gap-2">
+            <select id="exportDeptSelector" class="form-select form-select-sm border-success shadow-sm" style="max-width: 220px;" onchange="handleExportDeptSelect(this.value)">
+              <option value="">🏢 เลือกติ๊กตามกลุ่มงาน...</option>
+              <option value="all">-- เลือกทุกกลุ่มงาน --</option>
+              <option value="ฝ่ายบริหารทั่วไป">ฝ่ายบริหารทั่วไป</option>
+              <option value="ฝ่ายบริหารงานบุคคล">ฝ่ายบริหารงานบุคคล</option>
+              <option value="ฝ่ายบริหารวิชาการ">ฝ่ายบริหารวิชาการ</option>
+              <option value="ฝ่ายบริหารงบประมาณ">ฝ่ายบริหารงบประมาณ</option>
+              <option value="รองผู้อำนวยการ">รองผู้อำนวยการ</option>
+              <option value="ผู้อำนวยการ">ผู้อำนวยการ</option>
+              <option value="อื่นๆ">อื่นๆ (ระบุรายชื่อ)</option>
+            </select>
+
+            <!-- กล่องเลือกรายชื่อเฉพาะเมื่อเลือก 'อื่นๆ' -->
+            <select id="exportStaffSelector" class="form-select form-select-sm border-info shadow-sm" style="display:none; max-width: 200px;" onchange="handleExportStaffSelect(this.value)">
+              <option value="">👤 เลือกรายชื่อบุคคล...</option>
+            </select>
+
+            <!-- ปุ่มเปิดตารางสรุปการส่งออก -->
+            <button type="button" class="btn btn-sm btn-success fw-bold px-3 shadow-sm" onclick="openExportSummaryModal()">
+              📑 สรุปและส่งออกข้อมูล
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-danger fw-bold shadow-sm" onclick="toggleExportMode()">
+              ✕ ปิดโหมด
             </button>
           </div>
         </div>
@@ -925,6 +975,53 @@
       </span>
     </footer>
   </div> <!-- ปิด container -->
+  <!-- 📑 Modal แสดงตารางสรุปข้อมูลหนังสือที่เลือกส่งออก -->
+    <div class="modal fade" id="exportSummaryModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+          <div class="modal-header bg-success text-white py-3">
+            <h5 class="modal-title fw-bold">📑 ตารางสรุปรายการหนังสือที่เลือกส่งออก (<span id="summaryModalCount">0</span> รายการ)</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body p-3 p-md-4 bg-light">
+            <!-- แถบปุ่มส่งออกรูปแบบต่างๆ -->
+            <div class="d-flex flex-wrap justify-content-end gap-2 mb-3">
+              <button class="btn btn-sm btn-outline-primary fw-bold shadow-sm bg-white" onclick="copyExportTableToClipboard()">
+                📋 คัดลอกตาราง (วางใน Excel/Word)
+              </button>
+              <button class="btn btn-sm btn-outline-success fw-bold shadow-sm bg-white" onclick="exportSelectedToCSV()">
+                📊 ดาวน์โหลด Excel (CSV)
+              </button>
+              <button class="btn btn-sm btn-outline-dark fw-bold shadow-sm bg-white" onclick="printExportTable()">
+                🖨️ พิมพ์ / บันทึก PDF
+              </button>
+            </div>
+
+            <!-- ตารางแสดงผลข้อมูล 3 คอลัมน์หลัก -->
+            <div id="exportPrintArea" class="table-responsive bg-white rounded border shadow-sm p-3" style="max-height: 65vh;">
+              <div class="text-center mb-3">
+                <h5 class="fw-bold text-dark mb-1">สรุปรายการหนังสือรับ - ศูนย์การศึกษาพิเศษประจำจังหวัดตราด</h5>
+                <small class="text-muted">ข้อมูล ณ วันที่ <span id="exportPrintDate"></span></small>
+              </div>
+              <table class="table table-bordered table-hover align-middle mb-0" id="exportResultTable" style="font-size: 0.88rem;">
+                <thead class="table-light text-center">
+                  <tr>
+                    <th style="width: 8%;">ลำดับ</th>
+                    <th style="width: 18%;">เลขหนังสือ</th>
+                    <th style="width: 44%;">ชื่อเรื่อง / หนังสือ</th>
+                    <th style="width: 30%;">ผู้รับผิดชอบ (กลุ่มงาน / รายชื่อ)</th>
+                  </tr>
+                </thead>
+                <tbody id="exportResultTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="modal-footer bg-white">
+            <button type="button" class="btn btn-secondary px-4 fw-bold" data-bs-dismiss="modal">ปิดหน้าต่าง</button>
+          </div>
+        </div>
+      </div>
+    </div>
 </div> <!-- ปิด mainApp -->
 
 <script>
@@ -1696,6 +1793,7 @@ function loadLogsFromFirebase(year) {
         setupExitButton(); // 👈 เพิ่มบรรทัดนี้เพื่อปรับข้อความปุ่มตามอุปกรณ์
         // แสดงปุ่มรายชื่อบุคลากรให้ทุกสิทธิ์
         document.getElementById('manageStaffBtn').style.display = 'block';
+        document.getElementById('toggleExportModeBtn').style.display = 'block';
         document.getElementById('manageStaffBtn').innerText = (currentUser.role === 'Admin') ? "👥 จัดการบุคลากร" : "👥 รายชื่อบุคลากร";
 
         if (currentUser.role === 'Admin') {
@@ -1899,6 +1997,21 @@ function loadLogsFromFirebase(year) {
     let tableHTML = filtered.map((col, index) => {
       const isMissing = col[0] === "❌";
       let rawDate = isMissing ? "❌" : col[0].split(/[T\s,]+/)[0];
+      // 🎯 สลับการแสดงผลคอลัมน์แรก: โหมดส่งออกแสดง Checkbox | โหมดปกติแสดง วันที่
+      let firstColHTML = "";
+      if (isMissing) {
+        firstColHTML = `<span style="font-size: 1.1rem; color: #ff4d4d;">❌</span>`;
+      } else if (isExportMode) {
+        const isChecked = selectedExportFileNames.has(col[2]);
+        firstColHTML = `
+          <div class="form-check d-flex justify-content-center align-items-center m-0">
+            <input class="form-check-input border-success" type="checkbox" style="width: 1.35rem; height: 1.35rem; cursor: pointer;" 
+              ${isChecked ? 'checked' : ''} onchange="toggleExportItem('${encodeURIComponent(col[2])}', this.checked)">
+          </div>
+        `;
+      } else {
+        firstColHTML = `<span style="font-size: 0.75rem; color: gray;">${dateDisplay}</span>`;
+      }
       let dateDisplay = rawDate;
 
       if (!isMissing) {
@@ -1988,8 +2101,8 @@ function loadLogsFromFirebase(year) {
 
       return `
       <tr class="${isMissing ? 'row-missing' : ''} align-middle">
-        <td class="text-center" style="font-size: ${isMissing ? '1.1rem' : '0.75rem'}; color: ${isMissing ? '#ff4d4d' : 'gray'};">
-          ${dateDisplay}
+        <td class="text-center">
+          ${firstColHTML}
         </td>
         <td class="thai-wrap text-start">
            <span class="${isMissing ? '' : 'text-dark'} fw-bold d-block mb-1" style="font-size: 0.85rem;">${cleanFileName}</span>
@@ -2006,6 +2119,254 @@ function loadLogsFromFirebase(year) {
     }
 
     tableBody.innerHTML = tableHTML;
+  }
+
+// ==========================================
+  // 📤 ระบบส่งออกรายการหนังสือ (Export Module)
+  // ==========================================
+  let isExportMode = false;
+  let selectedExportFileNames = new Set();
+  let exportSummaryModalInstance = null;
+
+  // 1. สลับเข้า-ออก โหมดส่งออกหนังสือ
+  function toggleExportMode() {
+    isExportMode = !isExportMode;
+    selectedExportFileNames.clear();
+
+    const toolbar = document.getElementById('exportToolbar');
+    const toggleBtn = document.getElementById('toggleExportModeBtn');
+
+    if (isExportMode) {
+      toolbar.style.display = 'block';
+      toggleBtn.className = "btn btn-sm btn-success text-white shadow-sm fw-bold";
+      toggleBtn.innerText = "✕ ปิดโหมดส่งออก";
+      populateExportStaffDropdown();
+    } else {
+      toolbar.style.display = 'none';
+      toggleBtn.className = "btn btn-sm btn-light text-success shadow-sm fw-bold";
+      toggleBtn.innerText = "📤 ส่งออกรายการ";
+    }
+
+    updateExportSelectedCount();
+    displayTable(allLogs);
+  }
+
+  // 2. อัปเดตตัวเลขจำนวนที่เลือก
+  function updateExportSelectedCount() {
+    const countElem = document.getElementById('exportSelectedCount');
+    if (countElem) countElem.innerText = selectedExportFileNames.size;
+  }
+
+  // 3. จัดการการติ๊กเลือกแต่ละแถว
+  function toggleExportItem(fileName, isChecked) {
+    if (isChecked) {
+      selectedExportFileNames.add(fileName);
+    } else {
+      selectedExportFileNames.delete(fileName);
+    }
+    updateExportSelectedCount();
+  }
+
+  // 4. เลือกทั้งหมด / ล้างที่เลือก
+  function selectAllForExport(select) {
+    allLogs.forEach(row => {
+      if (!row || row[0] === "❌") return;
+      if (select) {
+        selectedExportFileNames.add(row[2]);
+      } else {
+        selectedExportFileNames.delete(row[2]);
+      }
+    });
+    updateExportSelectedCount();
+    displayTable(allLogs);
+  }
+
+  // 5. เลือกติ๊กตามกลุ่มงาน
+  function handleExportDeptSelect(dept) {
+    if (!dept) return;
+
+    const staffSelector = document.getElementById('exportStaffSelector');
+    if (dept === "อื่นๆ") {
+      staffSelector.style.display = 'inline-block';
+    } else {
+      staffSelector.style.display = 'none';
+    }
+
+    const deptAliasMap = {
+      "ฝ่ายบริหารวิชาการ": "บริหารงานวิชาการ", "บริหารงานวิชาการ": "ฝ่ายบริหารวิชาการ",
+      "ฝ่ายบริหารงานบุคคล": "บริหารงานบุคคล", "บริหารงานบุคคล": "ฝ่ายบริหารงานบุคคล",
+      "ฝ่ายบริหารงบประมาณ": "บริหารแผนงานและงบประมาณ", "บริหารแผนงานและงบประมาณ": "ฝ่ายบริหารงบประมาณ",
+      "ฝ่ายบริหารทั่วไป": "บริหารงานทั่วไป", "บริหารงานทั่วไป": "ฝ่ายบริหารทั่วไป"
+    };
+
+    allLogs.forEach(row => {
+      if (!row || row[0] === "❌") return;
+      const rowDept = row[3] || "";
+      let isMatch = false;
+
+      if (dept === "all") {
+        isMatch = true;
+      } else if (dept === "อื่นๆ") {
+        isMatch = rowDept.includes("อื่นๆ") || /\[(.*?)\]/.test(row[2]);
+      } else {
+        isMatch = rowDept.includes(dept) || (deptAliasMap[dept] && rowDept.includes(deptAliasMap[dept]));
+      }
+
+      if (isMatch) selectedExportFileNames.add(row[2]);
+    });
+
+    updateExportSelectedCount();
+    displayTable(allLogs);
+  }
+
+  // 6. ดึงรายชื่อบุคลากรใส่ Dropdown เพื่อเลือกเฉพาะบุคคล
+  function populateExportStaffDropdown() {
+    const selector = document.getElementById('exportStaffSelector');
+    if (!selector || fullStaffData.length === 0) return;
+    selector.innerHTML = `<option value="">👤 เลือกรายชื่อบุคคล...</option>` +
+      fullStaffData.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
+  }
+
+  // 7. เลือกติ๊กเฉพาะรายชื่อบุคคล
+  function handleExportStaffSelect(staffName) {
+    if (!staffName) return;
+
+    allLogs.forEach(row => {
+      if (!row || row[0] === "❌") return;
+      if (row[2].includes(staffName)) {
+        selectedExportFileNames.add(row[2]);
+      }
+    });
+
+    updateExportSelectedCount();
+    displayTable(allLogs);
+  }
+
+  // 8. สกัดข้อมูล 3 ฟิลด์ (เลขหนังสือ, ชื่อเรื่อง, ผู้รับผิดชอบ)
+  function extractBookExportDetails(row) {
+    const rawFileName = (row[2] || "").trim();
+    const cleanNoExt = rawFileName.replace(/\.pdf$/i, "").trim();
+
+    // 1. เลขหนังสือ
+    const numMatch = cleanNoExt.match(/^(\d+[-/]\d+)/);
+    const bookNumber = numMatch ? numMatch[1] : (cleanNoExt.split(" ")[0] || "-");
+
+    // 2. ชื่อหนังสือ (ตัดเลขนำหน้า และตัด [ชื่อบุคคล] ออก)
+    let bookTitle = cleanNoExt;
+    if (numMatch) bookTitle = bookTitle.substring(numMatch[1].length).trim();
+    bookTitle = bookTitle.replace(/\[.*?\]/g, "").trim();
+    if (!bookTitle) bookTitle = cleanNoExt;
+
+    // 3. ผู้รับผิดชอบ (รวมกลุ่มงาน + รายชื่อในวงเล็บ)
+    let responsible = row[3] || "";
+    const nameMatch = rawFileName.match(/\[(.*?)\]/);
+    if (nameMatch && nameMatch[1]) {
+      const names = nameMatch[1].trim();
+      if (!responsible.includes(names)) {
+        responsible = responsible ? `${responsible} (${names})` : names;
+      }
+    }
+
+    return {
+      bookNumber: bookNumber,
+      title: bookTitle,
+      responsible: responsible || "งานธุรการกลาง"
+    };
+  }
+
+  // 9. เปิดหน้าต่าง Modal ตารางสรุปข้อมูล
+  function openExportSummaryModal() {
+    if (selectedExportFileNames.size === 0) {
+      alert("⚠️ กรุณาติ๊กเลือกหนังสือที่ต้องการส่งออกอย่างน้อย 1 รายการ");
+      return;
+    }
+
+    const selectedRows = allLogs.filter(row => row && row[0] !== "❌" && selectedExportFileNames.has(row[2]));
+    document.getElementById('summaryModalCount').innerText = selectedRows.length;
+    document.getElementById('exportPrintDate').innerText = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+
+    const tbody = document.getElementById('exportResultTableBody');
+    tbody.innerHTML = selectedRows.map((row, idx) => {
+      const details = extractBookExportDetails(row);
+      return `
+        <tr>
+          <td class="text-center fw-bold">${idx + 1}</td>
+          <td class="text-center fw-bold text-success">${details.bookNumber}</td>
+          <td class="text-start text-dark">${details.title}</td>
+          <td class="text-start">${details.responsible}</td>
+        </tr>
+      `;
+    }).join('');
+
+    if (!exportSummaryModalInstance) {
+      exportSummaryModalInstance = new bootstrap.Modal(document.getElementById('exportSummaryModal'));
+    }
+    exportSummaryModalInstance.show();
+  }
+
+  // 10. ส่งออกไฟล์ CSV / Excel
+  function exportSelectedToCSV() {
+    const selectedRows = allLogs.filter(row => row && row[0] !== "❌" && selectedExportFileNames.has(row[2]));
+    if (selectedRows.length === 0) return;
+
+    let csvContent = "\uFEFFลำดับ,เลขหนังสือ,ชื่อเรื่อง / หนังสือ,ผู้รับผิดชอบ\n";
+
+    selectedRows.forEach((row, idx) => {
+      const details = extractBookExportDetails(row);
+      csvContent += `"${idx + 1}","${details.bookNumber}","${details.title.replace(/"/g, '""')}","${details.responsible.replace(/"/g, '""')}"\n`;
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `รายการหนังสือส่งออก_${new Date().getTime()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  // 11. คัดลอกตารางไปวางใน Word / Excel ได้ทันที
+  function copyExportTableToClipboard() {
+    const table = document.getElementById('exportResultTable');
+    if (!table) return;
+
+    const range = document.createRange();
+    range.selectNode(table);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+
+    try {
+      document.execCommand('copy');
+      window.getSelection().removeAllRanges();
+      alert("✅ คัดลอกตารางเรียบร้อยแล้ว! สามารถเปิด Word หรือ Excel แล้วกดวาง (Ctrl+V) ได้ทันที");
+    } catch (err) {
+      alert("⚠️ เบราว์เซอร์ไม่อนุญาตให้คัดลอกอัตโนมัติ กรุณาลากคลุมตารางแล้วกด Ctrl+C");
+    }
+  }
+
+  // 12. พิมพ์หน้ารายงาน / บันทึกเป็น PDF
+  function printExportTable() {
+    const printContents = document.getElementById('exportPrintArea').innerHTML;
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>พิมพ์รายการหนังสือ</title>
+          <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+          <style>
+            body { font-family: 'Sarabun', sans-serif; padding: 20px; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #000 !important; padding: 6px 8px; font-size: 13px; }
+            th { background-color: #f2f2f2 !important; text-align: center; }
+          </style>
+        </head>
+        <body onload="window.print(); window.close();">
+          ${printContents}
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
   }
 
   // --- 7. ระบบตรวจสอบสิทธิ์ล็อกอินผ่าน Google ชีตปิด (แก้ปัญหาตัวแดง 429) ---
@@ -2040,6 +2401,7 @@ function loadLogsFromFirebase(year) {
 
         document.getElementById('logoutBtn').style.display = 'block';
         document.getElementById('manageStaffBtn').style.display = 'block';
+        document.getElementById('toggleExportModeBtn').style.display = 'block';
         document.getElementById('manageStaffBtn').innerText = (currentUser.role === 'Admin') ? "👥 จัดการบุคลากร" : "👥 รายชื่อบุคลากร";
 
         if (currentUser.role === 'Admin') {

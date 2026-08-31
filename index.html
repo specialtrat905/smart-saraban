@@ -1190,7 +1190,9 @@ function loadLogsFromFirebase(year) {
 
     document.getElementById('backToSarabanBtn').style.display = 'none';
     document.getElementById('manageStaffBtn').style.display = 'block';
-    document.getElementById('toggleExportModeBtn').style.display = 'block';
+    
+    // 👈 เช็กสิทธิ์ก่อนแสดงปุ่มตอนกดย้อนกลับ
+    document.getElementById('toggleExportModeBtn').style.display = (currentUser.role === 'Admin') ? 'block' : 'none';
     
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -1851,17 +1853,18 @@ function loadLogsFromFirebase(year) {
         setupExitButton(); // 👈 เพิ่มบรรทัดนี้เพื่อปรับข้อความปุ่มตามอุปกรณ์
         // แสดงปุ่มรายชื่อบุคลากรให้ทุกสิทธิ์
         document.getElementById('manageStaffBtn').style.display = 'block';
-        document.getElementById('toggleExportModeBtn').style.display = 'block';
         document.getElementById('manageStaffBtn').innerText = (currentUser.role === 'Admin') ? "👥 จัดการบุคลากร" : "👥 รายชื่อบุคลากร";
 
         if (currentUser.role === 'Admin') {
             document.getElementById('adminView').style.display = 'block';
             document.getElementById('deptFilterContainer').style.display = 'block';
             document.getElementById('editDbBtn').style.display = 'block';
+            document.getElementById('toggleExportModeBtn').style.display = 'block'; // 👈 แสดงเฉพาะ Admin
         } else {
             document.getElementById('adminView').style.display = 'none';
             document.getElementById('deptFilterContainer').style.display = 'none';
             document.getElementById('editDbBtn').style.display = 'none';
+            document.getElementById('toggleExportModeBtn').style.display = 'none'; // 👈 ซ่อนสำหรับ User
         }
 
         updateYearOptions();
@@ -2527,17 +2530,18 @@ function loadLogsFromFirebase(year) {
 
         document.getElementById('logoutBtn').style.display = 'block';
         document.getElementById('manageStaffBtn').style.display = 'block';
-        document.getElementById('toggleExportModeBtn').style.display = 'block';
         document.getElementById('manageStaffBtn').innerText = (currentUser.role === 'Admin') ? "👥 จัดการบุคลากร" : "👥 รายชื่อบุคลากร";
 
         if (currentUser.role === 'Admin') {
             document.getElementById('editDbBtn').style.display = 'block';
             document.getElementById('adminView').style.display = 'block';
             document.getElementById('deptFilterContainer').style.display = 'block';
+            document.getElementById('toggleExportModeBtn').style.display = 'block'; // 👈 แสดงเฉพาะ Admin
         } else {
             document.getElementById('editDbBtn').style.display = 'none';
             document.getElementById('adminView').style.display = 'none';
             document.getElementById('deptFilterContainer').style.display = 'none';
+            document.getElementById('toggleExportModeBtn').style.display = 'none'; // 👈 ซ่อนสำหรับ User
         }
 
         setupExitButton(); // 👈 เพิ่มบรรทัดนี้

@@ -312,52 +312,77 @@
       -webkit-user-select: text !important;
     }
 
-    /* 🌟 หน้า Splash Screen ตอนเปิดแอป */
+    /* 🌟 หน้า Splash Screen เปิดแอป 3 วินาที แบบพรีเมียม */
     #appSplashScreen {
       position: fixed;
       top: 0;
       left: 0;
       width: 100vw;
       height: 100vh;
-      background: radial-gradient(circle at center, #00796b 0%, #004d40 100%);
+      background: radial-gradient(circle at center, #00796b 0%, #00332c 100%);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       z-index: 99999;
-      transition: opacity 0.5s ease, visibility 0.5s;
+      transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s ease, visibility 0.6s;
     }
     .splash-hidden {
       opacity: 0 !important;
+      transform: scale(1.08) !important;
       visibility: hidden !important;
       pointer-events: none !important;
     }
     .splash-logo-box {
-      width: 115px;
-      height: 115px;
+      width: 120px;
+      height: 120px;
       border-radius: 50%;
-      background: rgba(255, 255, 255, 0.95);
+      background: rgba(255, 255, 255, 0.98);
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-      animation: splashPulse 1.8s infinite ease-in-out;
-      margin-bottom: 18px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 25px rgba(255, 193, 7, 0.3);
+      animation: splashFloat 2.4s ease-in-out infinite;
+      margin-bottom: 20px;
     }
-    .splash-logo-box img { max-height: 80px; width: auto; object-fit: contain; }
-    .splash-loader {
-      width: 28px;
-      height: 28px;
-      border: 3px solid rgba(255, 255, 255, 0.2);
-      border-top-color: #ffc107;
-      border-radius: 50%;
-      animation: splashSpin 0.8s linear infinite;
+    .splash-logo-box img { max-height: 85px; width: auto; object-fit: contain; }
+    
+    /* แถบ Progress Bar วิ่งเนียนๆ 3 วินาที */
+    .splash-progress-track {
+      width: 160px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 24px;
     }
-    @keyframes splashPulse {
-      0%, 100% { transform: scale(0.96); }
-      50% { transform: scale(1.04); }
+    .splash-progress-bar {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #ffc107, #4caf50);
+      border-radius: 10px;
+      animation: splashFill 2.8s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
     }
-    @keyframes splashSpin { to { transform: rotate(360deg); } }
+
+    @keyframes splashFloat {
+      0%, 100% { transform: translateY(0) scale(0.97); }
+      50% { transform: translateY(-8px) scale(1.03); }
+    }
+    @keyframes splashFill {
+      0% { width: 0%; }
+      40% { width: 60%; }
+      80% { width: 88%; }
+      100% { width: 100%; }
+    }
+
+    /* 📱 อนิเมชันยุบตัวตอนกดปิดแอป (Mobile App Exit Transition) */
+    .app-closing-animation {
+      transform: scale(0.7) translateY(60px) !important;
+      opacity: 0 !important;
+      filter: blur(8px) brightness(0.7) !important;
+      transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.45s ease, filter 0.45s ease !important;
+      pointer-events: none !important;
+    }
 
     /* 📊 ตารางขยายความกว้างและเลื่อนซ้าย-ขวาได้บนมือถือ */
     .table-scroll-custom {
@@ -378,14 +403,16 @@
 </head>
 <body>
 
-  <!-- 🌟 Splash Screen -->
+  <!-- 🌟 Splash Screen เปิดแอป 3 วินาที -->
 <div id="appSplashScreen">
   <div class="splash-logo-box">
     <img src="./logo2.png" alt="Logo ศกศ.ตราด">
   </div>
-  <div class="text-white fw-bold fs-5 mb-1">ระบบสารบรรณ Hybrid</div>
-  <div class="text-white-50 small mb-4">ศูนย์การศึกษาพิเศษประจำจังหวัดตราด</div>
-  <div class="splash-loader"></div>
+  <div class="text-white fw-bold fs-5 mb-1" style="letter-spacing: 0.5px;">ระบบสารบรรณ Hybrid</div>
+  <div class="text-white-50 small mb-1">ศูนย์การศึกษาพิเศษประจำจังหวัดตราด</div>
+  <div class="splash-progress-track">
+    <div class="splash-progress-bar"></div>
+  </div>
 </div>
 
 <div id="loginPage" class="container mt-5" style="max-width: 400px;">
@@ -2322,13 +2349,20 @@ function updateDbManageButtonUI() {
 
 // 📱 ฟังก์ชันปิดแอปสำหรับสมาร์ตโฟน (ไม่ล้างสิทธิ์ล็อกอิน)
   function closeApp() {
-    window.close();
-    // สำรองสำหรับเบราว์เซอร์มือถือบางรุ่นที่ไม่ยอมให้ปิดแท็บด้วยคำสั่งสคริปต์
+    // ใส่คลาสสั่งให้ทั้งหน้าจอยุบตัวลงแบบนุ่มนวล
+    document.body.classList.add('app-closing-animation');
+
+    // หน่วงเวลาให้อนิเมชันยุบตัวทำงานเสร็จ (450ms) แล้วค่อยสั่งปิด
     setTimeout(() => {
-      if (!window.closed) {
-        alert("💡 ท่านสามารถกดปุ่ม Home หรือปัดปิดแอปได้ทันที โดยไม่ต้องล็อกอินใหม่ในครั้งถัดไป");
-      }
-    }, 250);
+      window.close();
+      setTimeout(() => {
+        if (!window.closed) {
+          alert("💡 สามารถกดปุ่ม Home หรือปัดปิดแอปได้ทันทีโดยไม่ต้องล็อกอินใหม่");
+          // คืนค่าหน้าจอกลับมาปกติหากเบราว์เซอร์ไม่อนุญาตให้ปิดแท็บ
+          document.body.classList.remove('app-closing-animation');
+        }
+      }, 300);
+    }, 450);
   }
 
   // 🔄 ฟังก์ชันสลับปุ่มระหว่าง "ออกจากระบบ" (บนคอม) กับ "ปิดแอป" (บนมือถือ)
@@ -3666,7 +3700,7 @@ function updateDbManageButtonUI() {
     setupDragAndDrop();
 
     // 🌟 สั่งปิด Splash Screen หลังโหลดเสร็จ
-    setTimeout(dismissSplashScreen, 600); // 📂 เปิดใช้งานระบบลากวางไฟล์
+    setTimeout(dismissSplashScreen, 2500); // 📂 เปิดใช้งานระบบลากวางไฟล์
     
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {

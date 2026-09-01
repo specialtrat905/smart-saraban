@@ -1,13 +1,21 @@
 {
+  "id": "smart-saraban-trat",
   "name": "ระบบสารบรรณ ศกศ.ตราด",
   "short_name": "สารบรรณ ตราด",
   "description": "ระบบส่งหนังสือและสารบรรณ Hybrid ศูนย์การศึกษาพิเศษประจำจังหวัดตราด",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#D48B16",
-  "theme_color": "#004d40",
+  "background_color": "#DFC57B",
+  "theme_color": "#DFC57B",
   "icons": [
+    {
+      "src": "./logo2.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "./logo.png?v=3",
       "sizes": "512x512",

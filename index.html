@@ -1230,7 +1230,7 @@
  // --- 1. การตั้งค่าสิทธิ์พื้นฐานองค์กร ---
   const GH_OWNER = "specialtrat905";
   const GH_REPO = "smart-saraban";
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8sIJ2xTGwxRhzK4P1KRJbyd34lOMn105MEhUQGJt2ieL_bRHDShkaLhRM6vK8nuA2yQ/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQBg-jxYLu0t35Wbz3ohsI37n_5VhjVlN83nNaik9bibkHwqxDi3uv-2nxyKp3EypAVQ/exec";
 // ⚡ กำหนดค่าเชื่อมต่อ Firebase (ตาม Config ของคุณ)
 const firebaseConfig = {
   apiKey: "AIzaSyBL_Jv3x_UxEkzcVnN6lpQpZdWoIaJvMNM",
@@ -1497,7 +1497,7 @@ function updateDbManageButtonUI() {
         `;
       } else if (currentDbManageSubMode === 'editDept') {
         actionHTML = `
-          <button class="btn btn-sm btn-warning text-dark fw-bold shadow-sm py-0 px-2" onclick="openEditBookDeptFromDbManage(${idx})">
+          <button class="btn btn-sm btn-warning text-dark fw-bold shadow-sm py-0 px-2" onclick="openEditBookDeptFromDbManage('${encodeURIComponent(row[2])}')">
             ✏️ แก้ไข
           </button>
         `;
@@ -1542,9 +1542,8 @@ function updateDbManageButtonUI() {
   }
 
   // เรียก Modal แก้ไขกลุ่มงานจากหน้านี้
-  function openEditBookDeptFromDbManage(index) {
-    allLogs = dbManageLogsData;
-    openEditBookDeptModal(index);
+  function openEditBookDeptFromDbManage(encodedFileName) {
+    openEditBookDeptModal(encodedFileName);
   }
 
   // ⬅️ สลับกลับหน้าระบบส่งหนังสือหลัก
@@ -2501,14 +2500,15 @@ function updateDbManageButtonUI() {
           </div>
         `;
       } else if (currentDbMode === 'editDept' && currentUser.role === 'Admin') {
-        actionColumnHTML = `
+        actionHTML = `
           <div class="d-flex justify-content-center">
-            <button onclick="openEditBookDeptModal(${index})" class="btn btn-sm btn-warning text-dark fw-bold shadow-sm w-100">
+            <button onclick="openEditBookDeptModal('${encodeURIComponent(col[2])}')" class="btn btn-sm btn-warning text-dark fw-bold shadow-sm w-100">
               ✏️ แก้ไข
             </button>
           </div>
         `;
-      } else {
+      } 
+      else {
         actionColumnHTML = `
           <div class="action-buttons justify-content-center">
             <button onclick="openPdfViewer('${col[4]}', '${encodeURIComponent(plainFileName)}')" class="btn btn-sm btn-primary shadow-sm flex-grow-1">
@@ -3540,9 +3540,27 @@ function updateDbManageButtonUI() {
   }
 
   // --- ส่วนของโหมดแก้ไขกลุ่มงาน / รายชื่อผู้รับ ---
-  function openEditBookDeptModal(index) {
-    currentEditingIndex = index;
-    const book = allLogs[index];
+  let currentEditingBook = null; // เก็บข้อมูลหนังสือฉบับที่กำลังเปิดแก้ไขจริง
+
+  function openEditBookDeptModal(target) {
+    const isDbManage = (document.getElementById('dbManageView') && document.getElementById('dbManageView').style.display === 'block');
+    const sourceList = isDbManage ? dbManageLogsData : allLogs;
+
+    // ค้นหาหนังสือจากชื่อไฟล์ (ถ้าส่งมาเป็น encoded string) หรือจาก index เดิม
+    let book = null;
+    if (typeof target === 'string') {
+      const fileName = decodeURIComponent(target);
+      book = sourceList.find(b => b && b[2] === fileName);
+    } else if (typeof target === 'number') {
+      book = sourceList[target];
+    }
+
+    if (!book) {
+      alert("⚠️ ไม่พบข้อมูลหนังสือในระบบ");
+      return;
+    }
+
+    currentEditingBook = book;
     const fullFileName = book[2];
     const existingDepts = book[3] ? book[3].split(',').map(s => s.trim()) : [];
 
@@ -3556,7 +3574,7 @@ function updateDbManageButtonUI() {
       editOtherStaffNames = [];
     }
 
-    // ติ๊ก Checkbox กลุ่มงานเดิมที่เคยเลือกไว้ (รองรับชื่อใหม่และชื่อเก่า)
+    // ติ๊ก Checkbox กลุ่มงานเดิมที่เคยเลือกไว้
     const deptAliasMap = {
       "ฝ่ายบริหารวิชาการ": "บริหารงานวิชาการ", "บริหารงานวิชาการ": "ฝ่ายบริหารวิชาการ",
       "ฝ่ายบริหารงานบุคคล": "บริหารงานบุคคล", "บริหารงานบุคคล": "ฝ่ายบริหารงานบุคคล",
@@ -3621,11 +3639,15 @@ function updateDbManageButtonUI() {
       return alert("กรุณาเลือกกลุ่มงานปลายทางอย่างน้อย 1 กลุ่มงาน");
     }
 
+    if (!currentEditingBook) {
+      return alert("⚠️ ไม่พบข้อมูลหนังสือที่กำลังแก้ไข กรุณาลองใหม่อีกครั้ง");
+    }
+
     const saveBtn = document.getElementById('saveEditDeptBtn');
     saveBtn.disabled = true;
     saveBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> กำลังบันทึก...`;
 
-    const book = allLogs[currentEditingIndex];
+    const book = currentEditingBook;
     const oldFileName = book[2];
     const existingDepts = book[3] ? book[3].split(',').map(s => s.trim()) : [];
     const notifyLine = document.getElementById('editNotifyLineCheck').checked;
@@ -3640,8 +3662,15 @@ function updateDbManageButtonUI() {
         : baseFileName + suffix;
     }
 
-    const selectedYear = document.getElementById('yearSelect').value;
-    const targetYear = (selectedYear === "all") ? currentScrollYear.toString() : selectedYear;
+    // ตรวจสอบปี พ.ศ. ให้ตรงกับหน้าที่ผู้ใช้งานกำลังเปิดอยู่
+    const isDbManage = (document.getElementById('dbManageView') && document.getElementById('dbManageView').style.display === 'block');
+    let targetYear;
+    if (isDbManage) {
+      targetYear = currentDbManageYear.toString();
+    } else {
+      const selectedYear = document.getElementById('yearSelect').value;
+      targetYear = (selectedYear === "all") ? currentScrollYear.toString() : selectedYear;
+    }
 
     try {
       const response = await fetch(SCRIPT_URL, {
@@ -3677,7 +3706,12 @@ function updateDbManageButtonUI() {
       currentDbMode = null;
       updateEditDbButtonUI();
       dataCache = {};
-      resetAndReloadLogs();
+
+      if (isDbManage) {
+        loadDbManageDataForYear(currentDbManageYear);
+      } else {
+        resetAndReloadLogs();
+      }
     }
   }
 

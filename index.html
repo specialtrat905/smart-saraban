@@ -685,20 +685,20 @@
       </div>
 
       <!-- 📋 ตารางแสดงรายการไปราชการ (เลื่อนซ้าย-ขวาได้บนมือถือ และย่อคอลัมน์ให้พอดี) -->
-<div class="table-responsive border rounded shadow-sm bg-white" style="max-height: 72vh; -webkit-overflow-scrolling: touch;">
-  <table class="table table-hover table-bordered align-middle table-scroll-custom mb-0" id="dutyTripTable" style="font-size: 0.88rem; min-width: 680px;">
-    <thead class="table-light text-center sticky-top shadow-sm" style="z-index: 5;">
-      <tr>
-        <th style="width: 120px; white-space: nowrap;">วันที่ไปราชการ</th>
-        <th style="min-width: 250px;">ราชการที่ปฏิบัติ</th>
-        <th style="min-width: 180px;">สถานที่</th>
-        <th style="width: 170px; white-space: nowrap;">รายชื่อผู้ไปราชการ</th>
-        <th id="dutyTripActionColHeader" style="width: 60px; white-space: nowrap;">จัดการ</th>
-      </tr>
-    </thead>
-    <tbody id="dutyTripTableBody"></tbody>
-  </table>
-</div>
+      <div class="table-responsive border rounded shadow-sm bg-white" style="max-height: 72vh; -webkit-overflow-scrolling: touch;">
+        <table class="table table-hover table-bordered align-middle table-scroll-custom mb-0" id="dutyTripTable" style="font-size: 0.88rem; min-width: 700px;">
+          <thead class="table-light text-center sticky-top shadow-sm" style="z-index: 5;">
+            <tr>
+              <th style="width: 110px; white-space: nowrap;">วันที่ไปราชการ</th>
+              <th style="width: 220px; max-width: 220px;">ราชการที่ปฏิบัติ</th>
+              <th style="width: 170px; max-width: 170px;">สถานที่</th>
+              <th style="width: 160px; white-space: nowrap;">รายชื่อผู้ไปราชการ</th>
+              <th id="dutyTripActionColHeader" style="width: 55px; white-space: nowrap;">จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="dutyTripTableBody"></tbody>
+        </table>
+      </div>
     </div> <!-- 👈 เติมแท็กปิด dutyTripView ตรงนี้ -->
 
     <!-- 📤 ส่วนที่ 3: หน้าส่งออกรายการหนังสือแบบเต็มจอ (Export View) -->
@@ -1659,112 +1659,104 @@ function loadLogsFromFirebase(year) {
     renderDutyTripTable(filtered);
   }
 
-  // 4. แสดงผลลงตาราง (ตัวหนาทั้งหมด, เลขอารบิก, วันที่ 3 แถว, ปุ่มบน-ล่าง, คอลัมน์รายชื่อพอดีคำ)
+  // 4. แสดงผลลงตาราง (ตัวหนาทั้งหมด, เลขอารบิก, วันที่ตัวอักษรเท่ากัน, ย่อคอลัมน์ตัดบรรทัดได้)
   function renderDutyTripTable(list) {
-  const tbody = document.getElementById('dutyTripTableBody');
-  const totalElem = document.getElementById('dutyTripTotalCount');
-  const thAction = document.getElementById('dutyTripActionColHeader');
-  if (totalElem) totalElem.innerText = list.length;
+    const tbody = document.getElementById('dutyTripTableBody');
+    const totalElem = document.getElementById('dutyTripTotalCount');
+    const thAction = document.getElementById('dutyTripActionColHeader');
+    if (totalElem) totalElem.innerText = list.length;
 
-  const isAdmin = (currentUser.role === 'Admin');
-  const colCount = isAdmin ? 5 : 4;
-  if (thAction) thAction.style.display = isAdmin ? 'table-cell' : 'none';
+    const isAdmin = (currentUser.role === 'Admin');
+    const colCount = isAdmin ? 5 : 4;
+    if (thAction) thAction.style.display = isAdmin ? 'table-cell' : 'none';
 
-  if (!list || list.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="${colCount}" class="text-center text-muted p-4 fw-bold">ไม่พบข้อมูลการไปราชการตามที่ค้นหา</td></tr>`;
-    return;
-  }
+    if (!list || list.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="${colCount}" class="text-center text-muted p-4 fw-bold">ไม่พบข้อมูลการไปราชการตามที่ค้นหา</td></tr>`;
+      return;
+    }
 
-  // จัดกลุ่มข้อมูลตามเดือนและปี
-  const groups = {};
-  list.forEach(item => {
-    const parsed = parseDutyTripDate3Rows(item.date);
-    const grp = parsed.groupTitle;
-    if (!groups[grp]) groups[grp] = [];
-    groups[grp].push(item);
-  });
+    // จัดกลุ่มข้อมูลแยกตามเดือนและปี
+    const groups = {};
+    list.forEach(item => {
+      const parsed = parseDutyTripDate3Rows(item.date);
+      const grp = parsed.groupTitle;
+      if (!groups[grp]) groups[grp] = [];
+      groups[grp].push(item);
+    });
 
-  let html = "";
+    let html = "";
 
-  for (let grp in groups) {
-    const members = groups[grp];
-    
-    // แถวหัวข้อกลุ่มเดือน
-    html += `
-      <tr class="table-success table-opacity-50">
-        <td colspan="${colCount}" class="fw-bold py-2 ps-3 text-dark bg-success bg-opacity-10" style="font-size: 0.92rem;">
-          📌 ${grp} (${members.length} รายการ)
-        </td>
-      </tr>
-    `;
+    for (let grp in groups) {
+      const members = groups[grp];
 
-    members.forEach((d) => {
-      const parsedDate = parseDutyTripDate3Rows(d.date);
-      const rawStaff = (d.staff || "").toString();
-      const staffLines = rawStaff.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-
-      let staffDisplay = "";
-      if (staffLines.length === 0) {
-        staffDisplay = '<span class="text-muted small fw-bold">-</span>';
-      } else if (staffLines.length <= 2) {
-        staffDisplay = staffLines.map(s => `
-          <div class="mb-1 text-nowrap">
-            <span class="badge bg-light text-dark border shadow-sm fw-bold" style="font-size:0.75rem;">👤 ${toArabicNums(s)}</span>
-          </div>
-        `).join('');
-      } else {
-        const firstTwo = staffLines.slice(0, 2);
-        staffDisplay = firstTwo.map(s => `
-          <div class="mb-1 text-nowrap">
-            <span class="badge bg-light text-dark border shadow-sm fw-bold" style="font-size:0.75rem;">👤 ${toArabicNums(s)}</span>
-          </div>
-        `).join('');
-        staffDisplay += `
-          <div class="mt-1 text-nowrap">
-            <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 fw-bold shadow-sm" style="font-size: 0.72rem; border-radius: 12px;" onclick="openDutyTripStaffModal('${d.id}')">
-              👥 ดูทั้งหมด (${staffLines.length} คน)
-            </button>
-          </div>
-        `;
-      }
-
-      // ปุ่มจัดการแก้ไข/ลบสำหรับ Admin
-      let actionHTML = "";
-      if (isAdmin) {
-        actionHTML = `
-          <td class="text-center" style="width: 1%; white-space: nowrap;">
-            <div class="d-flex flex-column align-items-center justify-content-center gap-1">
-              <button class="btn btn-sm btn-outline-warning text-dark py-0 px-2 fw-bold shadow-sm" style="font-size: 0.75rem; width: 32px;" onclick="openEditDutyTripForm('${d.id}')" title="แก้ไข">✏️</button>
-              <button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold shadow-sm" style="font-size: 0.75rem; width: 32px;" onclick="deleteDutyTripItem('${d.id}')" title="ลบ">🗑️</button>
-            </div>
-          </td>
-        `;
-      }
-
-      // บล็อกแสดงวันที่ 3 แถว
-      const date3RowsHTML = `
-        <div class="d-flex flex-column align-items-center justify-content-center text-center lh-sm" style="white-space: nowrap;">
-          <span class="text-primary fw-bold" style="font-size: 0.92rem;">${parsedDate.day}</span>
-          <span class="text-dark fw-bold" style="font-size: 0.84rem;">${parsedDate.month}</span>
-          <span class="text-muted fw-bold" style="font-size: 0.76rem;">${parsedDate.year}</span>
-        </div>
-      `;
-
-      // แถวข้อมูลแต่ละรายการ
+      // แถวหัวกลุ่มเดือน (ไม่มีข้อความคอมเมนต์หลุด)
       html += `
-        <tr class="align-middle fw-bold">
-          <td class="text-center fw-bold" style="width: 1%; white-space: nowrap; padding: 6px 10px;">${date3RowsHTML}</td>
-          <td class="text-start text-dark fw-bold thai-wrap">${toArabicNums(d.task || "-")}</td>
-          <td class="text-start text-dark fw-bold thai-wrap">${toArabicNums(d.location || "-")}</td>
-          <td class="text-start fw-bold" style="width: 1%; white-space: nowrap;">${staffDisplay}</td>
-          ${actionHTML}
+        <tr class="table-success table-opacity-50">
+          <td colspan="${colCount}" class="fw-bold py-2 ps-3 text-dark bg-success bg-opacity-10" style="font-size: 0.92rem;">
+            📌 ${grp} (${members.length} รายการ)
+          </td>
         </tr>
       `;
-    });
-  }
 
-  tbody.innerHTML = html;
-}
+      members.forEach((d) => {
+        const parsedDate = parseDutyTripDate3Rows(d.date);
+        const rawStaff = (d.staff || "").toString();
+        const staffLines = rawStaff.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+
+        let staffDisplay = "";
+        if (staffLines.length === 0) {
+          staffDisplay = '<span class="text-muted small fw-bold">-</span>';
+        } else if (staffLines.length <= 2) {
+          staffDisplay = staffLines.map(s => `<div class="mb-1 text-nowrap"><span class="badge bg-light text-dark border shadow-sm fw-bold" style="font-size:0.75rem;">👤 ${toArabicNums(s)}</span></div>`).join('');
+        } else {
+          const firstTwo = staffLines.slice(0, 2);
+          staffDisplay = firstTwo.map(s => `<div class="mb-1 text-nowrap"><span class="badge bg-light text-dark border shadow-sm fw-bold" style="font-size:0.75rem;">👤 ${toArabicNums(s)}</span></div>`).join('');
+          staffDisplay += `
+            <div class="mt-1 text-nowrap">
+              <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 fw-bold shadow-sm" style="font-size: 0.72rem; border-radius: 12px;" onclick="openDutyTripStaffModal('${d.id}')">
+                👥 ดูทั้งหมด (${staffLines.length} คน)
+              </button>
+            </div>
+          `;
+        }
+
+        // ปุ่มจัดการแบบ "บนและล่าง"
+        let actionHTML = "";
+        if (isAdmin) {
+          actionHTML = `
+            <td class="text-center" style="width: 55px; white-space: nowrap;">
+              <div class="d-flex flex-column align-items-center justify-content-center gap-1">
+                <button class="btn btn-sm btn-outline-warning text-dark py-0 px-2 fw-bold shadow-sm" style="font-size: 0.75rem; width: 32px;" onclick="openEditDutyTripForm('${d.id}')" title="แก้ไข">✏️</button>
+                <button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold shadow-sm" style="font-size: 0.75rem; width: 32px;" onclick="deleteDutyTripItem('${d.id}')" title="ลบ">🗑️</button>
+              </div>
+            </td>
+          `;
+        }
+
+        // วันที่ 3 แถว (ขนาดตัวอักษรเท่ากันทุกบรรทัด: 0.84rem)
+        const date3RowsHTML = `
+          <div class="d-flex flex-column align-items-center justify-content-center text-center lh-sm" style="white-space: nowrap; font-size: 0.84rem;">
+            <span class="text-primary fw-bold">${parsedDate.day}</span>
+            <span class="text-dark fw-bold">${parsedDate.month}</span>
+            <span class="text-muted fw-bold">${parsedDate.year}</span>
+          </div>
+        `;
+
+        // แถวข้อมูล: กำหนด max-width และ word-break เพื่อให้ข้อความยาวตัดเป็น 2 บรรทัดได้พอดี
+        html += `
+          <tr class="align-middle fw-bold">
+            <td class="text-center fw-bold" style="width: 110px; white-space: nowrap; padding: 6px 8px;">${date3RowsHTML}</td>
+            <td class="text-start text-dark fw-bold thai-wrap" style="max-width: 220px; word-break: break-word; line-height: 1.4; white-space: normal;">${toArabicNums(d.task || "-")}</td>
+            <td class="text-start text-dark fw-bold thai-wrap" style="max-width: 170px; word-break: break-word; line-height: 1.4; white-space: normal;">${toArabicNums(d.location || "-")}</td>
+            <td class="text-start fw-bold" style="width: 160px; white-space: nowrap;">${staffDisplay}</td>
+            ${actionHTML}
+          </tr>
+        `;
+      });
+    }
+
+    tbody.innerHTML = html;
+  }
 
   // 5. เปิด Modal แสดงรายชื่อทั้งหมด
   function openDutyTripStaffModal(id) {

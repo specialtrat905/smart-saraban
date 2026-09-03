@@ -1321,7 +1321,7 @@
  // --- 1. การตั้งค่าสิทธิ์พื้นฐานองค์กร ---
   const GH_OWNER = "specialtrat905";
   const GH_REPO = "smart-saraban";
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQBg-jxYLu0t35Wbz3ohsI37n_5VhjVlN83nNaik9bibkHwqxDi3uv-2nxyKp3EypAVQ/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzTVePa08zbmO0SQHpeLcJI1rC6zGuihx6EhPsbwC_DZoyp_WAS7R3_Ol-TTPOUG6LKSw/exec";
 // ⚡ กำหนดค่าเชื่อมต่อ Firebase (ตาม Config ของคุณ)
 const firebaseConfig = {
   apiKey: "AIzaSyBL_Jv3x_UxEkzcVnN6lpQpZdWoIaJvMNM",
@@ -1444,33 +1444,56 @@ function loadLogsFromFirebase(year) {
   }
 
   // 3. โหลดข้อมูลรายการไปราชการ
+  // 3. โหลดข้อมูลรายการไปราชการ (เพิ่มระบบตรวจสอบความปลอดภัยของข้อมูล)
   async function loadDutyTripList() {
     const tbody = document.getElementById('dutyTripTableBody');
     tbody.innerHTML = `<tr><td colspan="6" class="text-center p-4"><div class="spinner-border spinner-border-sm text-success me-2"></div> กำลังโหลดข้อมูลไปราชการ...</td></tr>`;
 
     try {
       const res = await fetch(`${SCRIPT_URL}?type=duty_trip&t=${new Date().getTime()}`);
-      fullDutyTripData = await res.json();
+      const data = await res.json();
+
+      // ตรวจสอบว่าถ้าได้รับเป็น Array ซ้อน Array แปลว่า Apps Script ยังรันโค้ดเก่าที่ส่ง logs กลับมา
+      if (Array.isArray(data) && data.length > 0 && Array.isArray(data[0])) {
+        throw new Error("Apps Script ยังรันโค้ดเก่า กรุณา Deploy 'เวอร์ชันใหม่' ใน Apps Script");
+      }
+
+      fullDutyTripData = Array.isArray(data) ? data : [];
       filterDutyTripList();
     } catch (e) {
-      tbody.innerHTML = `<tr><td colspan="6" class="text-center p-4 text-danger">⚠️ โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง</td></tr>`;
+      console.error("Duty Trip Error:", e);
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" class="text-center p-4 text-danger fw-bold">
+            ⚠️ โหลดข้อมูลไม่สำเร็จ: ${e.message}<br>
+            <small class="text-muted fw-normal">กรุณาตรวจสอบว่าได้ Deploy "เวอร์ชันใหม่" และเลือกผู้มีสิทธิ์เข้าถึงเป็น "ทุกคน" (Anyone) แล้วหรือยัง</small>
+          </td>
+        </tr>`;
     }
   }
 
-  // 4. ค้นหาและกรองรายการ
+  // 4. ค้นหาและกรองรายการ (ป้องกัน Error ค่าว่าง)
   function filterDutyTripList() {
     const search = document.getElementById('dutyTripSearchInput') ? document.getElementById('dutyTripSearchInput').value.toLowerCase().trim() : "";
     const staffFilter = document.getElementById('dutyTripStaffFilter') ? document.getElementById('dutyTripStaffFilter').value.trim() : "";
 
+    if (!Array.isArray(fullDutyTripData)) fullDutyTripData = [];
+
     const filtered = fullDutyTripData.filter(d => {
+      if (!d) return false;
+      const task = (d.task || "").toString().toLowerCase();
+      const date = (d.date || "").toString().toLowerCase();
+      const location = (d.location || "").toString().toLowerCase();
+      const staff = (d.staff || "").toString().toLowerCase();
+
       const matchSearch = (search === "") ? true : (
-        d.task.toLowerCase().includes(search) ||
-        d.date.toLowerCase().includes(search) ||
-        d.location.toLowerCase().includes(search) ||
-        d.staff.toLowerCase().includes(search)
+        task.includes(search) ||
+        date.includes(search) ||
+        location.includes(search) ||
+        staff.includes(search)
       );
 
-      const matchStaff = (staffFilter === "") ? true : d.staff.includes(staffFilter);
+      const matchStaff = (staffFilter === "") ? true : (d.staff || "").toString().includes(staffFilter);
       return matchSearch && matchStaff;
     });
 
@@ -1487,16 +1510,18 @@ function loadLogsFromFirebase(year) {
     const isAdmin = (currentUser.role === 'Admin');
     if (thAction) thAction.style.display = isAdmin ? 'table-cell' : 'none';
 
-    if (list.length === 0) {
+    if (!list || list.length === 0) {
       tbody.innerHTML = `<tr><td colspan="${isAdmin ? 6 : 5}" class="text-center text-muted p-4">ไม่พบข้อมูลการไปราชการตามที่ค้นหา</td></tr>`;
       return;
     }
 
     let html = "";
     list.forEach((d, idx) => {
-      // แปลงชื่อผู้ไปราชการให้แสดงผลเป็นบรรทัดหรือ Badge สวยงาม
-      const staffLines = d.staff.split(/\r?\n/).filter(Boolean);
-      const staffDisplay = staffLines.map(s => `<div class="mb-1"><span class="badge bg-light text-dark border shadow-sm" style="font-size:0.75rem;">👤 ${s.trim()}</span></div>`).join('');
+      const rawStaff = (d.staff || "").toString();
+      const staffLines = rawStaff.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+      const staffDisplay = staffLines.length > 0
+        ? staffLines.map(s => `<div class="mb-1"><span class="badge bg-light text-dark border shadow-sm" style="font-size:0.75rem;">👤 ${s}</span></div>`).join('')
+        : '<span class="text-muted small">-</span>';
 
       let actionHTML = "";
       if (isAdmin) {
@@ -1513,9 +1538,9 @@ function loadLogsFromFirebase(year) {
       html += `
         <tr class="align-middle">
           <td class="text-center text-muted fw-bold">${idx + 1}</td>
-          <td class="text-start text-dark fw-bold">${d.task}</td>
-          <td class="text-center text-muted" style="font-size: 0.82rem;">${d.date}</td>
-          <td class="text-start">${d.location}</td>
+          <td class="text-start text-dark fw-bold">${d.task || "-"}</td>
+          <td class="text-center text-muted" style="font-size: 0.82rem;">${d.date || "-"}</td>
+          <td class="text-start">${d.location || "-"}</td>
           <td class="text-start">${staffDisplay}</td>
           ${actionHTML}
         </tr>
@@ -1524,7 +1549,6 @@ function loadLogsFromFirebase(year) {
 
     tbody.innerHTML = html;
   }
-
   // 6. ฟอร์มเพิ่ม/แก้ไข (Admin)
   function openAddDutyTripForm() {
     document.getElementById('dutyTripFormTitle').innerText = "➕ เพิ่มรายการไปราชการ";

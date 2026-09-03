@@ -630,32 +630,61 @@
         </div>
       </div>
 
-      <!-- 🔍 แถบตัวกรองและค้นหา -->
-      <div class="row g-2 mb-3">
-        <div class="col-12 col-md-7">
-          <div class="input-group shadow-sm">
-            <span class="input-group-text bg-white">🔍</span>
-            <input type="text" id="dutyTripSearchInput" class="form-control" placeholder="พิมพ์ค้นหา ชื่องาน, วันที่, สถานที่ หรือชื่อผู้ไปราชการ..." oninput="filterDutyTripList()">
-          </div>
-        </div>
-        <div class="col-12 col-md-5">
-          <select id="dutyTripStaffFilter" class="form-select shadow-sm border-success" onchange="filterDutyTripList()">
-            <option value="">👤 เลือกดูเฉพาะรายชื่อบุคลากร (ทั้งหมด)...</option>
+      <!-- 🔍 แถบตัวกรองและค้นหา (เดือน, ปี, บุคลากร, คำค้นหา) -->
+      <div class="row g-2 mb-3 align-items-center">
+        <!-- Dropdown 1: เดือน -->
+        <div class="col-6 col-md-2">
+          <select id="dutyTripMonthFilter" class="form-select form-select-sm border-success shadow-sm" onchange="filterDutyTripList()">
+            <option value="all">📅 ทุกเดือน</option>
+            <option value="มกราคม">มกราคม</option>
+            <option value="กุมภาพันธ์">กุมภาพันธ์</option>
+            <option value="มีนาคม">มีนาคม</option>
+            <option value="เมษายน">เมษายน</option>
+            <option value="พฤษภาคม">พฤษภาคม</option>
+            <option value="มิถุนายน">มิถุนายน</option>
+            <option value="กรกฎาคม">กรกฎาคม</option>
+            <option value="สิงหาคม">สิงหาคม</option>
+            <option value="กันยายน">กันยายน</option>
+            <option value="ตุลาคม">ตุลาคม</option>
+            <option value="พฤศจิกายน">พฤศจิกายน</option>
+            <option value="ธันวาคม">ธันวาคม</option>
           </select>
+        </div>
+
+        <!-- Dropdown 2: ปี พ.ศ. -->
+        <div class="col-6 col-md-2">
+          <select id="dutyTripYearFilter" class="form-select form-select-sm border-success shadow-sm" onchange="filterDutyTripList()">
+            <option value="all">📂 ทุกปี พ.ศ.</option>
+          </select>
+        </div>
+
+        <!-- Dropdown 3: บุคลากร -->
+        <div class="col-12 col-md-3">
+          <select id="dutyTripStaffFilter" class="form-select form-select-sm border-info shadow-sm" onchange="filterDutyTripList()">
+            <option value="">👤 ทุกบุคลากร (ทั้งหมด)...</option>
+          </select>
+        </div>
+
+        <!-- ช่องพิมพ์ค้นหาคำ -->
+        <div class="col-12 col-md-5">
+          <div class="input-group input-group-sm shadow-sm">
+            <span class="input-group-text bg-white">🔍</span>
+            <input type="text" id="dutyTripSearchInput" class="form-control" placeholder="พิมพ์ค้นหา ชื่องาน, สถานที่ หรือผู้ไป..." oninput="filterDutyTripList()">
+          </div>
         </div>
       </div>
 
-      <!-- 📋 ตารางแสดงรายการไปราชการ -->
+      <!-- 📋 ตารางแสดงรายการไปราชการจัดเรียงคอลัมน์ใหม่ -->
       <div class="table-responsive border rounded shadow-sm bg-white" style="max-height: 72vh;">
         <table class="table table-hover table-bordered align-middle mb-0" style="font-size: 0.88rem;">
           <thead class="table-light text-center sticky-top shadow-sm" style="z-index: 5;">
             <tr>
-              <th style="width: 60px;">ลำดับ</th>
-              <th style="min-width: 200px;">ราชการที่ปฏิบัติ</th>
-              <th style="min-width: 140px;">วันที่</th>
-              <th style="min-width: 180px;">สถานที่</th>
-              <th style="min-width: 220px;">ผู้ไปราชการ</th>
-              <th id="dutyTripActionColHeader" style="width: 80px;">จัดการ</th>
+              <th style="width: 55px;">ลำดับ</th>
+              <th style="width: 140px;">วันที่ไปราชการ</th>
+              <th style="min-width: 220px;">ราชการที่ปฏิบัติ</th>
+              <th style="min-width: 170px;">สถานที่</th>
+              <th style="min-width: 210px;">รายชื่อผู้ไปราชการ</th>
+              <th id="dutyTripActionColHeader" style="width: 75px;">จัดการ</th>
             </tr>
           </thead>
           <tbody id="dutyTripTableBody"></tbody>
@@ -1267,6 +1296,35 @@
         </div>
       </div>
     </div>
+    <!-- 👥 Modal หน้าต่างแสดงรายชื่อผู้ไปราชการทั้งหมด -->
+    <div class="modal fade" id="dutyTripStaffViewModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+          <div class="modal-header bg-success text-white py-2 px-3">
+            <h6 class="modal-title fw-bold d-flex align-items-center gap-2 m-0">
+              <span>👥</span>
+              <span>รายชื่อผู้ไปราชการ (<span id="dutyStaffModalCount">0</span> คน)</span>
+            </h6>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body p-3 bg-light">
+            <div class="p-2 bg-white rounded border mb-2 shadow-sm">
+              <div class="text-muted small">ราชการที่ปฏิบัติ:</div>
+              <div id="dutyStaffModalTask" class="fw-bold text-dark text-break" style="font-size: 0.88rem;"></div>
+              <div class="d-flex flex-wrap gap-2 text-muted small mt-1">
+                <div>📅 <span id="dutyStaffModalDate"></span></div>
+                <div>📍 <span id="dutyStaffModalLocation"></span></div>
+              </div>
+            </div>
+            <div class="fw-bold small text-secondary mb-1">รายชื่อบุคลากรที่ร่วมเดินทาง:</div>
+            <ol id="dutyStaffModalList" class="list-group list-group-numbered shadow-sm" style="max-height: 50vh; overflow-y: auto;"></ol>
+          </div>
+          <div class="modal-footer bg-white p-2">
+            <button type="button" class="btn btn-sm btn-secondary px-3 fw-bold" data-bs-dismiss="modal">ปิดหน้าต่าง</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div> <!-- ปิด container -->
   <!-- 📑 Modal แสดงตารางสรุปข้อมูลหนังสือที่เลือกส่งออก -->
     <div class="modal fade" id="exportSummaryModal" tabindex="-1" aria-hidden="true">
@@ -1411,6 +1469,39 @@ function loadLogsFromFirebase(year) {
   let fullDutyTripData = [];
   let formDutyStaffTags = [];
   let dutyTripModalInstance = null;
+  let dutyTripStaffViewModalInstance = null;
+
+  const thaiMonthsListFull = [
+    "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+    "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+  ];
+
+  // ฟังก์ชันแยก เดือน และ ปี พ.ศ. จากข้อความวันที่
+  function parseDutyTripDate(dateStr) {
+    if (!dateStr) return { month: "ไม่ระบุเดือน", year: "ไม่ระบุปี", groupTitle: "ไม่ระบุวันเดือนปี" };
+
+    const thaiNums = {'๐':'0','๑':'1','๒':'2','๓':'3','๔':'4','๕':'5','๖':'6','๗':'7','๘':'8','๙':'9'};
+    let clean = dateStr.toString().replace(/[๐-๙]/g, m => thaiNums[m]);
+
+    let foundMonth = "";
+    for (let i = 0; i < thaiMonthsListFull.length; i++) {
+      if (clean.includes(thaiMonthsListFull[i])) {
+        foundMonth = thaiMonthsListFull[i];
+        break;
+      }
+    }
+
+    let yearMatch = clean.match(/25\d{2}/);
+    let foundYear = yearMatch ? yearMatch[0] : "";
+
+    let groupTitle = (foundMonth && foundYear) ? `${foundMonth} ${foundYear}` : (foundMonth || (foundYear ? `ปี ${foundYear}` : "อื่นๆ"));
+
+    return {
+      month: foundMonth || "ไม่ระบุเดือน",
+      year: foundYear || "ไม่ระบุปี",
+      groupTitle: groupTitle
+    };
+  }
 
   // 1. สลับหน้ามาดูรายการไปราชการ
   function switchToDutyTripView() {
@@ -1431,20 +1522,38 @@ function loadLogsFromFirebase(year) {
     if (addBtn) addBtn.style.display = isAdmin ? 'inline-block' : 'none';
 
     populateDutyTripStaffDropdown();
+    populateDutyTripYearDropdown();
     loadDutyTripList();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  // 2. เติมตัวเลือกรายชื่อบุคลากรลงในช่องกรอง
+  // 2. เติมตัวเลือกรายชื่อบุคลากรและปี พ.ศ. ในช่องกรอง
   function populateDutyTripStaffDropdown() {
     const sel = document.getElementById('dutyTripStaffFilter');
     if (!sel || fullStaffData.length === 0) return;
-    sel.innerHTML = `<option value="">👤 เลือกดูเฉพาะรายชื่อบุคลากร (ทั้งหมด)...</option>` +
+    sel.innerHTML = `<option value="">👤 ทุกบุคลากร (ทั้งหมด)...</option>` +
       fullStaffData.map(s => `<option value="${s.name}">${s.name} (${s.position})</option>`).join('');
   }
 
+  function populateDutyTripYearDropdown() {
+    const sel = document.getElementById('dutyTripYearFilter');
+    if (!sel) return;
+    const years = new Set();
+    fullDutyTripData.forEach(d => {
+      const p = parseDutyTripDate(d.date);
+      if (p.year && p.year !== "ไม่ระบุปี") years.add(p.year);
+    });
+    if (years.size === 0) years.add(currentYearBE.toString());
+
+    const sortedYears = Array.from(years).sort((a, b) => b - a);
+    let opts = `<option value="all">📂 ทุกปี พ.ศ.</option>`;
+    sortedYears.forEach(y => {
+      opts += `<option value="${y}">ปี พ.ศ. ${y}</option>`;
+    });
+    sel.innerHTML = opts;
+  }
+
   // 3. โหลดข้อมูลรายการไปราชการ
-  // 3. โหลดข้อมูลรายการไปราชการ (เพิ่มระบบตรวจสอบความปลอดภัยของข้อมูล)
   async function loadDutyTripList() {
     const tbody = document.getElementById('dutyTripTableBody');
     tbody.innerHTML = `<tr><td colspan="6" class="text-center p-4"><div class="spinner-border spinner-border-sm text-success me-2"></div> กำลังโหลดข้อมูลไปราชการ...</td></tr>`;
@@ -1452,55 +1561,51 @@ function loadLogsFromFirebase(year) {
     try {
       const res = await fetch(`${SCRIPT_URL}?type=duty_trip&t=${new Date().getTime()}`);
       const data = await res.json();
-
-      // ตรวจสอบว่าถ้าได้รับเป็น Array ซ้อน Array แปลว่า Apps Script ยังรันโค้ดเก่าที่ส่ง logs กลับมา
-      if (Array.isArray(data) && data.length > 0 && Array.isArray(data[0])) {
-        throw new Error("Apps Script ยังรันโค้ดเก่า กรุณา Deploy 'เวอร์ชันใหม่' ใน Apps Script");
-      }
-
       fullDutyTripData = Array.isArray(data) ? data : [];
+      populateDutyTripYearDropdown();
       filterDutyTripList();
     } catch (e) {
       console.error("Duty Trip Error:", e);
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="6" class="text-center p-4 text-danger fw-bold">
-            ⚠️ โหลดข้อมูลไม่สำเร็จ: ${e.message}<br>
-            <small class="text-muted fw-normal">กรุณาตรวจสอบว่าได้ Deploy "เวอร์ชันใหม่" และเลือกผู้มีสิทธิ์เข้าถึงเป็น "ทุกคน" (Anyone) แล้วหรือยัง</small>
-          </td>
-        </tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center p-4 text-danger fw-bold">⚠️ โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง</td></tr>`;
     }
   }
 
-  // 4. ค้นหาและกรองรายการ (ป้องกัน Error ค่าว่าง)
+  // 4. กรองรายการตามเดือน, ปี, บุคลากร และคำค้นหา
   function filterDutyTripList() {
+    const selectedMonth = document.getElementById('dutyTripMonthFilter') ? document.getElementById('dutyTripMonthFilter').value : "all";
+    const selectedYear = document.getElementById('dutyTripYearFilter') ? document.getElementById('dutyTripYearFilter').value : "all";
     const search = document.getElementById('dutyTripSearchInput') ? document.getElementById('dutyTripSearchInput').value.toLowerCase().trim() : "";
     const staffFilter = document.getElementById('dutyTripStaffFilter') ? document.getElementById('dutyTripStaffFilter').value.trim() : "";
 
-    if (!Array.isArray(fullDutyTripData)) fullDutyTripData = [];
-
     const filtered = fullDutyTripData.filter(d => {
       if (!d) return false;
-      const task = (d.task || "").toString().toLowerCase();
-      const date = (d.date || "").toString().toLowerCase();
-      const location = (d.location || "").toString().toLowerCase();
-      const staff = (d.staff || "").toString().toLowerCase();
+      const parsed = parseDutyTripDate(d.date);
 
-      const matchSearch = (search === "") ? true : (
-        task.includes(search) ||
-        date.includes(search) ||
-        location.includes(search) ||
-        staff.includes(search)
-      );
+      // กรองเดือน
+      if (selectedMonth !== "all" && parsed.month !== selectedMonth) return false;
 
-      const matchStaff = (staffFilter === "") ? true : (d.staff || "").toString().includes(staffFilter);
-      return matchSearch && matchStaff;
+      // กรองปี พ.ศ.
+      if (selectedYear !== "all" && parsed.year !== selectedYear) return false;
+
+      // กรองรายชื่อบุคลากร
+      if (staffFilter !== "" && !(d.staff || "").toString().includes(staffFilter)) return false;
+
+      // กรองคำค้นหา
+      if (search !== "") {
+        const task = (d.task || "").toString().toLowerCase();
+        const date = (d.date || "").toString().toLowerCase();
+        const location = (d.location || "").toString().toLowerCase();
+        const staff = (d.staff || "").toString().toLowerCase();
+        return task.includes(search) || date.includes(search) || location.includes(search) || staff.includes(search);
+      }
+
+      return true;
     });
 
     renderDutyTripTable(filtered);
   }
 
-  // 5. แสดงผลลงในตาราง
+  // 5. แสดงผลลงในตารางแยกหมวดหมู่ตามเดือน-ปี และจำกัดแสดง 2 ชื่อแรก
   function renderDutyTripTable(list) {
     const tbody = document.getElementById('dutyTripTableBody');
     const totalElem = document.getElementById('dutyTripTotalCount');
@@ -1515,41 +1620,109 @@ function loadLogsFromFirebase(year) {
       return;
     }
 
+    // จัดกลุ่มข้อมูลแยกตามเดือนและปี
+    const groups = {};
+    list.forEach(item => {
+      const parsed = parseDutyTripDate(item.date);
+      const grp = parsed.groupTitle;
+      if (!groups[grp]) groups[grp] = [];
+      groups[grp].push(item);
+    });
+
     let html = "";
-    list.forEach((d, idx) => {
-      const rawStaff = (d.staff || "").toString();
-      const staffLines = rawStaff.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-      const staffDisplay = staffLines.length > 0
-        ? staffLines.map(s => `<div class="mb-1"><span class="badge bg-light text-dark border shadow-sm" style="font-size:0.75rem;">👤 ${s}</span></div>`).join('')
-        : '<span class="text-muted small">-</span>';
 
-      let actionHTML = "";
-      if (isAdmin) {
-        actionHTML = `
-          <td class="text-center">
-            <div class="d-flex justify-content-center gap-1">
-              <button class="btn btn-sm btn-outline-warning text-dark py-0 px-2 fw-bold shadow-sm" onclick="openEditDutyTripForm('${d.id}')">✏️</button>
-              <button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold shadow-sm" onclick="deleteDutyTripItem('${d.id}')">🗑️</button>
-            </div>
-          </td>
-        `;
-      }
-
+    for (let grp in groups) {
+      const members = groups[grp];
       html += `
-        <tr class="align-middle">
-          <td class="text-center text-muted fw-bold">${idx + 1}</td>
-          <td class="text-start text-dark fw-bold">${d.task || "-"}</td>
-          <td class="text-center text-muted" style="font-size: 0.82rem;">${d.date || "-"}</td>
-          <td class="text-start">${d.location || "-"}</td>
-          <td class="text-start">${staffDisplay}</td>
-          ${actionHTML}
+        <tr class="table-success table-opacity-50">
+          <td colspan="${isAdmin ? 6 : 5}" class="fw-bold py-2 ps-3 text-dark bg-success bg-opacity-10" style="font-size: 0.92rem;">
+            📌 ${grp} (${members.length} รายการ)
+          </td>
         </tr>
       `;
-    });
+
+      members.forEach((d, idx) => {
+        const rawStaff = (d.staff || "").toString();
+        const staffLines = rawStaff.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+
+        let staffDisplay = "";
+        if (staffLines.length === 0) {
+          staffDisplay = '<span class="text-muted small">-</span>';
+        } else if (staffLines.length <= 2) {
+          staffDisplay = staffLines.map(s => `<div class="mb-1"><span class="badge bg-light text-dark border shadow-sm" style="font-size:0.75rem;">👤 ${s}</span></div>`).join('');
+        } else {
+          // แสดงเฉพาะ 2 ชื่อแรก + ปุ่มกดดูทั้งหมด
+          const firstTwo = staffLines.slice(0, 2);
+          staffDisplay = firstTwo.map(s => `<div class="mb-1"><span class="badge bg-light text-dark border shadow-sm" style="font-size:0.75rem;">👤 ${s}</span></div>`).join('');
+          staffDisplay += `
+            <div class="mt-1">
+              <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 fw-bold shadow-sm" style="font-size: 0.72rem; border-radius: 12px;" onclick="openDutyTripStaffModal('${d.id}')">
+                👥 ดูทั้งหมด (${staffLines.length} คน)
+              </button>
+            </div>
+          `;
+        }
+
+        let actionHTML = "";
+        if (isAdmin) {
+          actionHTML = `
+            <td class="text-center">
+              <div class="d-flex justify-content-center gap-1">
+                <button class="btn btn-sm btn-outline-warning text-dark py-0 px-2 fw-bold shadow-sm" onclick="openEditDutyTripForm('${d.id}')">✏️</button>
+                <button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold shadow-sm" onclick="deleteDutyTripItem('${d.id}')">🗑️</button>
+              </div>
+            </td>
+          `;
+        }
+
+        // เรียงลำดับคอลัมน์: 1.ลำดับ 2.วันที่ 3.ราชการที่ปฏิบัติ 4.สถานที่ 5.ผู้ไปราชการ
+        html += `
+          <tr class="align-middle">
+            <td class="text-center text-muted fw-bold">${idx + 1}</td>
+            <td class="text-center text-dark fw-bold" style="font-size: 0.82rem; white-space: normal;">${d.date || "-"}</td>
+            <td class="text-start text-dark fw-bold" style="word-break: break-word;">${d.task || "-"}</td>
+            <td class="text-start text-muted" style="font-size: 0.85rem; word-break: break-word;">${d.location || "-"}</td>
+            <td class="text-start">${staffDisplay}</td>
+            ${actionHTML}
+          </tr>
+        `;
+      });
+    }
 
     tbody.innerHTML = html;
   }
-  // 6. ฟอร์มเพิ่ม/แก้ไข (Admin)
+
+  // 6. เปิด Modal แสดงรายชื่อผู้ไปราชการทั้งหมด
+  function openDutyTripStaffModal(id) {
+    const item = fullDutyTripData.find(d => d && d.id.toString() === id.toString());
+    if (!item) return;
+
+    document.getElementById('dutyStaffModalTask').innerText = item.task || "-";
+    document.getElementById('dutyStaffModalDate').innerText = item.date || "-";
+    document.getElementById('dutyStaffModalLocation').innerText = item.location || "-";
+
+    const staffLines = (item.staff || "").split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+    document.getElementById('dutyStaffModalCount').innerText = staffLines.length;
+
+    const listContainer = document.getElementById('dutyStaffModalList');
+    if (staffLines.length === 0) {
+      listContainer.innerHTML = `<li class="list-group-item text-muted text-center py-3">ไม่มีรายชื่อบุคลากร</li>`;
+    } else {
+      listContainer.innerHTML = staffLines.map(s => `
+        <li class="list-group-item py-2 px-3 fw-bold text-dark d-flex justify-content-between align-items-center" style="font-size: 0.86rem;">
+          <span>${s}</span>
+          <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25" style="font-size: 0.72rem;">ผู้ร่วมปฏิบัติราชการ</span>
+        </li>
+      `).join('');
+    }
+
+    if (!dutyTripStaffViewModalInstance) {
+      dutyTripStaffViewModalInstance = new bootstrap.Modal(document.getElementById('dutyTripStaffViewModal'));
+    }
+    dutyTripStaffViewModalInstance.show();
+  }
+
+  // 7. ฟอร์มเพิ่ม/แก้ไข (Admin)
   function openAddDutyTripForm() {
     document.getElementById('dutyTripFormTitle').innerText = "➕ เพิ่มรายการไปราชการ";
     document.getElementById('dutyTripFormId').value = "";
@@ -1576,7 +1749,6 @@ function loadLogsFromFirebase(year) {
     document.getElementById('formDutyDate').value = item.date;
     document.getElementById('formDutyLocation').value = item.location;
 
-    // แยกแท็กชื่อบุคลากร
     formDutyStaffTags = item.staff.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
     document.getElementById('formDutyStaffManual').value = "";
     renderDutyTripStaffTags();

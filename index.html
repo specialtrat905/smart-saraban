@@ -689,7 +689,6 @@
         <table class="table table-hover table-bordered align-middle mb-0" id="dutyTripTable" style="font-size: 0.88rem; min-width: 680px;">
           <thead class="table-light text-center sticky-top shadow-sm" style="z-index: 5;">
             <tr>
-              <th style="width: 50px;">ลำดับ</th>
               <th style="width: 1%; white-space: nowrap;">วันที่ไปราชการ</th>
               <th style="min-width: 230px;">ราชการที่ปฏิบัติ</th>
               <th style="min-width: 170px;">สถานที่</th>
@@ -769,7 +768,7 @@
               <th style="width: 50px;">
                 <input class="form-check-input" type="checkbox" id="masterExportCheck" onchange="toggleMasterExportCheck(this.checked)" title="เลือกทั้งหมด">
               </th>
-              <th style="width: 60px;">ลำดับ</th>
+              <!-- เอาลำดับออกแล้ว -->
               <th style="width: 110px;">วันที่</th>
               <th style="width: 130px;">เลขหนังสือ</th>
               <th style="min-width: 250px;">ชื่อเรื่อง / หนังสือ</th>
@@ -786,20 +785,11 @@
       <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 pb-2 border-bottom">
         <div>
           <h4 class="fw-bold text-success mb-0">⚙️ จัดการฐานข้อมูลสารบรรณ ศกศ.ตราด</h4>
-          <small class="text-muted">เลือกโหมดการจัดการเพื่อ ลบหนังสือ หรือ แก้ไขกลุ่มงาน/ผู้รับ</small>
-        </div>
-        <!-- ปุ่มเลือกโหมดการทำงาน -->
-        <div class="d-flex flex-wrap gap-2">
-          <button id="btnModeDelete" class="btn btn-sm btn-outline-danger fw-bold shadow-sm bg-white" onclick="switchDbManageSubMode('delete')">
-          🗑️ ลบหนังสือ
-        </button>
-        <button id="btnModeEditDept" class="btn btn-sm btn-outline-warning text-dark fw-bold shadow-sm bg-white" onclick="switchDbManageSubMode('editDept')">
-          ✏️ แก้ไขกลุ่มงาน/ผู้รับ
-        </button>
+          <small class="text-muted">แก้ไขกลุ่มงาน/ผู้รับ หรือ ลบหนังสือออกจากระบบ</small>
         </div>
       </div>
 
-      <!-- แถบตัวกรองและปุ่มสั่งการ -->
+      <!-- แถบตัวกรองปีและค้นหา -->
       <div class="row g-2 mb-3 align-items-center">
         <div class="col-6 col-md-2">
           <select id="dbManageYearSelect" class="form-select form-select-sm border-success shadow-sm" onchange="changeDbManageYear(this.value)"></select>
@@ -810,25 +800,18 @@
             <input type="text" id="dbManageSearchInput" class="form-control" placeholder="พิมพ์ค้นหาเลข หรือ ชื่อหนังสือ..." oninput="filterDbManageTable()">
           </div>
         </div>
-        <div class="col-12 col-md-6 d-flex justify-content-md-end align-items-center gap-2">
-          <!-- ปุ่มยืนยันลบเมื่อเลือกรายการ -->
-          <button id="btnExecuteDeleteModal" type="button" class="btn btn-sm btn-danger fw-bold shadow-sm" style="display:none;" onclick="openDeleteConfirmModal()">
-            🗑️ ยืนยันลบที่เลือก (<span id="dbManageDeleteCount">0</span>)
-          </button>
-        </div>
       </div>
 
-      <!-- ตารางจัดการฐานข้อมูล -->
+      <!-- ตารางจัดการฐานข้อมูล (5 คอลัมน์ตรงเป๊ะ เอาลำดับออก มีปุ่มจัดการบน-ล่าง) -->
       <div class="table-responsive border rounded shadow-sm bg-white" style="max-height: 68vh;">
         <table class="table table-hover table-bordered align-middle table-scroll-custom mb-0" style="font-size: 0.88rem;">
           <thead class="table-light text-center sticky-top shadow-sm" style="z-index: 5;">
             <tr>
-              <th id="dbManageActionColTitle" style="width: 80px;">เลือก</th>
-              <th style="width: 60px;">ลำดับ</th>
-              <th style="width: 110px;">วันที่</th>
-              <th style="width: 130px;">เลขหนังสือ</th>
+              <th style="width: 100px;">วันที่</th>
+              <th style="width: 120px;">เลขหนังสือ</th>
               <th style="min-width: 250px;">ชื่อเรื่อง / หนังสือ</th>
-              <th style="min-width: 200px;">กลุ่มงานปลายทาง</th>
+              <th style="min-width: 180px;">กลุ่มงานปลายทาง</th>
+              <th style="width: 55px; white-space: nowrap;">จัดการ</th>
             </tr>
           </thead>
           <tbody id="dbManageTableBody"></tbody>
@@ -1684,7 +1667,7 @@ function loadLogsFromFirebase(year) {
     if (thAction) thAction.style.display = isAdmin ? 'table-cell' : 'none';
 
     if (!list || list.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="${isAdmin ? 6 : 5}" class="text-center text-muted p-4 fw-bold">ไม่พบข้อมูลการไปราชการตามที่ค้นหา</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="${isAdmin ? 5 : 4}" class="text-center text-muted p-4 fw-bold">ไม่พบข้อมูลการไปราชการตามที่ค้นหา</td></tr>`;
       return;
     }
 
@@ -1701,11 +1684,12 @@ function loadLogsFromFirebase(year) {
     for (let grp in groups) {
       const members = groups[grp];
       html += `
-        <tr class="table-success table-opacity-50">
-          <td colspan="${isAdmin ? 6 : 5}" class="fw-bold py-2 ps-3 text-dark bg-success bg-opacity-10" style="font-size: 0.92rem;">
-            📌 ${grp} (${members.length} รายการ)
-          </td>
-        </tr>
+        // ... ในส่วนหัวกลุ่มเดือน ...
+    <tr class="table-success table-opacity-50">
+      <td colspan="${isAdmin ? 5 : 4}" class="fw-bold py-2 ps-3 text-dark bg-success bg-opacity-10" style="font-size: 0.92rem;">
+        📌 ${grp} (${members.length} รายการ)
+      </td>
+    </tr>
       `;
 
       members.forEach((d, idx) => {
@@ -1752,16 +1736,16 @@ function loadLogsFromFirebase(year) {
           </div>
         `;
 
-        html += `
-          <tr class="align-middle fw-bold">
-            <td class="text-center text-muted fw-bold">${idx + 1}</td>
-            <td class="text-center fw-bold" style="width: 1%; white-space: nowrap; padding: 6px 10px;">${date3RowsHTML}</td>
-            <td class="text-start text-dark fw-bold" style="word-break: break-word;">${toArabicNums(d.task || "-")}</td>
-            <td class="text-start text-dark fw-bold" style="word-break: break-word;">${toArabicNums(d.location || "-")}</td>
-            <td class="text-start fw-bold" style="width: 1%; white-space: nowrap;">${staffDisplay}</td>
-            ${actionHTML}
-          </tr>
-        `;
+        // ... ในส่วนแถวข้อมูล (เอาคอลัมน์ลำดับออก) ...
+    html += `
+      <tr class="align-middle fw-bold">
+        <td class="text-center fw-bold" style="width: 1%; white-space: nowrap; padding: 6px 10px;">${date3RowsHTML}</td>
+        <td class="text-start text-dark fw-bold" style="word-break: break-word;">${toArabicNums(d.task || "-")}</td>
+        <td class="text-start text-dark fw-bold" style="word-break: break-word;">${toArabicNums(d.location || "-")}</td>
+        <td class="text-start fw-bold" style="width: 1%; white-space: nowrap;">${staffDisplay}</td>
+        ${actionHTML}
+      </tr>
+    `;
       });
     }
 
@@ -2075,14 +2059,17 @@ function loadLogsFromFirebase(year) {
   // --- 12. ระบบควบคุมหน้าตารางทะเบียนบุคลากรเต็มจอ ---
   // 👥 สลับไปหน้าบุคลากร
   // 👥 สลับไปหน้าบุคลากร
+  // 👥 สลับไปหน้าบุคลากร
   function switchToStaffView() {
     document.getElementById('sarabanView').style.display = 'none';
     document.getElementById('exportView').style.display = 'none';
     document.getElementById('dbManageView').style.display = 'none';
+    if (document.getElementById('dutyTripView')) document.getElementById('dutyTripView').style.display = 'none'; // 👈 ซ่อนหน้าไปราชการ
     document.getElementById('staffView').style.display = 'block';
 
     // บน Navbar ซ่อนทุกปุ่ม เหลือแค่ กลับระบบส่งหนังสือ + ออกจากระบบ
     document.getElementById('manageStaffBtn').style.display = 'none';
+    if (document.getElementById('dutyTripBtn')) document.getElementById('dutyTripBtn').style.display = 'none'; // 👈 ซ่อนปุ่มไปราชการ
     document.getElementById('toggleExportModeBtn').style.display = 'none';
     document.getElementById('editDbBtn').style.display = 'none';
     document.getElementById('backToSarabanBtn').style.display = 'block';
@@ -2102,10 +2089,12 @@ function loadLogsFromFirebase(year) {
     document.getElementById('sarabanView').style.display = 'none';
     document.getElementById('staffView').style.display = 'none';
     document.getElementById('dbManageView').style.display = 'none';
+    if (document.getElementById('dutyTripView')) document.getElementById('dutyTripView').style.display = 'none'; // 👈 ซ่อนหน้าไปราชการ
     document.getElementById('exportView').style.display = 'block';
 
     // บน Navbar ซ่อนทุกปุ่ม เหลือแค่ กลับระบบส่งหนังสือ + ออกจากระบบ
     document.getElementById('manageStaffBtn').style.display = 'none';
+    if (document.getElementById('dutyTripBtn')) document.getElementById('dutyTripBtn').style.display = 'none'; // 👈 ซ่อนปุ่มไปราชการ
     document.getElementById('toggleExportModeBtn').style.display = 'none';
     document.getElementById('editDbBtn').style.display = 'none';
     document.getElementById('backToSarabanBtn').style.display = 'block';
@@ -2119,10 +2108,12 @@ function loadLogsFromFirebase(year) {
     document.getElementById('sarabanView').style.display = 'none';
     document.getElementById('staffView').style.display = 'none';
     document.getElementById('exportView').style.display = 'none';
+    if (document.getElementById('dutyTripView')) document.getElementById('dutyTripView').style.display = 'none'; // 👈 ซ่อนหน้าไปราชการ
     document.getElementById('dbManageView').style.display = 'block';
 
     // บน Navbar ซ่อนทุกปุ่ม เหลือแค่ กลับระบบส่งหนังสือ + ออกจากระบบ
     document.getElementById('manageStaffBtn').style.display = 'none';
+    if (document.getElementById('dutyTripBtn')) document.getElementById('dutyTripBtn').style.display = 'none'; // 👈 ซ่อนปุ่มไปราชการ
     document.getElementById('toggleExportModeBtn').style.display = 'none';
     document.getElementById('editDbBtn').style.display = 'none';
     document.getElementById('backToSarabanBtn').style.display = 'block';
@@ -2138,6 +2129,7 @@ function loadLogsFromFirebase(year) {
   let currentDbManageYear = currentYearBE;
   let currentDbManageSubMode = null; // null | 'delete' | 'editDept'
 
+  // ⚙️ เริ่มต้นหน้าจัดการฐานข้อมูล
   function initDbManageView() {
     const ySelect = document.getElementById('dbManageYearSelect');
     if (ySelect) {
@@ -2148,8 +2140,6 @@ function loadLogsFromFirebase(year) {
       ySelect.innerHTML = opts;
     }
     selectedBooksToDelete = [];
-    currentDbManageSubMode = null; // เริ่มต้นยังไม่เลือกโหมด
-    updateDbManageButtonUI();
     loadDbManageDataForYear(currentDbManageYear);
   }
 
@@ -2224,15 +2214,16 @@ function updateDbManageButtonUI() {
     renderDbManageTableRows(filtered);
   }
 
+  // 📋 เรนเดอร์ข้อมูลตารางจัดการฐานข้อมูล (ข้อมูลตรงช่อง + ปุ่มบน-ล่าง)
   function renderDbManageTableRows(rows) {
     const tbody = document.getElementById('dbManageTableBody');
     if (rows.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6" class="text-center p-4 text-muted">ไม่พบข้อมูลหนังสือ</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="5" class="text-center p-4 text-muted fw-bold">ไม่พบข้อมูลหนังสือ</td></tr>`;
       return;
     }
 
     let html = "";
-    rows.forEach((row, idx) => {
+    rows.forEach((row) => {
       const rawFileName = (row[2] || "").trim();
       const cleanNoExt = rawFileName.replace(/\.pdf$/i, "").trim();
       const numMatch = cleanNoExt.match(/^(\d+[-/]\d+)/);
@@ -2241,26 +2232,9 @@ function updateDbManageButtonUI() {
       let bookTitle = cleanNoExt;
       if (numMatch) bookTitle = bookTitle.substring(numMatch[1].length).trim();
       bookTitle = bookTitle.replace(/\[.*?\]/g, "").trim();
+      if (!bookTitle) bookTitle = cleanNoExt;
 
-      // สลับแสดง Checkbox หรือ ปุ่มแก้ไข หรือ ขีดว่างตามโหมดที่เลือก
-      let actionHTML = '<span class="text-muted small">-</span>';
-      if (currentDbManageSubMode === 'delete') {
-        const isChecked = selectedBooksToDelete.some(b => b.fileName === row[2]);
-        actionHTML = `
-          <div class="form-check d-flex justify-content-center m-0">
-            <input class="form-check-input border-danger" type="checkbox" style="width: 1.3rem; height: 1.3rem; cursor: pointer;"
-              ${isChecked ? 'checked' : ''} onchange="toggleSelectBookForDelete('${encodeURIComponent(row[2])}', this.checked)">
-          </div>
-        `;
-      } else if (currentDbManageSubMode === 'editDept') {
-        actionHTML = `
-          <button class="btn btn-sm btn-warning text-dark fw-bold shadow-sm py-0 px-2" onclick="openEditBookDeptFromDbManage('${encodeURIComponent(row[2])}')">
-            ✏️ แก้ไข
-          </button>
-        `;
-      }
-
-      let rawDate = row[0].split(/[T\s,]+/)[0];
+      let rawDate = (row[0] || "").split(/[T\s,]+/)[0];
       let dateDisplay = rawDate;
       if (rawDate.includes("-")) {
         const d = rawDate.split("-");
@@ -2268,16 +2242,29 @@ function updateDbManageButtonUI() {
           let y = parseInt(d[0]); if (y < 2500) y += 543;
           dateDisplay = `${parseInt(d[2])}/${parseInt(d[1])}/${y}`;
         }
+      } else if (rawDate.includes("/")) {
+        const d = rawDate.split("/");
+        if (d.length === 3) {
+          let y = parseInt(d[2]); if (y < 2500) y += 543;
+          dateDisplay = `${parseInt(d[0])}/${parseInt(d[1])}/${y}`;
+        }
       }
 
+      // 🔘 ปุ่มแก้ไข (บน) และปุ่มลบ (ล่าง) แบบเดียวกับ ไปราชการ
+      const actionHTML = `
+        <div class="d-flex flex-column align-items-center justify-content-center gap-1">
+          <button class="btn btn-sm btn-outline-warning text-dark py-0 px-2 fw-bold shadow-sm" style="font-size: 0.75rem; width: 32px;" onclick="openEditBookDeptFromDbManage('${encodeURIComponent(row[2])}')" title="แก้ไขกลุ่มงาน/ผู้รับ">✏️</button>
+          <button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold shadow-sm" style="font-size: 0.75rem; width: 32px;" onclick="deleteBookFromDbManage('${encodeURIComponent(row[2])}')" title="ลบหนังสือ">🗑️</button>
+        </div>
+      `;
+
       html += `
-        <tr class="align-middle">
-          <td class="text-center text-muted fw-bold">${idx + 1}</td>
-          <td class="text-center text-muted" style="font-size: 0.8rem;">${dateDisplay}</td>
-          <td class="text-center fw-bold text-success">${bookNumber}</td>
-          <td class="text-start text-dark fw-bold">${bookTitle}</td>
-          <td class="text-start">${row[3] || "-"}</td>
-          <td class="text-center">${actionHTML}</td>
+        <tr class="align-middle fw-bold">
+          <td class="text-center text-muted fw-bold" style="font-size: 0.82rem; white-space: nowrap;">${dateDisplay}</td>
+          <td class="text-center fw-bold text-success" style="white-space: nowrap;">${bookNumber}</td>
+          <td class="text-start text-dark fw-bold" style="word-break: break-word;">${bookTitle}</td>
+          <td class="text-start" style="font-size: 0.85rem;">${row[3] || "-"}</td>
+          <td class="text-center" style="width: 1%; white-space: nowrap;">${actionHTML}</td>
         </tr>
       `;
     });
@@ -2303,15 +2290,17 @@ function updateDbManageButtonUI() {
     openEditBookDeptModal(encodedFileName);
   }
 
-  // ⬅️ สลับกลับหน้าระบบส่งหนังสือหลัก
+  /// ⬅️ สลับกลับหน้าระบบส่งหนังสือหลัก (แสดงปุ่มไปราชการกลับมา)
   function switchToSarabanView() {
     document.getElementById('staffView').style.display = 'none';
     document.getElementById('exportView').style.display = 'none';
     document.getElementById('dbManageView').style.display = 'none';
+    if (document.getElementById('dutyTripView')) document.getElementById('dutyTripView').style.display = 'none';
     document.getElementById('sarabanView').style.display = 'block';
 
     document.getElementById('backToSarabanBtn').style.display = 'none';
     document.getElementById('manageStaffBtn').style.display = 'block';
+    if (document.getElementById('dutyTripBtn')) document.getElementById('dutyTripBtn').style.display = 'block'; // 👈 แสดงปุ่มไปราชการ
     
     // คืนค่าปุ่มเฉพาะ Admin
     const isAdmin = (currentUser.role === 'Admin');
@@ -2319,8 +2308,6 @@ function updateDbManageButtonUI() {
     document.getElementById('toggleExportModeBtn').style.display = isAdmin ? 'block' : 'none';
     
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    if (document.getElementById('dutyTripView')) document.getElementById('dutyTripView').style.display = 'none';
-document.getElementById('dutyTripBtn').style.display = 'block';
   }
 
   function filterStaffDirectory() {
@@ -3434,7 +3421,6 @@ document.getElementById('dutyTripBtn').style.display = 'block';
             <input class="form-check-input border-success export-row-check" type="checkbox" style="width: 1.25rem; height: 1.25rem; cursor: pointer;"
               ${isChecked ? 'checked' : ''} onchange="toggleExportItem('${encodeURIComponent(row[2])}', this.checked)">
           </td>
-          <td class="text-center text-muted fw-bold">${idx + 1}</td>
           <td class="text-center text-muted" style="font-size: 0.8rem;">${dateDisplay}</td>
           <td class="text-center fw-bold text-success">${details.bookNumber}</td>
           <td class="text-start text-dark fw-bold">${details.title}</td>
@@ -4252,15 +4238,27 @@ function copyDeepLink(fileUrl, encodedTitle) {
     }
   });
 
+// 🗑️ สั่งลบหนังสือรายฉบับจากหน้าจัดการฐานข้อมูล
+  function deleteBookFromDbManage(encodedFileName) {
+    const fileName = decodeURIComponent(encodedFileName);
+    selectedBooksToDelete = [{ fileName: fileName }];
+    openDeleteConfirmModal();
+  }
 
-
+  // 🗑️ ยืนยันการลบหนังสือ (ปรับให้รีโหลดหน้าจัดการฐานข้อมูลทันที)
   async function executeDelete() {
     const confirmBtn = document.getElementById('confirmDeleteBtn');
     confirmBtn.disabled = true;
     confirmBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> กำลังลบ...`;
 
-    const selectedYear = document.getElementById('yearSelect').value;
-    const targetYear = (selectedYear === "all") ? currentScrollYear.toString() : selectedYear;
+    const isDbManage = (document.getElementById('dbManageView') && document.getElementById('dbManageView').style.display === 'block');
+    let targetYear;
+    if (isDbManage) {
+      targetYear = currentDbManageYear.toString();
+    } else {
+      const selectedYear = document.getElementById('yearSelect').value;
+      targetYear = (selectedYear === "all") ? currentScrollYear.toString() : selectedYear;
+    }
     const notifyLine = document.getElementById('deleteNotifyLineCheck').checked;
 
     try {
@@ -4293,7 +4291,12 @@ function copyDeepLink(fileUrl, encodedTitle) {
       selectedBooksToDelete = [];
       updateEditDbButtonUI();
       dataCache = {};
-      resetAndReloadLogs();
+
+      if (isDbManage) {
+        loadDbManageDataForYear(currentDbManageYear);
+      } else {
+        resetAndReloadLogs();
+      }
     }
   }
 

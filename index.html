@@ -3352,14 +3352,13 @@ function updateDbManageButtonUI() {
   
 
 // --- 13. ระบบ In-App Deep Linking & คัดลอกลิงก์เปิดอ่านในแอป ---
-  function copyDeepLink(fileUrl, encodedTitle) {
-    const deepUrl = `${window.location.origin}${window.location.pathname}?view=${encodeURIComponent(fileUrl)}&title=${encodedTitle}`;
-    navigator.clipboard.writeText(deepUrl).then(() => {
-      alert("✅ คัดลอกลิงก์เปิดเอกสารในแอปแล้ว! สามารถส่งแชร์ทาง LINE เพื่อเปิดอ่านได้ทันที");
+function copyDeepLink(fileUrl, encodedTitle) {
+    navigator.clipboard.writeText(fileUrl).then(() => {
+      alert("✅ คัดลอกลิงก์ Google Drive แล้ว!");
     }).catch(() => {
-      const t = document.createElement("textarea"); t.value = deepUrl; document.body.appendChild(t); t.select();
+      const t = document.createElement("textarea"); t.value = fileUrl; document.body.appendChild(t); t.select();
       document.execCommand("copy"); document.body.removeChild(t);
-      alert("✅ คัดลอกลิงก์เปิดเอกสารในแอปแล้ว!");
+      alert("✅ คัดลอกลิงก์ Google Drive แล้ว!");
     });
   }
 

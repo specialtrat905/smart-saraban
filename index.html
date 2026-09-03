@@ -442,6 +442,10 @@
         <button id="manageStaffBtn" class="btn btn-sm btn-light text-dark shadow-sm fw-bold" style="display:none;" onclick="switchToStaffView()">
           👥 รายชื่อบุคลากร
         </button>
+        <!-- 🚗 ปุ่มสลับไปหน้ารายการไปราชการ (แสดงทั้ง Admin และ User) -->
+        <button id="dutyTripBtn" class="btn btn-sm btn-light text-dark shadow-sm fw-bold" style="display:none;" onclick="switchToDutyTripView()">
+          🚗 ไปราชการ
+        </button>
         <!-- 📤 ปุ่มสลับไปหน้าส่งออกรายการหนังสือ -->
         <button id="toggleExportModeBtn" class="btn btn-sm btn-light text-success shadow-sm fw-bold" style="display:none;" onclick="switchToExportView()">
           📤 ส่งออกรายการ
@@ -610,6 +614,54 @@
         </table>
       </div>
     </div> <!-- ปิด staffView -->
+
+<!-- 🚗 ส่วนที่: หน้าข้อมูลการไปราชการเต็มจอ (Duty Trip View) -->
+    <div id="dutyTripView" style="display:none;" class="card card-border-green p-3 p-md-4 shadow-sm mb-5">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 pb-2 border-bottom">
+        <div>
+          <h4 class="fw-bold text-success mb-0">🚗 บันทึกประวัติและแผนการไปราชการ ศกศ.ตราด</h4>
+          <small class="text-muted">รายการทั้งหมด <span id="dutyTripTotalCount" class="fw-bold text-dark">0</span> รายการ</small>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+          <!-- ➕ ปุ่มเพิ่มรายการไปราชการใหม่ (เฉพาะ Admin) -->
+          <button id="adminAddDutyTripBtn" class="btn btn-sm btn-success fw-bold shadow-sm" style="display:none;" onclick="openAddDutyTripForm()">
+            ➕ เพิ่มรายการไปราชการ
+          </button>
+        </div>
+      </div>
+
+      <!-- 🔍 แถบตัวกรองและค้นหา -->
+      <div class="row g-2 mb-3">
+        <div class="col-12 col-md-7">
+          <div class="input-group shadow-sm">
+            <span class="input-group-text bg-white">🔍</span>
+            <input type="text" id="dutyTripSearchInput" class="form-control" placeholder="พิมพ์ค้นหา ชื่องาน, วันที่, สถานที่ หรือชื่อผู้ไปราชการ..." oninput="filterDutyTripList()">
+          </div>
+        </div>
+        <div class="col-12 col-md-5">
+          <select id="dutyTripStaffFilter" class="form-select shadow-sm border-success" onchange="filterDutyTripList()">
+            <option value="">👤 เลือกดูเฉพาะรายชื่อบุคลากร (ทั้งหมด)...</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 📋 ตารางแสดงรายการไปราชการ -->
+      <div class="table-responsive border rounded shadow-sm bg-white" style="max-height: 72vh;">
+        <table class="table table-hover table-bordered align-middle mb-0" style="font-size: 0.88rem;">
+          <thead class="table-light text-center sticky-top shadow-sm" style="z-index: 5;">
+            <tr>
+              <th style="width: 60px;">ลำดับ</th>
+              <th style="min-width: 200px;">ราชการที่ปฏิบัติ</th>
+              <th style="min-width: 140px;">วันที่</th>
+              <th style="min-width: 180px;">สถานที่</th>
+              <th style="min-width: 220px;">ผู้ไปราชการ</th>
+              <th id="dutyTripActionColHeader" style="width: 80px;">จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="dutyTripTableBody"></tbody>
+        </table>
+      </div>
+    </div> <!-- ปิด dutyTripView -->
 
     <!-- 📤 ส่วนที่ 3: หน้าส่งออกรายการหนังสือแบบเต็มจอ (Export View) -->
     <div id="exportView" style="display:none;" class="card card-border-green p-3 p-md-4 shadow-sm mb-5">
@@ -1174,6 +1226,47 @@
         กำลังโหลดเวอร์ชัน...
       </span>
     </footer>
+    <!-- 📝 Modal เพิ่ม/แก้ไขข้อมูลการไปราชการ -->
+    <div class="modal fade" id="dutyTripFormModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+          <div class="modal-header bg-success text-white py-3">
+            <h5 id="dutyTripFormTitle" class="modal-title fw-bold mb-0">➕ เพิ่มรายการไปราชการ</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body p-4 bg-light">
+            <input type="hidden" id="dutyTripFormId" value="">
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label small fw-bold mb-1">1. ราชการที่ปฏิบัติ / ชื่องานโครงการ <span class="text-danger">*</span></label>
+                <textarea id="formDutyTask" class="form-control" rows="2" placeholder="ระบุราชการที่ปฏิบัติ เช่น ศึกษาดูงานการจัดการเรียนการสอน..."></textarea>
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label small fw-bold mb-1">2. วันที่ <span class="text-danger">*</span></label>
+                <input type="text" id="formDutyDate" class="form-control" placeholder="เช่น 8 – 10 พฤษภาคม 2569">
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label small fw-bold mb-1">3. สถานที่ <span class="text-danger">*</span></label>
+                <input type="text" id="formDutyLocation" class="form-control" placeholder="เช่น ศูนย์การศึกษาพิเศษ เขตการศึกษา ๑๐ หรือ โรงแรม...">
+              </div>
+              <div class="col-12">
+                <label class="form-label small fw-bold mb-1">4. ผู้ไปราชการ (เลือกรายชื่อ หรือพิมพ์เอง) <span class="text-danger">*</span></label>
+                <div class="input-group mb-2">
+                  <input type="text" id="formDutyStaffInput" list="staffList" class="form-control form-control-sm" placeholder="เลือกหรือพิมพ์ชื่อบุคลากร..." onkeydown="if(event.key==='Enter'){event.preventDefault();addDutyTripStaffTag();}">
+                  <button class="btn btn-sm btn-success" type="button" onclick="addDutyTripStaffTag()">➕ เพิ่มชื่อ</button>
+                </div>
+                <div id="dutyTripStaffTagsContainer" class="d-flex flex-wrap gap-1 mb-2 p-2 bg-white rounded border" style="min-height: 42px;"></div>
+                <textarea id="formDutyStaffManual" class="form-control form-control-sm" rows="2" placeholder="หรือระบุรายชื่อ/คณะเดินทางเพิ่มเติมที่นี่ (แยกบรรทัดละคน หรือใส่ชื่อหน่วยบริการ)..."></textarea>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer bg-white">
+            <button type="button" class="btn btn-secondary px-3" data-bs-dismiss="modal">ยกเลิก</button>
+            <button type="button" id="saveDutyTripBtn" class="btn btn-success px-4 fw-bold shadow-sm" onclick="submitDutyTripForm()">💾 บันทึกข้อมูล</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div> <!-- ปิด container -->
   <!-- 📑 Modal แสดงตารางสรุปข้อมูลหนังสือที่เลือกส่งออก -->
     <div class="modal fade" id="exportSummaryModal" tabindex="-1" aria-hidden="true">
@@ -1312,7 +1405,261 @@ function loadLogsFromFirebase(year) {
         filterStaffDirectory();
     } catch (e) { console.error("โหลดรายชื่อไม่สำเร็จ", e); }
   }
+// ==========================================
+  // 🚗 ระบบจัดการข้อมูลการไปราชการ (Duty Trip Module)
+  // ==========================================
+  let fullDutyTripData = [];
+  let formDutyStaffTags = [];
+  let dutyTripModalInstance = null;
 
+  // 1. สลับหน้ามาดูรายการไปราชการ
+  function switchToDutyTripView() {
+    document.getElementById('sarabanView').style.display = 'none';
+    document.getElementById('staffView').style.display = 'none';
+    document.getElementById('exportView').style.display = 'none';
+    document.getElementById('dbManageView').style.display = 'none';
+    document.getElementById('dutyTripView').style.display = 'block';
+
+    document.getElementById('manageStaffBtn').style.display = 'none';
+    document.getElementById('dutyTripBtn').style.display = 'none';
+    document.getElementById('toggleExportModeBtn').style.display = 'none';
+    document.getElementById('editDbBtn').style.display = 'none';
+    document.getElementById('backToSarabanBtn').style.display = 'block';
+
+    const isAdmin = (currentUser.role === 'Admin');
+    const addBtn = document.getElementById('adminAddDutyTripBtn');
+    if (addBtn) addBtn.style.display = isAdmin ? 'inline-block' : 'none';
+
+    populateDutyTripStaffDropdown();
+    loadDutyTripList();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // 2. เติมตัวเลือกรายชื่อบุคลากรลงในช่องกรอง
+  function populateDutyTripStaffDropdown() {
+    const sel = document.getElementById('dutyTripStaffFilter');
+    if (!sel || fullStaffData.length === 0) return;
+    sel.innerHTML = `<option value="">👤 เลือกดูเฉพาะรายชื่อบุคลากร (ทั้งหมด)...</option>` +
+      fullStaffData.map(s => `<option value="${s.name}">${s.name} (${s.position})</option>`).join('');
+  }
+
+  // 3. โหลดข้อมูลรายการไปราชการ
+  async function loadDutyTripList() {
+    const tbody = document.getElementById('dutyTripTableBody');
+    tbody.innerHTML = `<tr><td colspan="6" class="text-center p-4"><div class="spinner-border spinner-border-sm text-success me-2"></div> กำลังโหลดข้อมูลไปราชการ...</td></tr>`;
+
+    try {
+      const res = await fetch(`${SCRIPT_URL}?type=duty_trip&t=${new Date().getTime()}`);
+      fullDutyTripData = await res.json();
+      filterDutyTripList();
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center p-4 text-danger">⚠️ โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง</td></tr>`;
+    }
+  }
+
+  // 4. ค้นหาและกรองรายการ
+  function filterDutyTripList() {
+    const search = document.getElementById('dutyTripSearchInput') ? document.getElementById('dutyTripSearchInput').value.toLowerCase().trim() : "";
+    const staffFilter = document.getElementById('dutyTripStaffFilter') ? document.getElementById('dutyTripStaffFilter').value.trim() : "";
+
+    const filtered = fullDutyTripData.filter(d => {
+      const matchSearch = (search === "") ? true : (
+        d.task.toLowerCase().includes(search) ||
+        d.date.toLowerCase().includes(search) ||
+        d.location.toLowerCase().includes(search) ||
+        d.staff.toLowerCase().includes(search)
+      );
+
+      const matchStaff = (staffFilter === "") ? true : d.staff.includes(staffFilter);
+      return matchSearch && matchStaff;
+    });
+
+    renderDutyTripTable(filtered);
+  }
+
+  // 5. แสดงผลลงในตาราง
+  function renderDutyTripTable(list) {
+    const tbody = document.getElementById('dutyTripTableBody');
+    const totalElem = document.getElementById('dutyTripTotalCount');
+    const thAction = document.getElementById('dutyTripActionColHeader');
+    if (totalElem) totalElem.innerText = list.length;
+
+    const isAdmin = (currentUser.role === 'Admin');
+    if (thAction) thAction.style.display = isAdmin ? 'table-cell' : 'none';
+
+    if (list.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="${isAdmin ? 6 : 5}" class="text-center text-muted p-4">ไม่พบข้อมูลการไปราชการตามที่ค้นหา</td></tr>`;
+      return;
+    }
+
+    let html = "";
+    list.forEach((d, idx) => {
+      // แปลงชื่อผู้ไปราชการให้แสดงผลเป็นบรรทัดหรือ Badge สวยงาม
+      const staffLines = d.staff.split(/\r?\n/).filter(Boolean);
+      const staffDisplay = staffLines.map(s => `<div class="mb-1"><span class="badge bg-light text-dark border shadow-sm" style="font-size:0.75rem;">👤 ${s.trim()}</span></div>`).join('');
+
+      let actionHTML = "";
+      if (isAdmin) {
+        actionHTML = `
+          <td class="text-center">
+            <div class="d-flex justify-content-center gap-1">
+              <button class="btn btn-sm btn-outline-warning text-dark py-0 px-2 fw-bold shadow-sm" onclick="openEditDutyTripForm('${d.id}')">✏️</button>
+              <button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold shadow-sm" onclick="deleteDutyTripItem('${d.id}')">🗑️</button>
+            </div>
+          </td>
+        `;
+      }
+
+      html += `
+        <tr class="align-middle">
+          <td class="text-center text-muted fw-bold">${idx + 1}</td>
+          <td class="text-start text-dark fw-bold">${d.task}</td>
+          <td class="text-center text-muted" style="font-size: 0.82rem;">${d.date}</td>
+          <td class="text-start">${d.location}</td>
+          <td class="text-start">${staffDisplay}</td>
+          ${actionHTML}
+        </tr>
+      `;
+    });
+
+    tbody.innerHTML = html;
+  }
+
+  // 6. ฟอร์มเพิ่ม/แก้ไข (Admin)
+  function openAddDutyTripForm() {
+    document.getElementById('dutyTripFormTitle').innerText = "➕ เพิ่มรายการไปราชการ";
+    document.getElementById('dutyTripFormId').value = "";
+    document.getElementById('formDutyTask').value = "";
+    document.getElementById('formDutyDate').value = "";
+    document.getElementById('formDutyLocation').value = "";
+    document.getElementById('formDutyStaffManual').value = "";
+    formDutyStaffTags = [];
+    renderDutyTripStaffTags();
+
+    if (!dutyTripModalInstance) {
+      dutyTripModalInstance = new bootstrap.Modal(document.getElementById('dutyTripFormModal'));
+    }
+    dutyTripModalInstance.show();
+  }
+
+  function openEditDutyTripForm(id) {
+    const item = fullDutyTripData.find(d => d.id.toString() === id.toString());
+    if (!item) return alert("⚠️ ไม่พบข้อมูล");
+
+    document.getElementById('dutyTripFormTitle').innerText = "✏️ แก้ไขรายการไปราชการ";
+    document.getElementById('dutyTripFormId').value = item.id;
+    document.getElementById('formDutyTask').value = item.task;
+    document.getElementById('formDutyDate').value = item.date;
+    document.getElementById('formDutyLocation').value = item.location;
+
+    // แยกแท็กชื่อบุคลากร
+    formDutyStaffTags = item.staff.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+    document.getElementById('formDutyStaffManual').value = "";
+    renderDutyTripStaffTags();
+
+    if (!dutyTripModalInstance) {
+      dutyTripModalInstance = new bootstrap.Modal(document.getElementById('dutyTripFormModal'));
+    }
+    dutyTripModalInstance.show();
+  }
+
+  function addDutyTripStaffTag() {
+    const input = document.getElementById('formDutyStaffInput');
+    const name = input.value.trim();
+    if (name && !formDutyStaffTags.includes(name)) {
+      formDutyStaffTags.push(name);
+      input.value = "";
+      renderDutyTripStaffTags();
+    }
+  }
+
+  function removeDutyTripStaffTag(name) {
+    formDutyStaffTags = formDutyStaffTags.filter(n => n !== name);
+    renderDutyTripStaffTags();
+  }
+
+  function renderDutyTripStaffTags() {
+    const box = document.getElementById('dutyTripStaffTagsContainer');
+    box.innerHTML = formDutyStaffTags.map(name => `
+      <span class="badge bg-secondary p-2 d-flex align-items-center gap-1" style="font-size: 0.75rem;">
+        ${name}
+        <span role="button" class="text-white ms-1 fw-bold cursor-pointer" onclick="removeDutyTripStaffTag('${name}')">✕</span>
+      </span>
+    `).join('');
+  }
+
+  async function submitDutyTripForm() {
+    const id = document.getElementById('dutyTripFormId').value.trim();
+    const task = document.getElementById('formDutyTask').value.trim();
+    const date = document.getElementById('formDutyDate').value.trim();
+    const location = document.getElementById('formDutyLocation').value.trim();
+    const manualStaff = document.getElementById('formDutyStaffManual').value.trim();
+
+    if (!task || !date || !location) {
+      return alert("⚠️ กรุณากรอก ราชการที่ปฏิบัติ, วันที่ และสถานที่ ให้ครบถ้วน");
+    }
+
+    let combinedStaff = [...formDutyStaffTags];
+    if (manualStaff) {
+      const manualLines = manualStaff.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+      combinedStaff = Array.from(new Set([...combinedStaff, ...manualLines]));
+    }
+
+    if (combinedStaff.length === 0) {
+      return alert("⚠️ กรุณาระบุผู้ไปราชการอย่างน้อย 1 ท่าน");
+    }
+
+    const payload = {
+      action: id ? "updateDutyTrip" : "addDutyTrip",
+      id: id,
+      task: task,
+      date: date,
+      location: location,
+      staff: combinedStaff.join("\n")
+    };
+
+    const btn = document.getElementById('saveDutyTripBtn');
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> กำลังบันทึก...`;
+
+    try {
+      const res = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      const result = await res.json();
+      if (result.success) {
+        if (dutyTripModalInstance) dutyTripModalInstance.hide();
+        alert(id ? "✅ อัปเดตข้อมูลไปราชการเรียบร้อยแล้ว" : "✅ เพิ่มรายการไปราชการใหม่เรียบร้อยแล้ว");
+        loadDutyTripList();
+      } else {
+        alert("⚠️ เกิดข้อผิดพลาด: " + (result.message || "ไม่สามารถบันทึกข้อมูลได้"));
+      }
+    } catch (e) {
+      alert("❌ เชื่อมต่อเซิร์ฟเวอร์ล้มเหลว กรุณาลองใหม่อีกครั้ง");
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `💾 บันทึกข้อมูล`;
+    }
+  }
+
+  async function deleteDutyTripItem(id) {
+    if (!confirm("คุณต้องการลบรายการไปราชการนี้ใช่หรือไม่?")) return;
+
+    try {
+      const res = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: "deleteDutyTrip", id: id })
+      });
+      const result = await res.json();
+      if (result.success) {
+        alert("✅ ลบรายการเรียบร้อยแล้ว");
+        loadDutyTripList();
+      }
+    } catch (e) {
+      alert("❌ เชื่อมต่อเซิร์ฟเวอร์ล้มเหลว");
+    }
+  }
   // --- 12. ระบบควบคุมหน้าตารางทะเบียนบุคลากรเต็มจอ ---
   // 👥 สลับไปหน้าบุคลากร
   // 👥 สลับไปหน้าบุคลากร
@@ -1560,6 +1907,8 @@ function updateDbManageButtonUI() {
     document.getElementById('toggleExportModeBtn').style.display = isAdmin ? 'block' : 'none';
     
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (document.getElementById('dutyTripView')) document.getElementById('dutyTripView').style.display = 'none';
+document.getElementById('dutyTripBtn').style.display = 'block';
   }
 
   function filterStaffDirectory() {
@@ -2219,7 +2568,7 @@ function updateDbManageButtonUI() {
         // แสดงปุ่มรายชื่อบุคลากรให้ทุกสิทธิ์
         document.getElementById('manageStaffBtn').style.display = 'block';
         document.getElementById('manageStaffBtn').innerText = (currentUser.role === 'Admin') ? "👥 จัดการบุคลากร" : "👥 รายชื่อบุคลากร";
-
+        document.getElementById('dutyTripBtn').style.display = 'block';
         if (currentUser.role === 'Admin') {
             document.getElementById('adminView').style.display = 'block';
             document.getElementById('deptFilterContainer').style.display = 'block';
@@ -2906,7 +3255,7 @@ function updateDbManageButtonUI() {
         document.getElementById('logoutBtn').style.display = 'block';
         document.getElementById('manageStaffBtn').style.display = 'block';
         document.getElementById('manageStaffBtn').innerText = (currentUser.role === 'Admin') ? "👥 จัดการบุคลากร" : "👥 รายชื่อบุคลากร";
-
+        document.getElementById('dutyTripBtn').style.display = 'block';
         if (currentUser.role === 'Admin') {
             document.getElementById('editDbBtn').style.display = 'block';
             document.getElementById('adminView').style.display = 'block';

@@ -482,9 +482,20 @@
 }
 /* ✨ เอฟเฟกต์ Transition เปลี่ยนหน้าจอแบบเรียบหรู นุ่มนวล ไม่เวียนหัว (Subtle & Sleek Fade-In) */
     .view-transition {
-      animation: smoothViewEnter 0.26s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      will-change: opacity, transform;
-    }
+  animation: smoothViewEnter 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  will-change: opacity, transform;
+}
+
+@keyframes smoothViewEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
     @keyframes smoothViewEnter {
       0% {
@@ -496,6 +507,104 @@
         transform: translateY(0);
       }
     }
+    /* 📱 การจัดเลย์เอาต์ Navbar แยก 2 ชั้นเฉพาะบนมือถือ (<= 768px) */
+@media (max-width: 768px) {
+  .nav-container-custom {
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 0 !important;
+    gap: 6px 0 !important;
+  }
+  .nav-top-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+  }
+  .nav-bottom-row {
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+    gap: 4px !important;
+  }
+  /* 4 ปุ่มหลัก: ไอคอนด้านบน ข้อความด้านล่าง สูงและกว้างเท่ากันเป๊ะ */
+  .btn-nav-action {
+    display: inline-flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    height: 52px !important;
+    min-height: 52px !important;
+    padding: 3px 2px !important;
+    border-radius: 8px !important;
+    background-color: #ffffff !important;
+    color: #004d40 !important;
+    border: 1.5px solid #b2dfdb !important;
+    font-weight: 600 !important;
+  }
+  .btn-nav-action .nav-btn-icon {
+    font-size: 1.15rem !important;
+    line-height: 1 !important;
+    margin-bottom: 2px !important;
+    display: block !important;
+  }
+  .btn-nav-action .nav-btn-text {
+    font-size: 0.65rem !important;
+    line-height: 1.15 !important;
+    text-align: center !important;
+    white-space: normal !important;
+    display: -webkit-box !important;
+    line-clamp: 2 !important;
+-webkit-line-clamp: 2 !important;
+-webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+  }
+  /* ปุ่มกลับระบบส่งหนังสือ ชิดขวาสุดใต้ปุ่มปิดแอป */
+  #backToSarabanBtn {
+    margin-left: auto !important;
+    font-size: 0.8rem !important;
+    padding: 6px 14px !important;
+    border-radius: 8px !important;
+  }
+}
+
+/* 💻 บนคอมพิวเตอร์ (หน้าจอใหญ่ >= 769px) แสดงแถวเดียวปกติ */
+@media (min-width: 769px) {
+  .nav-container-custom {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+  }
+  .nav-top-row { display: flex; align-items: center; width: auto !important; }
+  .nav-bottom-row { display: flex; align-items: center; gap: 6px; width: auto !important; margin-left: auto; }
+  .btn-nav-action {
+    display: inline-flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 5px !important;
+    padding: 5px 10px !important;
+    font-size: 0.84rem !important;
+    border-radius: 6px !important;
+    background-color: #ffffff !important;
+    color: #004d40 !important;
+    border: 1.5px solid #b2dfdb !important;
+    font-weight: 600 !important;
+  }
+  .btn-nav-action .nav-btn-icon { font-size: 1rem !important; }
+  .btn-nav-action .nav-btn-text { font-size: 0.84rem !important; white-space: nowrap !important; }
+}
+
+.btn-nav-refresh {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.45) !important;
+  font-weight: bold;
+}
+.btn-nav-refresh:hover { background-color: rgba(255, 255, 255, 0.35) !important; color: #ffffff !important; }
   </style>
   <!-- ⚡ Firebase App & Realtime Database SDK (Compat Version) -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -537,39 +646,52 @@
 
 <div id="mainApp" class="main-app">
   <nav class="navbar nav-custom p-2 px-3 shadow-sm sticky-top">
-    <div class="container-fluid">
+  <div class="container-fluid nav-container-custom">
+
+    <!-- 📌 แถวที่ 1: โลโก้ + ชื่อ Admin (ซ้าย) | ปุ่มรีเฟรช + ปุ่มปิดแอป (ขวาบนสุด) -->
+    <div class="nav-top-row">
       <div class="d-flex align-items-center gap-2">
-        <img src="./logo2.png" alt="Logo ศกศ.ตราด" style="height: 34px; width: auto; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));">
+        <img src="./logo2.png" alt="Logo ศกศ.ตราด" class="navbar-logo-glow">
         <div id="userNavContainer" class="d-flex align-items-center gap-2"></div>
       </div>
-      <div class="d-flex gap-2 align-items-center">
-        <!-- 👥 ปุ่มสลับไปหน้ารายชื่อบุคลากร (แสดงทั้ง Admin และ User) -->
-        <button id="manageStaffBtn" class="btn btn-sm btn-light text-dark shadow-sm fw-bold" style="display:none;" onclick="switchToStaffView()">
-          👥 รายชื่อบุคลากร
+
+      <div class="d-flex align-items-center gap-1">
+        <button id="refreshBtn" class="btn btn-sm btn-nav-refresh shadow-sm fw-bold px-2 py-1" onclick="refreshApp()" title="รีเฟรชหน้าเว็บ">
+          🔄 <span class="d-none d-md-inline" style="font-size: 0.8rem;">รีเฟรช</span>
         </button>
-        <!-- 🚗 ปุ่มสลับไปหน้ารายการไปราชการ (แสดงทั้ง Admin และ User) -->
-        <button id="dutyTripBtn" class="btn btn-sm btn-light text-dark shadow-sm fw-bold" style="display:none;" onclick="switchToDutyTripView()">
-          🚗 ไปราชการ
-        </button>
-        <!-- 📤 ปุ่มสลับไปหน้าส่งออกรายการหนังสือ -->
-        <button id="toggleExportModeBtn" class="btn btn-sm btn-light text-success shadow-sm fw-bold" style="display:none;" onclick="switchToExportView()">
-          📤 ส่งออกรายการ
-        </button>
-        <!-- ⬅️ ปุ่มย้อนกลับหน้าระบบสารบรรณ -->
-        <button id="backToSarabanBtn" class="btn btn-sm btn-light text-dark shadow-sm fw-bold" style="display:none;" onclick="switchToSarabanView()">
-          ⬅️ กลับระบบส่งหนังสือ
-        </button>
-        <!-- ⚙️ ปุ่มแก้ไขฐานข้อมูล (เฉพาะ Admin) -->
-        <button id="editDbBtn" class="btn btn-sm btn-nav-edit shadow-sm" style="display:none;" onclick="handleEditDbBtnClick()">
-          ⚙️ แก้ไขฐานข้อมูล
-        </button>
-        <!-- 🚪 ปุ่มออกจากระบบ (บนคอม) / ปุ่มปิดแอป (บนมือถือ) -->
-        <button id="logoutBtn" class="btn btn-sm btn-nav-logout shadow-sm" style="display:none;">
+        <button id="logoutBtn" class="btn btn-sm btn-nav-logout shadow-sm fw-bold px-2 py-1" style="display:none;" title="ปิดแอป / ออกจากระบบ">
           ออกจากระบบ
         </button>
       </div>
     </div>
-  </nav>
+
+    <!-- 📌 แถวที่ 2: 4 ปุ่มหลัก (สีเดียวกัน ไอคอนบน ข้อความล่าง) หรือปุ่มย้อนกลับชิดขวา -->
+    <div id="navMainButtons" class="nav-bottom-row">
+      <button id="manageStaffBtn" class="btn btn-sm btn-nav-action shadow-sm fw-bold" style="display:none;" onclick="switchToStaffView()">
+        <span class="nav-btn-icon">👥</span>
+        <span class="nav-btn-text">จัดการบุคลากร</span>
+      </button>
+      <button id="dutyTripBtn" class="btn btn-sm btn-nav-action shadow-sm fw-bold" style="display:none;" onclick="switchToDutyTripView()">
+        <span class="nav-btn-icon">🚗</span>
+        <span class="nav-btn-text">ไปราชการ</span>
+      </button>
+      <button id="toggleExportModeBtn" class="btn btn-sm btn-nav-action shadow-sm fw-bold" style="display:none;" onclick="switchToExportView()">
+        <span class="nav-btn-icon">📤</span>
+        <span class="nav-btn-text">ส่งออกรายการ</span>
+      </button>
+      <button id="editDbBtn" class="btn btn-sm btn-nav-action shadow-sm fw-bold" style="display:none;" onclick="handleEditDbBtnClick()">
+        <span class="nav-btn-icon">⚙️</span>
+        <span class="nav-btn-text">แก้ไขฐานข้อมูล</span>
+      </button>
+
+      <!-- ปุ่มกลับระบบส่งหนังสือ (ชิดขวาสุดบนมือถือ) -->
+      <button id="backToSarabanBtn" class="btn btn-sm btn-warning text-dark shadow-sm fw-bold" style="display:none;" onclick="switchToSarabanView()">
+        ⬅️ กลับระบบส่งหนังสือ
+      </button>
+    </div>
+
+  </div>
+</nav>
 
   <div class="container mt-4">
     <!-- 📄 ส่วนที่ 1: หน้าระบบสารบรรณ (เปิดเริ่มต้น) -->
@@ -3124,8 +3246,10 @@ function updateDbManageButtonUI() {
         document.getElementById('logoutBtn').style.display = 'block'; 
         setupExitButton(); // 👈 เพิ่มบรรทัดนี้เพื่อปรับข้อความปุ่มตามอุปกรณ์
         // แสดงปุ่มรายชื่อบุคลากรให้ทุกสิทธิ์
-        document.getElementById('manageStaffBtn').style.display = 'block';
-        document.getElementById('manageStaffBtn').innerText = (currentUser.role === 'Admin') ? "👥 จัดการบุคลากร" : "👥 รายชื่อบุคลากร";
+        const staffLabel = (currentUser.role === 'Admin') ? "จัดการบุคลากร" : "รายชื่อบุคลากร";
+const staffBtn = document.getElementById('manageStaffBtn');
+staffBtn.style.display = 'inline-flex';
+staffBtn.innerHTML = `<span class="nav-btn-icon">👥</span><span class="nav-btn-text">${staffLabel}</span>`;
         document.getElementById('dutyTripBtn').style.display = 'block';
         if (currentUser.role === 'Admin') {
             document.getElementById('adminView').style.display = 'block';
@@ -3267,6 +3391,12 @@ function updateDbManageButtonUI() {
         }
       }, 300);
     }, 450);
+  }
+
+function refreshApp() {
+    const btn = document.getElementById('refreshBtn');
+    if (btn) btn.innerHTML = '🔄 <span class="spinner-border spinner-border-sm" role="status"></span>';
+    window.location.reload();
   }
 
   // 🔄 ฟังก์ชันสลับปุ่มระหว่าง "ออกจากระบบ" (บนคอม) กับ "ปิดแอป" (บนมือถือ)
@@ -3810,8 +3940,10 @@ function updateDbManageButtonUI() {
         localStorage.setItem('sarabanUser', JSON.stringify(currentUser));
 
         document.getElementById('logoutBtn').style.display = 'block';
-        document.getElementById('manageStaffBtn').style.display = 'block';
-        document.getElementById('manageStaffBtn').innerText = (currentUser.role === 'Admin') ? "👥 จัดการบุคลากร" : "👥 รายชื่อบุคลากร";
+        const staffLabel = (currentUser.role === 'Admin') ? "จัดการบุคลากร" : "รายชื่อบุคลากร";
+const staffBtn = document.getElementById('manageStaffBtn');
+staffBtn.style.display = 'inline-flex';
+staffBtn.innerHTML = `<span class="nav-btn-icon">👥</span><span class="nav-btn-text">${staffLabel}</span>`;
         document.getElementById('dutyTripBtn').style.display = 'block';
         if (currentUser.role === 'Admin') {
             document.getElementById('editDbBtn').style.display = 'block';

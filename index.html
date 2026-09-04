@@ -1568,7 +1568,30 @@ function loadLogsFromFirebase(year) {
       groupTitle: groupTitle
     };
   }
+// 🔢 ฟังก์ชันแปลงข้อความวันที่เป็นค่าตัวเลขเพื่อใช้เรียงลำดับจากล่าสุดไปเก่าสุด
+  function getDutyTripSortValue(dateStr) {
+    if (!dateStr) return 0;
+    let clean = toArabicNums(dateStr).trim().replace(/พ\.ศ\.?/g, '').trim();
 
+    // 1. ดึงปี พ.ศ. (4 หลัก)
+    const ym = clean.match(/25\d{2}/);
+    const year = ym ? parseInt(ym[0]) : 0;
+
+    // 2. ดึงลำดับเดือน (1 - 12)
+    let monthIdx = 0;
+    for (let i = 0; i < thaiMonthsListFull.length; i++) {
+      if (clean.includes(thaiMonthsListFull[i])) {
+        monthIdx = i + 1;
+        break;
+      }
+    }
+
+    // 3. ดึงตัวเลขวันแรกที่พบ (1 - 31)
+    const dm = clean.match(/\d{1,2}/);
+    const day = dm ? parseInt(dm[0]) : 0;
+
+    return (year * 10000) + (monthIdx * 100) + day;
+  }
   // 1. สลับหน้ามาดูรายการไปราชการ
   function switchToDutyTripView() {
     document.getElementById('sarabanView').style.display = 'none';
@@ -1695,6 +1718,14 @@ function loadLogsFromFirebase(year) {
       }
 
       return true;
+    });
+
+    // ⚡ เรียงลำดับข้อมูลจาก วันที่ล่าสุด -> วันที่เก่าสุด
+    filtered.sort((a, b) => {
+      const valA = getDutyTripSortValue(a.date);
+      const valB = getDutyTripSortValue(b.date);
+      if (valB !== valA) return valB - valA;
+      return (parseInt(b.id) || 0) - (parseInt(a.id) || 0);
     });
 
     renderDutyTripTable(filtered);

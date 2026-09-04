@@ -1618,25 +1618,58 @@ function loadLogsFromFirebase(year) {
     sel.innerHTML = opts;
   }
 
-  // 2. โหลดข้อมูลรายการไปราชการ
-  async function loadDutyTripList() {
-  const tbody = document.getElementById('dutyTripTableBody');
-  const isAdmin = (currentUser.role === 'Admin');
-  const cols = isAdmin ? 5 : 4;
+  // 3. โหลดข้อมูลรายการไปราชการผ่าน Firebase Realtime Database (เร็ว 0.01 วินาที)
+  let isDutyTripFirebaseListening = false;
 
-  tbody.innerHTML = `<tr><td colspan="${cols}" class="text-center p-4"><div class="spinner-border spinner-border-sm text-success me-2"></div> กำลังโหลดข้อมูลไปราชการ...</td></tr>`;
+  function loadDutyTripList() {
+    const tbody = document.getElementById('dutyTripTableBody');
+    const isAdmin = (currentUser.role === 'Admin');
+    const cols = isAdmin ? 5 : 4;
 
-  try {
-    const res = await fetch(`${SCRIPT_URL}?type=duty_trip&t=${new Date().getTime()}`);
-    const data = await res.json();
-    fullDutyTripData = Array.isArray(data) ? data : [];
-    populateDutyTripYearDropdown();
-    filterDutyTripList();
-  } catch (e) {
-    console.error("Duty Trip Error:", e);
-    tbody.innerHTML = `<tr><td colspan="${cols}" class="text-center p-4 text-danger fw-bold">⚠️ โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง</td></tr>`;
+    // หากเคยโหลดข้อมูลไว้ในเครื่องแล้ว ไม่ต้องโชว์ตัวหมุนโหลดให้เสียจังหวะ
+    if (fullDutyTripData.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="${cols}" class="text-center p-4"><div class="spinner-border spinner-border-sm text-success me-2"></div> กำลังโหลดข้อมูลไปราชการ...</td></tr>`;
+    }
+
+    // เปิดรับข้อมูลสดจาก Firebase ทันที (Realtime Sync)
+    if (!isDutyTripFirebaseListening) {
+      isDutyTripFirebaseListening = true;
+      
+      rtdb.ref('duty_trip').on('value', (snapshot) => {
+        const rawData = snapshot.val();
+        if (rawData) {
+          console.log("🔥 [Firebase] ซิงก์ข้อมูลไปราชการสำเร็จ");
+          fullDutyTripData = Array.isArray(rawData) ? rawData : Object.values(rawData);
+          populateDutyTripYearDropdown();
+          filterDutyTripList(); // กรองและแสดงผลทันที 0ms
+        } else {
+          // หากยังไม่มีข้อมูลใน Firebase ให้ดึงสำรองผ่าน Apps Script
+          fallbackLoadDutyTripFromScript();
+        }
+      }, (err) => {
+        console.warn("Firebase Read Error:", err);
+        fallbackLoadDutyTripFromScript();
+      });
+    } else {
+      filterDutyTripList();
+    }
   }
-}
+
+  // ตัวโหลดสำรองผ่าน Google Apps Script (กรณีเน็ตมีปัญหาหรือ Firebase ยังไม่มีค่า)
+  async function fallbackLoadDutyTripFromScript() {
+    try {
+      const res = await fetch(`${SCRIPT_URL}?type=duty_trip&t=${new Date().getTime()}`);
+      const data = await res.json();
+      fullDutyTripData = Array.isArray(data) ? data : [];
+      populateDutyTripYearDropdown();
+      filterDutyTripList();
+    } catch (e) {
+      const tbody = document.getElementById('dutyTripTableBody');
+      const isAdmin = (currentUser.role === 'Admin');
+      const cols = isAdmin ? 5 : 4;
+      tbody.innerHTML = `<tr><td colspan="${cols}" class="text-center p-4 text-danger fw-bold">⚠️ โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง</td></tr>`;
+    }
+  }
 
   // 3. กรองรายการ
   function filterDutyTripList() {

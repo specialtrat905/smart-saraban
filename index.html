@@ -507,27 +507,58 @@
         transform: translateY(0);
       }
     }
-    /* 📱 การจัดเลย์เอาต์ Navbar แยก 2 ชั้นเฉพาะบนมือถือ (<= 768px) */
+    /* 📱 เลย์เอาต์บนมือถือ (<= 768px) แบ่ง 2 แถว */
 @media (max-width: 768px) {
   .nav-container-custom {
-    display: flex !important;
-    flex-direction: column !important;
+    display: grid !important;
+    grid-template-columns: 1fr auto !important;
+    grid-template-rows: auto auto !important;
+    row-gap: 6px !important;
     padding: 0 !important;
-    gap: 6px 0 !important;
   }
-  .nav-top-row {
+
+  /* แถว 1 ด้านซ้าย: โลโก้ + Admin */
+  .nav-brand-section {
+    grid-column: 1 / 2 !important;
+    grid-row: 1 / 2 !important;
     display: flex !important;
     align-items: center !important;
-    justify-content: space-between !important;
-    width: 100% !important;
+    gap: 6px !important;
   }
-  .nav-bottom-row {
+
+  /* แถว 1 ด้านขวา: ปุ่มรีเฟรช + ปุ่มปิดแอป อยู่ที่เดิมเสมอ */
+  .nav-system-section {
+    grid-column: 2 / 3 !important;
+    grid-row: 1 / 2 !important;
     display: flex !important;
     align-items: center !important;
-    width: 100% !important;
+    justify-content: flex-end !important;
     gap: 4px !important;
   }
-  /* 4 ปุ่มหลัก: ไอคอนด้านบน ข้อความด้านล่าง สูงและกว้างเท่ากันเป๊ะ */
+
+  /* แถว 2: เมื่ออยู่หน้าแรก 4 ปุ่มขยายเต็มความกว้าง */
+  .nav-menu-section {
+    grid-column: 1 / 3 !important;
+    grid-row: 2 / 3 !important;
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+  }
+
+  /* เมื่ออยู่หน้าย่อย (จัดการบุคลากร, ไปราชการ ฯลฯ) ชื่อหน้าอยู่ซ้าย ปุ่มกลับอยู่ขวา */
+  .nav-container-custom.in-subview .nav-menu-section {
+    grid-column: 1 / 2 !important;
+    width: auto !important;
+  }
+
+  .nav-back-section {
+    grid-column: 2 / 3 !important;
+    grid-row: 2 / 3 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+  }
+
   .btn-nav-action {
     display: inline-flex !important;
     flex-direction: column !important;
@@ -535,52 +566,47 @@
     justify-content: center !important;
     flex: 1 1 0 !important;
     min-width: 0 !important;
-    height: 52px !important;
-    min-height: 52px !important;
-    padding: 3px 2px !important;
+    height: 50px !important;
+    padding: 2px !important;
     border-radius: 8px !important;
     background-color: #ffffff !important;
     color: #004d40 !important;
     border: 1.5px solid #b2dfdb !important;
     font-weight: 600 !important;
   }
-  .btn-nav-action .nav-btn-icon {
-    font-size: 1.15rem !important;
-    line-height: 1 !important;
-    margin-bottom: 2px !important;
-    display: block !important;
-  }
-  .btn-nav-action .nav-btn-text {
-    font-size: 0.65rem !important;
-    line-height: 1.15 !important;
-    text-align: center !important;
-    white-space: normal !important;
-    display: -webkit-box !important;
-    line-clamp: 2 !important;
--webkit-line-clamp: 2 !important;
--webkit-box-orient: vertical !important;
-    overflow: hidden !important;
-  }
-  /* ปุ่มกลับระบบส่งหนังสือ ชิดขวาสุดใต้ปุ่มปิดแอป */
+  .btn-nav-action .nav-btn-icon { font-size: 1.1rem !important; line-height: 1 !important; margin-bottom: 2px !important; }
+  .btn-nav-action .nav-btn-text { font-size: 0.65rem !important; line-height: 1.15 !important; text-align: center !important; }
+
   #backToSarabanBtn {
-    margin-left: auto !important;
-    font-size: 0.8rem !important;
-    padding: 6px 14px !important;
+    font-size: 0.78rem !important;
+    padding: 5px 10px !important;
     border-radius: 8px !important;
+    white-space: nowrap !important;
   }
 }
 
-/* 💻 บนคอมพิวเตอร์ (หน้าจอใหญ่ >= 769px) แสดงแถวเดียวปกติ */
+/* 💻 เลย์เอาต์บนคอมพิวเตอร์ (>= 769px) แถวเดียว */
 @media (min-width: 769px) {
   .nav-container-custom {
     display: flex !important;
     flex-direction: row !important;
-    justify-content: space-between !important;
     align-items: center !important;
+    justify-content: space-between !important;
     flex-wrap: nowrap !important;
   }
-  .nav-top-row { display: flex; align-items: center; width: auto !important; }
-  .nav-bottom-row { display: flex; align-items: center; gap: 6px; width: auto !important; margin-left: auto; }
+
+  .nav-brand-section {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+
+  .nav-menu-section {
+    display: flex !important;
+    align-items: center !important;
+    margin-left: 12px !important;
+  }
+
   .btn-nav-action {
     display: inline-flex !important;
     flex-direction: row !important;
@@ -596,15 +622,36 @@
   }
   .btn-nav-action .nav-btn-icon { font-size: 1rem !important; }
   .btn-nav-action .nav-btn-text { font-size: 0.84rem !important; white-space: nowrap !important; }
+
+  /* ดันปุ่มกลับระบบส่งหนังสือ และ ปุ่มรีเฟรช/ปิดแอป ไปชิดขวาสุด */
+  .nav-back-section {
+    margin-left: auto !important;
+    margin-right: 6px !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  .nav-system-section {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+  }
 }
 
-.btn-nav-refresh {
-  background-color: rgba(255, 255, 255, 0.2) !important;
-  color: #ffffff !important;
-  border: 1px solid rgba(255, 255, 255, 0.45) !important;
+/* 🏷️ สไตล์ป้ายชื่อหน้าปัจจุบันเมื่ออยู่หน้าย่อย */
+.active-page-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
   font-weight: bold;
+  font-size: 0.88rem;
+  white-space: nowrap;
 }
-.btn-nav-refresh:hover { background-color: rgba(255, 255, 255, 0.35) !important; color: #ffffff !important; }
   </style>
   <!-- ⚡ Firebase App & Realtime Database SDK (Compat Version) -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -646,47 +693,57 @@
 
 <div id="mainApp" class="main-app">
   <nav class="navbar nav-custom p-2 px-3 shadow-sm sticky-top">
-  <div class="container-fluid nav-container-custom">
+  <div class="container-fluid nav-container-custom" id="navContainer">
 
-    <!-- 📌 แถวที่ 1: โลโก้ + ชื่อ Admin (ซ้าย) | ปุ่มรีเฟรช + ปุ่มปิดแอป (ขวาบนสุด) -->
-    <div class="nav-top-row">
-      <div class="d-flex align-items-center gap-2">
-        <img src="./logo2.png" alt="Logo ศกศ.ตราด" class="navbar-logo-glow">
-        <div id="userNavContainer" class="d-flex align-items-center gap-2"></div>
+    <!-- 📌 โซนที่ 1: โลโก้ + Admin (มือถือ: แถวบนซ้าย | PC: ซ้ายสุด) -->
+    <div class="nav-brand-section">
+      <img src="./logo2.png" alt="Logo ศกศ.ตราด" class="navbar-logo-glow">
+      <div id="userNavContainer" class="d-flex align-items-center gap-2"></div>
+    </div>
+
+    <!-- 📌 โซนที่ 2: 4 ปุ่มหลัก หรือ ชื่อหน้าปัจจุบัน (มือถือ: แถวล่างซ้าย | PC: ต่อจาก Admin) -->
+    <div class="nav-menu-section" id="navMenuSection">
+      <!-- 4 ปุ่มเมนูหลัก -->
+      <div id="navMainButtons" class="d-flex align-items-center gap-1 w-100">
+        <button id="manageStaffBtn" class="btn btn-sm btn-nav-action shadow-sm fw-bold" style="display:none;" onclick="switchToStaffView()">
+          <span class="nav-btn-icon">👥</span>
+          <span class="nav-btn-text">จัดการบุคลากร</span>
+        </button>
+        <button id="dutyTripBtn" class="btn btn-sm btn-nav-action shadow-sm fw-bold" style="display:none;" onclick="switchToDutyTripView()">
+          <span class="nav-btn-icon">🚗</span>
+          <span class="nav-btn-text">ไปราชการ</span>
+        </button>
+        <button id="toggleExportModeBtn" class="btn btn-sm btn-nav-action shadow-sm fw-bold" style="display:none;" onclick="switchToExportView()">
+          <span class="nav-btn-icon">📤</span>
+          <span class="nav-btn-text">ส่งออกรายการ</span>
+        </button>
+        <button id="editDbBtn" class="btn btn-sm btn-nav-action shadow-sm fw-bold" style="display:none;" onclick="handleEditDbBtnClick()">
+          <span class="nav-btn-icon">⚙️</span>
+          <span class="nav-btn-text">แก้ไขฐานข้อมูล</span>
+        </button>
       </div>
 
-      <div class="d-flex align-items-center gap-1">
-        <button id="refreshBtn" class="btn btn-sm btn-nav-refresh shadow-sm fw-bold px-2 py-1" onclick="refreshApp()" title="รีเฟรชหน้าเว็บ">
-          🔄 <span class="d-none d-md-inline" style="font-size: 0.8rem;">รีเฟรช</span>
-        </button>
-        <button id="logoutBtn" class="btn btn-sm btn-nav-logout shadow-sm fw-bold px-2 py-1" style="display:none;" title="ปิดแอป / ออกจากระบบ">
-          ออกจากระบบ
-        </button>
+      <!-- ป้ายแสดงชื่อหน้าปัจจุบัน (แสดงเมื่อเข้าหน้าย่อย) -->
+      <div id="activePageBadge" class="active-page-title" style="display: none;">
+        <span id="activePageIcon">👥</span>
+        <span id="activePageText">จัดการบุคลากร</span>
       </div>
     </div>
 
-    <!-- 📌 แถวที่ 2: 4 ปุ่มหลัก (สีเดียวกัน ไอคอนบน ข้อความล่าง) หรือปุ่มย้อนกลับชิดขวา -->
-    <div id="navMainButtons" class="nav-bottom-row">
-      <button id="manageStaffBtn" class="btn btn-sm btn-nav-action shadow-sm fw-bold" style="display:none;" onclick="switchToStaffView()">
-        <span class="nav-btn-icon">👥</span>
-        <span class="nav-btn-text">จัดการบุคลากร</span>
-      </button>
-      <button id="dutyTripBtn" class="btn btn-sm btn-nav-action shadow-sm fw-bold" style="display:none;" onclick="switchToDutyTripView()">
-        <span class="nav-btn-icon">🚗</span>
-        <span class="nav-btn-text">ไปราชการ</span>
-      </button>
-      <button id="toggleExportModeBtn" class="btn btn-sm btn-nav-action shadow-sm fw-bold" style="display:none;" onclick="switchToExportView()">
-        <span class="nav-btn-icon">📤</span>
-        <span class="nav-btn-text">ส่งออกรายการ</span>
-      </button>
-      <button id="editDbBtn" class="btn btn-sm btn-nav-action shadow-sm fw-bold" style="display:none;" onclick="handleEditDbBtnClick()">
-        <span class="nav-btn-icon">⚙️</span>
-        <span class="nav-btn-text">แก้ไขฐานข้อมูล</span>
-      </button>
-
-      <!-- ปุ่มกลับระบบส่งหนังสือ (ชิดขวาสุดบนมือถือ) -->
+    <!-- 📌 โซนที่ 3: ปุ่มกลับระบบส่งหนังสือ (มือถือ: แถวล่างขวา | PC: ชิดขวาก่อนปุ่มรีเฟรช) -->
+    <div class="nav-back-section">
       <button id="backToSarabanBtn" class="btn btn-sm btn-warning text-dark shadow-sm fw-bold" style="display:none;" onclick="switchToSarabanView()">
-        ⬅️ กลับระบบส่งหนังสือ
+        ⬅️ <span class="d-none d-sm-inline">กลับระบบส่งหนังสือ</span><span class="d-inline d-sm-none">กลับส่งหนังสือ</span>
+      </button>
+    </div>
+
+    <!-- 📌 โซนที่ 4: ปุ่มรีเฟรช + ปุ่มปิดแอป/ออกจากระบบ (มือถือ: แถวบนขวา | PC: ขวาสุด คงที่เสมอทุกหน้า) -->
+    <div class="nav-system-section">
+      <button id="refreshBtn" class="btn btn-sm btn-nav-refresh shadow-sm fw-bold px-2 py-1" onclick="refreshApp()" title="รีเฟรชข้อมูลหน้านี้">
+        🔄 <span class="d-none d-md-inline" style="font-size: 0.8rem;">รีเฟรช</span>
+      </button>
+      <button id="logoutBtn" class="btn btn-sm btn-nav-logout shadow-sm fw-bold px-2 py-1" style="display:none;" title="ปิดแอป / ออกจากระบบ">
+        ออกจากระบบ
       </button>
     </div>
 
@@ -1821,23 +1878,18 @@ function loadLogsFromFirebase(year) {
 
   // 🚗 สลับไปหน้ารายการไปราชการ
   function switchToDutyTripView() {
-    switchViewWithTransition('dutyTripView');
+  switchViewWithTransition('dutyTripView');
+  updateNavForView('dutyTrip');
 
-    document.getElementById('manageStaffBtn').style.display = 'none';
-    document.getElementById('dutyTripBtn').style.display = 'none';
-    document.getElementById('toggleExportModeBtn').style.display = 'none';
-    document.getElementById('editDbBtn').style.display = 'none';
-    document.getElementById('backToSarabanBtn').style.display = 'block';
+  const isAdmin = (currentUser.role === 'Admin');
+  const addBtn = document.getElementById('adminAddDutyTripBtn');
+  if (addBtn) addBtn.style.display = isAdmin ? 'inline-block' : 'none';
 
-    const isAdmin = (currentUser.role === 'Admin');
-    const addBtn = document.getElementById('adminAddDutyTripBtn');
-    if (addBtn) addBtn.style.display = isAdmin ? 'inline-block' : 'none';
-
-    populateDutyTripStaffDropdown();
-    populateDutyTripYearDropdown();
-    loadDutyTripList();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
+  populateDutyTripStaffDropdown();
+  populateDutyTripYearDropdown();
+  loadDutyTripList();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
 
   function populateDutyTripStaffDropdown() {
     const sel = document.getElementById('dutyTripStaffFilter');
@@ -1906,14 +1958,13 @@ function loadLogsFromFirebase(year) {
     try {
       const res = await fetch(`${SCRIPT_URL}?type=duty_trip&t=${new Date().getTime()}`);
       const data = await res.json();
-      fullDutyTripData = Array.isArray(data) ? data : [];
-      populateDutyTripYearDropdown();
-      filterDutyTripList();
+      if (Array.isArray(data)) {
+        fullDutyTripData = data;
+        populateDutyTripYearDropdown();
+        filterDutyTripList();
+      }
     } catch (e) {
-      const tbody = document.getElementById('dutyTripTableBody');
-      const isAdmin = (currentUser.role === 'Admin');
-      const cols = isAdmin ? 5 : 4;
-      tbody.innerHTML = `<tr><td colspan="${cols}" class="text-center p-4 text-danger fw-bold">⚠️ โหลดข้อมูลไม่สำเร็จ กรุณาลองใหม่อีกครั้ง</td></tr>`;
+      console.error("โหลดข้อมูลไปราชการล้มเหลว", e);
     }
   }
 
@@ -2328,7 +2379,8 @@ function loadLogsFromFirebase(year) {
       if (result.success) {
         if (dutyTripModalInstance) dutyTripModalInstance.hide();
         alert(id ? "✅ อัปเดตข้อมูลไปราชการเรียบร้อยแล้ว" : "✅ เพิ่มรายการไปราชการใหม่เรียบร้อยแล้ว");
-        loadDutyTripList();
+        // บังคับดึงข้อมูลล่าสุดจากเซิร์ฟเวอร์โดยตรงทันที ไม่ใช้ตัวแปรเดิมที่ค้าง
+        await fallbackLoadDutyTripFromScript();
       } else {
         alert("⚠️ เกิดข้อผิดพลาด: " + (result.message || "ไม่สามารถบันทึกข้อมูลได้"));
       }
@@ -2363,50 +2415,33 @@ function loadLogsFromFirebase(year) {
   // 👥 สลับไปหน้าบุคลากร
   // 👥 สลับไปหน้าบุคลากร
   function switchToStaffView() {
-    switchViewWithTransition('staffView');
+  switchViewWithTransition('staffView');
+  updateNavForView('staff');
 
-    document.getElementById('manageStaffBtn').style.display = 'none';
-    if (document.getElementById('dutyTripBtn')) document.getElementById('dutyTripBtn').style.display = 'none';
-    document.getElementById('toggleExportModeBtn').style.display = 'none';
-    document.getElementById('editDbBtn').style.display = 'none';
-    document.getElementById('backToSarabanBtn').style.display = 'block';
+  const isAdmin = (currentUser.role === 'Admin');
+  const addBtn = document.getElementById('adminAddStaffBtn');
+  const shareBtn = document.getElementById('adminShareStaffBtn');
+  if (addBtn) addBtn.style.display = isAdmin ? 'inline-block' : 'none';
+  if (shareBtn) shareBtn.style.display = isAdmin ? 'inline-block' : 'none';
 
-    const isAdmin = (currentUser.role === 'Admin');
-    const addBtn = document.getElementById('adminAddStaffBtn');
-    const shareBtn = document.getElementById('adminShareStaffBtn');
-    if (addBtn) addBtn.style.display = isAdmin ? 'inline-block' : 'none';
-    if (shareBtn) shareBtn.style.display = isAdmin ? 'inline-block' : 'none';
-
-    filterStaffDirectory();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
+  filterStaffDirectory();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
   /// 📤 สลับไปหน้าส่งออกรายการหนังสือ
   function switchToExportView() {
-    switchViewWithTransition('exportView');
-
-    document.getElementById('manageStaffBtn').style.display = 'none';
-    if (document.getElementById('dutyTripBtn')) document.getElementById('dutyTripBtn').style.display = 'none';
-    document.getElementById('toggleExportModeBtn').style.display = 'none';
-    document.getElementById('editDbBtn').style.display = 'none';
-    document.getElementById('backToSarabanBtn').style.display = 'block';
-
-    initExportView();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
+  switchViewWithTransition('exportView');
+  updateNavForView('export');
+  initExportView();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
 
   // ⚙️ สลับไปหน้าจัดการฐานข้อมูล
   function switchToDbManageView() {
-    switchViewWithTransition('dbManageView');
-
-    document.getElementById('manageStaffBtn').style.display = 'none';
-    if (document.getElementById('dutyTripBtn')) document.getElementById('dutyTripBtn').style.display = 'none';
-    document.getElementById('toggleExportModeBtn').style.display = 'none';
-    document.getElementById('editDbBtn').style.display = 'none';
-    document.getElementById('backToSarabanBtn').style.display = 'block';
-
-    initDbManageView();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
+  switchViewWithTransition('dbManageView');
+  updateNavForView('dbManage');
+  initDbManageView();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
 
   // ==========================================
   // ⚙️ ระบบหน้าจัดการฐานข้อมูลเต็มจอ (DB Manage Module)
@@ -2578,18 +2613,10 @@ function updateDbManageButtonUI() {
 
   // ⬅️ สลับกลับหน้าระบบส่งหนังสือหลัก
   function switchToSarabanView() {
-    switchViewWithTransition('sarabanView');
-
-    document.getElementById('backToSarabanBtn').style.display = 'none';
-    document.getElementById('manageStaffBtn').style.display = 'block';
-    if (document.getElementById('dutyTripBtn')) document.getElementById('dutyTripBtn').style.display = 'block';
-    
-    const isAdmin = (currentUser.role === 'Admin');
-    document.getElementById('editDbBtn').style.display = isAdmin ? 'block' : 'none';
-    document.getElementById('toggleExportModeBtn').style.display = isAdmin ? 'block' : 'none';
-    
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
+  switchViewWithTransition('sarabanView');
+  updateNavForView('saraban');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
 
   function filterStaffDirectory() {
     const search = document.getElementById('staffSearchInput') ? document.getElementById('staffSearchInput').value.toLowerCase().trim() : "";
@@ -3246,28 +3273,73 @@ function updateDbManageButtonUI() {
         document.getElementById('logoutBtn').style.display = 'block'; 
         setupExitButton(); // 👈 เพิ่มบรรทัดนี้เพื่อปรับข้อความปุ่มตามอุปกรณ์
         // แสดงปุ่มรายชื่อบุคลากรให้ทุกสิทธิ์
-        const staffLabel = (currentUser.role === 'Admin') ? "จัดการบุคลากร" : "รายชื่อบุคลากร";
-const staffBtn = document.getElementById('manageStaffBtn');
-staffBtn.style.display = 'inline-flex';
-staffBtn.innerHTML = `<span class="nav-btn-icon">👥</span><span class="nav-btn-text">${staffLabel}</span>`;
-        document.getElementById('dutyTripBtn').style.display = 'block';
+        document.getElementById('logoutBtn').style.display = 'block'; 
+        setupExitButton();
+
+        // 1. ควบคุมแถบเครื่องมือในหน้าสารบรรณ
         if (currentUser.role === 'Admin') {
             document.getElementById('adminView').style.display = 'block';
             document.getElementById('deptFilterContainer').style.display = 'block';
-            document.getElementById('editDbBtn').style.display = 'block';
-            document.getElementById('toggleExportModeBtn').style.display = 'block'; // 👈 แสดงเฉพาะ Admin
         } else {
             document.getElementById('adminView').style.display = 'none';
             document.getElementById('deptFilterContainer').style.display = 'none';
-            document.getElementById('editDbBtn').style.display = 'none';
-            document.getElementById('toggleExportModeBtn').style.display = 'none'; // 👈 ซ่อนสำหรับ User
         }
+
+        // 2. 👈 วางคำสั่งนี้ตรงนี้ครับ เพื่อจัดปุ่มบนแถบ Navbar หน้าแรก
+        updateNavForView('saraban');
 
         updateYearOptions();
         resetAndReloadLogs(); 
     }
   }
 
+function updateNavForView(viewName) {
+  const navContainer = document.getElementById('navContainer');
+  const mainButtons = document.getElementById('navMainButtons');
+  const activeBadge = document.getElementById('activePageBadge');
+  const activeIcon = document.getElementById('activePageIcon');
+  const activeText = document.getElementById('activePageText');
+  const backBtn = document.getElementById('backToSarabanBtn');
+
+  if (viewName === 'saraban') {
+    if (navContainer) navContainer.classList.remove('in-subview');
+    if (mainButtons) mainButtons.style.display = 'flex';
+    if (activeBadge) activeBadge.style.display = 'none';
+    if (backBtn) backBtn.style.display = 'none';
+
+    const staffLabel = (currentUser.role === 'Admin') ? "จัดการบุคลากร" : "รายชื่อบุคลากร";
+    const staffBtn = document.getElementById('manageStaffBtn');
+    if (staffBtn) {
+      staffBtn.style.display = 'inline-flex';
+      staffBtn.innerHTML = `<span class="nav-btn-icon">👥</span><span class="nav-btn-text">${staffLabel}</span>`;
+    }
+    if (document.getElementById('dutyTripBtn')) document.getElementById('dutyTripBtn').style.display = 'inline-flex';
+    const isAdmin = (currentUser.role === 'Admin');
+    if (document.getElementById('toggleExportModeBtn')) document.getElementById('toggleExportModeBtn').style.display = isAdmin ? 'inline-flex' : 'none';
+    if (document.getElementById('editDbBtn')) document.getElementById('editDbBtn').style.display = isAdmin ? 'inline-flex' : 'none';
+  } else {
+    if (navContainer) navContainer.classList.add('in-subview');
+    if (mainButtons) mainButtons.style.display = 'none';
+    if (activeBadge) activeBadge.style.display = 'inline-flex';
+    if (backBtn) backBtn.style.display = 'inline-flex';
+
+    if (viewName === 'staff') {
+      const staffLabel = (currentUser.role === 'Admin') ? "จัดการบุคลากร" : "รายชื่อบุคลากร";
+      if (activeIcon) activeIcon.innerText = "👥";
+      if (activeText) activeText.innerText = staffLabel;
+    } else if (viewName === 'dutyTrip') {
+      if (activeIcon) activeIcon.innerText = "🚗";
+      if (activeText) activeText.innerText = "ไปราชการ";
+    } else if (viewName === 'export') {
+      if (activeIcon) activeIcon.innerText = "📤";
+      if (activeText) activeText.innerText = "ส่งออกรายการ";
+    } else if (viewName === 'dbManage') {
+      if (activeIcon) activeIcon.innerText = "⚙️";
+      if (activeText) activeText.innerText = "แก้ไขฐานข้อมูล";
+    }
+  }
+}
+  
 // 👤 แสดงผลชื่อผู้ใช้งานบน Navbar (Admin แสดงแบบเดิม / User แสดงป้ายสีเดียวตามกลุ่มงาน)
   function renderUserNavbar() {
     const container = document.getElementById('userNavContainer');
@@ -3393,11 +3465,42 @@ staffBtn.innerHTML = `<span class="nav-btn-icon">👥</span><span class="nav-btn
     }, 450);
   }
 
-function refreshApp() {
-    const btn = document.getElementById('refreshBtn');
-    if (btn) btn.innerHTML = '🔄 <span class="spinner-border spinner-border-sm" role="status"></span>';
-    window.location.reload();
+async function refreshApp() {
+  const btn = document.getElementById('refreshBtn');
+  const originalContent = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '🔄 <span class="spinner-border spinner-border-sm" role="status"></span>';
   }
+
+  try {
+    const isVisible = (id) => {
+      const el = document.getElementById(id);
+      return el && el.style.display !== 'none';
+    };
+
+    if (isVisible('staffView')) {
+      await loadStaffList();
+    } else if (isVisible('dutyTripView')) {
+      await fallbackLoadDutyTripFromScript();
+    } else if (isVisible('exportView')) {
+      loadExportDataForYear(currentExportYear);
+    } else if (isVisible('dbManageView')) {
+      loadDbManageDataForYear(currentDbManageYear);
+    } else {
+      resetAndReloadLogs();
+    }
+  } catch (e) {
+    console.error("Refresh error:", e);
+  } finally {
+    setTimeout(() => {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = originalContent;
+      }
+    }, 450);
+  }
+}
 
   // 🔄 ฟังก์ชันสลับปุ่มระหว่าง "ออกจากระบบ" (บนคอม) กับ "ปิดแอป" (บนมือถือ)
   function setupExitButton() {
@@ -3940,29 +4043,25 @@ function refreshApp() {
         localStorage.setItem('sarabanUser', JSON.stringify(currentUser));
 
         document.getElementById('logoutBtn').style.display = 'block';
-        const staffLabel = (currentUser.role === 'Admin') ? "จัดการบุคลากร" : "รายชื่อบุคลากร";
-const staffBtn = document.getElementById('manageStaffBtn');
-staffBtn.style.display = 'inline-flex';
-staffBtn.innerHTML = `<span class="nav-btn-icon">👥</span><span class="nav-btn-text">${staffLabel}</span>`;
-        document.getElementById('dutyTripBtn').style.display = 'block';
+
+        // 1. ควบคุมแถบเครื่องมือในหน้าสารบรรณ
         if (currentUser.role === 'Admin') {
-            document.getElementById('editDbBtn').style.display = 'block';
             document.getElementById('adminView').style.display = 'block';
             document.getElementById('deptFilterContainer').style.display = 'block';
-            document.getElementById('toggleExportModeBtn').style.display = 'block'; // 👈 แสดงเฉพาะ Admin
         } else {
-            document.getElementById('editDbBtn').style.display = 'none';
             document.getElementById('adminView').style.display = 'none';
             document.getElementById('deptFilterContainer').style.display = 'none';
-            document.getElementById('toggleExportModeBtn').style.display = 'none'; // 👈 ซ่อนสำหรับ User
         }
 
-        setupExitButton(); // 👈 เพิ่มบรรทัดนี้
+        // 2. 👈 วางคำสั่งนี้ตรงนี้ครับ
+        updateNavForView('saraban');
+
+        setupExitButton();
 
         document.getElementById('loginPage').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
         renderUserNavbar();
-        
+
         updateYearOptions();
         resetAndReloadLogs();
       } else {
@@ -4837,6 +4936,7 @@ function copyDeepLink(fileUrl, encodedTitle) {
         checkSession();
     }
   });
+  
 </script>
 </body>
 </html>

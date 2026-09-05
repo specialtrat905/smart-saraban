@@ -543,7 +543,16 @@
     align-items: center !important;
     justify-content: flex-end !important;
   }
-
+.btn-nav-refresh {
+  background-color: #0ea5e9 !important; /* ฟ้าสดใส */
+  color: #ffffff !important;
+  border: 1px solid #0284c7 !important;
+  font-weight: bold;
+}
+.btn-nav-refresh:hover { 
+  background-color: #0284c7 !important; 
+  color: #ffffff !important; 
+}
   .btn-nav-action {
     display: inline-flex !important;
     flex-direction: column !important;
@@ -3230,39 +3239,64 @@ function updateNavForView(viewName) {
   // แสดงปุ่มระบบ (รีเฟรช และ ออกจากระบบ/ปิดแอป) เสมอในทุกหน้า
   if (logoutBtn) logoutBtn.style.display = 'inline-block';
 
-  // ตั้งค่าเริ่มต้นซ่อน 4 ปุ่มหลักก่อน
-  if (staffBtn) staffBtn.style.display = 'none';
-  if (dutyBtn) dutyBtn.style.display = 'none';
-  if (exportBtn) exportBtn.style.display = 'none';
-  if (dbBtn) dbBtn.style.display = 'none';
+  // ตั้งค่าเริ่มต้นซ่อนปุ่มทั้งหมดและรีเซ็ตพื้นหลังเป็นสีขาว
+  [staffBtn, dutyBtn, exportBtn, dbBtn].forEach(btn => {
+    if (btn) {
+      btn.style.display = 'none';
+      btn.style.backgroundColor = '#ffffff';
+      btn.style.color = '#004d40';
+    }
+  });
 
   if (viewName === 'saraban') {
-    // 🏠 อยู่หน้าหลัก
+    // 🏠 อยู่หน้าหลัก (ระบบส่งหนังสือ)
     if (backBtn) backBtn.style.display = 'none';
 
     const staffLabel = isAdmin ? "จัดการบุคลากร" : "รายชื่อบุคลากร";
     if (staffBtn) {
       staffBtn.style.display = 'inline-flex';
+      staffBtn.style.backgroundColor = '#ffffff';
+      staffBtn.style.color = '#004d40';
       staffBtn.innerHTML = `<span class="nav-btn-icon">👥</span><span class="nav-btn-text">${staffLabel}</span>`;
     }
-    if (dutyBtn) dutyBtn.style.display = 'inline-flex';
-    if (exportBtn) exportBtn.style.display = isAdmin ? 'inline-flex' : 'none';
-    if (dbBtn) dbBtn.style.display = isAdmin ? 'inline-flex' : 'none';
+    if (dutyBtn) {
+      dutyBtn.style.display = 'inline-flex';
+      dutyBtn.style.backgroundColor = '#ffffff';
+      dutyBtn.style.color = '#004d40';
+    }
+    if (exportBtn) {
+      exportBtn.style.display = isAdmin ? 'inline-flex' : 'none';
+      exportBtn.style.backgroundColor = '#ffffff';
+      exportBtn.style.color = '#004d40';
+    }
+    if (dbBtn) {
+      dbBtn.style.display = isAdmin ? 'inline-flex' : 'none';
+      dbBtn.style.backgroundColor = '#ffffff';
+      dbBtn.style.color = '#004d40';
+    }
 
   } else {
-    // 📂 อยู่หน้าย่อย (แสดงปุ่มย้อนกลับ และแสดงเฉพาะปุ่มของหน้านั้นๆ)
+    // 📂 อยู่หน้าย่อย (แสดงปุ่มย้อนกลับ, ซ่อนปุ่มอื่น และเปลี่ยนสีปุ่มปัจจุบันเป็นสีทอง)
     if (backBtn) backBtn.style.display = 'inline-flex';
 
     if (viewName === 'staff' && staffBtn) {
       const staffLabel = isAdmin ? "จัดการบุคลากร" : "รายชื่อบุคลากร";
       staffBtn.style.display = 'inline-flex';
+      staffBtn.style.backgroundColor = '#ffc107'; // สีทอง
+      staffBtn.style.color = '#000000';
       staffBtn.innerHTML = `<span class="nav-btn-icon">👥</span><span class="nav-btn-text">${staffLabel}</span>`;
     } else if (viewName === 'dutyTrip' && dutyBtn) {
-      dutyTripBtn.style.display = 'inline-flex';
+      dutyBtn.style.display = 'inline-flex';
+      dutyBtn.style.backgroundColor = '#ffc107'; // สีทอง
+      dutyBtn.style.color = '#000000';
     } else if (viewName === 'export' && exportBtn) {
       exportBtn.style.display = 'inline-flex';
+      exportBtn.style.backgroundColor = '#ffc107'; // สีทอง
+      exportBtn.style.color = '#000000';
     } else if (viewName === 'dbManage' && dbBtn) {
       dbBtn.style.display = 'inline-flex';
+      dbBtn.style.backgroundColor = '#ffc107'; // สีทอง
+      dbBtn.style.color = '#000000';
     }
   }
 }

@@ -497,16 +497,6 @@
   }
 }
 
-    @keyframes smoothViewEnter {
-      0% {
-        opacity: 0;
-        transform: translateY(8px);
-      }
-      100% {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
     /* 📱 เลย์เอาต์บนมือถือ (<= 768px) แบ่ง 2 แถว */
 @media (max-width: 768px) {
   .nav-container-custom {
@@ -651,6 +641,16 @@
   font-weight: bold;
   font-size: 0.88rem;
   white-space: nowrap;
+}
+.btn-nav-refresh {
+  background-color: #e0f2fe !important;
+  color: #0369a1 !important;
+  border: 1px solid #7dd3fc !important;
+  font-weight: bold;
+}
+.btn-nav-refresh:hover { 
+  background-color: #bae6fd !important; 
+  color: #0c4a6e !important; 
 }
   </style>
   <!-- ⚡ Firebase App & Realtime Database SDK (Compat Version) -->
@@ -1634,53 +1634,7 @@
       </div>
     </div>
   </div> <!-- ปิด container -->
-  <!-- 📑 Modal แสดงตารางสรุปข้อมูลหนังสือที่เลือกส่งออก -->
-    <div class="modal fade" id="exportSummaryModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-xl modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg">
-          <div class="modal-header bg-success text-white py-3">
-            <h5 class="modal-title fw-bold">📑 ตารางสรุปรายการหนังสือที่เลือกส่งออก (<span id="summaryModalCount">0</span> รายการ)</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body p-3 p-md-4 bg-light">
-            <!-- แถบปุ่มส่งออกรูปแบบต่างๆ -->
-            <div class="d-flex flex-wrap justify-content-end gap-2 mb-3">
-              <button class="btn btn-sm btn-outline-primary fw-bold shadow-sm bg-white" onclick="copyExportTableToClipboard()">
-                📋 คัดลอกตาราง (วางใน Excel/Word)
-              </button>
-              <button class="btn btn-sm btn-outline-success fw-bold shadow-sm bg-white" onclick="exportSelectedToCSV()">
-                📊 ดาวน์โหลด Excel (CSV)
-              </button>
-              <button class="btn btn-sm btn-outline-dark fw-bold shadow-sm bg-white" onclick="printExportTable()">
-                🖨️ พิมพ์ / บันทึก PDF
-              </button>
-            </div>
-
-            <!-- ตารางแสดงผลข้อมูล 3 คอลัมน์หลัก -->
-            <div id="exportPrintArea" class="table-responsive bg-white rounded border shadow-sm p-3" style="max-height: 65vh;">
-              <div class="text-center mb-3">
-                <h5 class="fw-bold text-dark mb-1">สรุปรายการหนังสือรับ - ศูนย์การศึกษาพิเศษประจำจังหวัดตราด</h5>
-                <small class="text-muted">ข้อมูล ณ วันที่ <span id="exportPrintDate"></span></small>
-              </div>
-              <table class="table table-bordered table-hover align-middle mb-0" id="exportResultTable" style="font-size: 0.88rem;">
-                <thead class="table-light text-center">
-                  <tr>
-                    <th style="width: 8%;">ลำดับ</th>
-                    <th style="width: 18%;">เลขหนังสือ</th>
-                    <th style="width: 44%;">ชื่อเรื่อง / หนังสือ</th>
-                    <th style="width: 30%;">ผู้รับผิดชอบ (กลุ่มงาน / รายชื่อ)</th>
-                  </tr>
-                </thead>
-                <tbody id="exportResultTableBody"></tbody>
-              </table>
-            </div>
-          </div>
-          <div class="modal-footer bg-white">
-            <button type="button" class="btn btn-secondary px-4 fw-bold" data-bs-dismiss="modal">ปิดหน้าต่าง</button>
-          </div>
-        </div>
-      </div>
-    </div>
+  
 </div> <!-- ปิด mainApp -->
 
 <script>
@@ -2483,25 +2437,27 @@ function loadLogsFromFirebase(year) {
   }
 
 function updateDbManageButtonUI() {
-    const btnDel = document.getElementById('btnModeDelete');
-    const btnEdit = document.getElementById('btnModeEditDept');
-    const titleCol = document.getElementById('dbManageActionColTitle');
+  const btnDel = document.getElementById('btnModeDelete');
+  const btnEdit = document.getElementById('btnModeEditDept');
+  const titleCol = document.getElementById('dbManageActionColTitle');
 
-    if (currentDbManageSubMode === 'delete') {
-      btnDel.className = "btn btn-sm btn-danger text-white fw-bold shadow-sm";
-      btnEdit.className = "btn btn-sm btn-outline-warning text-dark fw-bold shadow-sm bg-white";
-      if (titleCol) titleCol.innerText = "เลือกลบ";
-    } else if (currentDbManageSubMode === 'editDept') {
-      btnDel.className = "btn btn-sm btn-outline-danger fw-bold shadow-sm bg-white";
-      btnEdit.className = "btn btn-sm btn-warning text-dark fw-bold shadow-sm";
-      if (titleCol) titleCol.innerText = "แก้ไข";
-    } else {
-      btnDel.className = "btn btn-sm btn-outline-danger fw-bold shadow-sm bg-white";
-      btnEdit.className = "btn btn-sm btn-outline-warning text-dark fw-bold shadow-sm bg-white";
-      if (titleCol) titleCol.innerText = "จัดการ";
-    }
-    updateDbManageDeleteUI();
+  if (!btnDel || !btnEdit) return; // 👈 เพิ่มบรรทัดนี้เพื่อไม่ให้ระบบค้างถ้าไม่มีปุ่ม
+
+  if (currentDbManageSubMode === 'delete') {
+    btnDel.className = "btn btn-sm btn-danger text-white fw-bold shadow-sm";
+    btnEdit.className = "btn btn-sm btn-outline-warning text-dark fw-bold shadow-sm bg-white";
+    if (titleCol) titleCol.innerText = "เลือกลบ";
+  } else if (currentDbManageSubMode === 'editDept') {
+    btnDel.className = "btn btn-sm btn-outline-danger fw-bold shadow-sm bg-white";
+    btnEdit.className = "btn btn-sm btn-warning text-dark fw-bold shadow-sm";
+    if (titleCol) titleCol.innerText = "แก้ไข";
+  } else {
+    btnDel.className = "btn btn-sm btn-outline-danger fw-bold shadow-sm bg-white";
+    btnEdit.className = "btn btn-sm btn-outline-warning text-dark fw-bold shadow-sm bg-white";
+    if (titleCol) titleCol.innerText = "จัดการ";
   }
+  updateDbManageDeleteUI();
+}
 
   function loadDbManageDataForYear(year) {
     const tbody = document.getElementById('dbManageTableBody');
@@ -3272,9 +3228,6 @@ function updateDbManageButtonUI() {
         // แสดงปุ่มออกจากระบบให้ทุกสิทธิ์ (เพื่อให้ User สลับฝ่ายหรือออกจากระบบได้)
         document.getElementById('logoutBtn').style.display = 'block'; 
         setupExitButton(); // 👈 เพิ่มบรรทัดนี้เพื่อปรับข้อความปุ่มตามอุปกรณ์
-        // แสดงปุ่มรายชื่อบุคลากรให้ทุกสิทธิ์
-        document.getElementById('logoutBtn').style.display = 'block'; 
-        setupExitButton();
 
         // 1. ควบคุมแถบเครื่องมือในหน้าสารบรรณ
         if (currentUser.role === 'Admin') {
@@ -3294,48 +3247,49 @@ function updateDbManageButtonUI() {
   }
 
 function updateNavForView(viewName) {
-  const navContainer = document.getElementById('navContainer');
-  const mainButtons = document.getElementById('navMainButtons');
-  const activeBadge = document.getElementById('activePageBadge');
-  const activeIcon = document.getElementById('activePageIcon');
-  const activeText = document.getElementById('activePageText');
+  const staffBtn = document.getElementById('manageStaffBtn');
+  const dutyBtn = document.getElementById('dutyTripBtn');
+  const exportBtn = document.getElementById('toggleExportModeBtn');
+  const dbBtn = document.getElementById('editDbBtn');
   const backBtn = document.getElementById('backToSarabanBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
+  const isAdmin = (currentUser.role === 'Admin');
+
+  // ซ่อนปุ่มทั้งหมดไว้ก่อนเป็นค่าตั้งต้น
+  if (staffBtn) staffBtn.style.display = 'none';
+  if (dutyBtn) dutyBtn.style.display = 'none';
+  if (exportBtn) exportBtn.style.display = 'none';
+  if (dbBtn) dbBtn.style.display = 'none';
 
   if (viewName === 'saraban') {
-    if (navContainer) navContainer.classList.remove('in-subview');
-    if (mainButtons) mainButtons.style.display = 'flex';
-    if (activeBadge) activeBadge.style.display = 'none';
+    // 🏠 อยู่หน้าหลัก (ระบบส่งหนังสือ)
     if (backBtn) backBtn.style.display = 'none';
+    if (logoutBtn) logoutBtn.style.display = 'inline-block'; // แสดงปุ่มออกจากระบบเฉพาะหน้าหลัก
 
-    const staffLabel = (currentUser.role === 'Admin') ? "จัดการบุคลากร" : "รายชื่อบุคลากร";
-    const staffBtn = document.getElementById('manageStaffBtn');
+    const staffLabel = isAdmin ? "จัดการบุคลากร" : "รายชื่อบุคลากร";
     if (staffBtn) {
       staffBtn.style.display = 'inline-flex';
       staffBtn.innerHTML = `<span class="nav-btn-icon">👥</span><span class="nav-btn-text">${staffLabel}</span>`;
     }
-    if (document.getElementById('dutyTripBtn')) document.getElementById('dutyTripBtn').style.display = 'inline-flex';
-    const isAdmin = (currentUser.role === 'Admin');
-    if (document.getElementById('toggleExportModeBtn')) document.getElementById('toggleExportModeBtn').style.display = isAdmin ? 'inline-flex' : 'none';
-    if (document.getElementById('editDbBtn')) document.getElementById('editDbBtn').style.display = isAdmin ? 'inline-flex' : 'none';
-  } else {
-    if (navContainer) navContainer.classList.add('in-subview');
-    if (mainButtons) mainButtons.style.display = 'none';
-    if (activeBadge) activeBadge.style.display = 'inline-flex';
-    if (backBtn) backBtn.style.display = 'inline-flex';
+    if (dutyBtn) dutyBtn.style.display = 'inline-flex';
+    if (exportBtn) exportBtn.style.display = isAdmin ? 'inline-flex' : 'none';
+    if (dbBtn) dbBtn.style.display = isAdmin ? 'inline-flex' : 'none';
 
-    if (viewName === 'staff') {
-      const staffLabel = (currentUser.role === 'Admin') ? "จัดการบุคลากร" : "รายชื่อบุคลากร";
-      if (activeIcon) activeIcon.innerText = "👥";
-      if (activeText) activeText.innerText = staffLabel;
-    } else if (viewName === 'dutyTrip') {
-      if (activeIcon) activeIcon.innerText = "🚗";
-      if (activeText) activeText.innerText = "ไปราชการ";
-    } else if (viewName === 'export') {
-      if (activeIcon) activeIcon.innerText = "📤";
-      if (activeText) activeText.innerText = "ส่งออกรายการ";
-    } else if (viewName === 'dbManage') {
-      if (activeIcon) activeIcon.innerText = "⚙️";
-      if (activeText) activeText.innerText = "แก้ไขฐานข้อมูล";
+  } else {
+    // 📂 อยู่หน้าย่อย (ซ่อนปุ่มออกจากระบบ แสดงปุ่มกลับ และแสดงเฉพาะปุ่มของหน้านั้น)
+    if (backBtn) backBtn.style.display = 'inline-flex';
+    if (logoutBtn) logoutBtn.style.display = 'none'; // ซ่อนปุ่มออกจากระบบในหน้าย่อย
+
+    if (viewName === 'staff' && staffBtn) {
+      const staffLabel = isAdmin ? "จัดการบุคลากร" : "รายชื่อบุคลากร";
+      staffBtn.style.display = 'inline-flex';
+      staffBtn.innerHTML = `<span class="nav-btn-icon">👥</span><span class="nav-btn-text">${staffLabel}</span>`;
+    } else if (viewName === 'dutyTrip' && dutyBtn) {
+      dutyBtn.style.display = 'inline-flex';
+    } else if (viewName === 'export' && exportBtn) {
+      exportBtn.style.display = 'inline-flex';
+    } else if (viewName === 'dbManage' && dbBtn) {
+      dbBtn.style.display = 'inline-flex';
     }
   }
 }
@@ -3638,14 +3592,14 @@ async function refreshApp() {
           </div>
         `;
       } else if (currentDbMode === 'editDept' && currentUser.role === 'Admin') {
-        actionHTML = `
-          <div class="d-flex justify-content-center">
-            <button onclick="openEditBookDeptModal('${encodeURIComponent(col[2])}')" class="btn btn-sm btn-warning text-dark fw-bold shadow-sm w-100">
-              ✏️ แก้ไข
-            </button>
-          </div>
-        `;
-      } 
+  actionColumnHTML = `
+    <div class="d-flex justify-content-center">
+      <button onclick="openEditBookDeptModal('${encodeURIComponent(col[2])}')" class="btn btn-sm btn-warning text-dark fw-bold shadow-sm w-100">
+        ✏️ แก้ไข
+      </button>
+    </div>
+  `;
+} 
       else {
         actionColumnHTML = `
           <div class="action-buttons justify-content-center">
@@ -4082,12 +4036,6 @@ async function refreshApp() {
     loadLogs();
   }
 
-  function handleSearchInput() {
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(() => {
-      resetAndReloadLogs();
-    }, 1000); // ⏱️ ตั้งหน่วงเวลา 1 วินาทีเมื่อหยุดพิมพ์เพื่อเริ่มค้นหา
-  }
 
   // ⚡ ฟังก์ชันกรองข้อมูลในหน่วยความจำเครื่อง (พร้อมระบบคำนวณเลขที่ยังไม่ลงระบบ ❌)
   function applyClientSideFilter() {
@@ -4908,16 +4856,14 @@ function copyDeepLink(fileUrl, encodedTitle) {
     
     // 🔗 หากเปิดจากลิงก์แชร์ ?view=staff ให้แสดงหน้ารายชื่อ 6 คอลัมน์ทันทีโดยไม่ต้องล็อกอิน
     if (p.get('view') === 'staff') {
-      document.getElementById('loginPage').style.display = 'none';
-      document.getElementById('mainApp').style.display = 'block';
-      document.getElementById('sarabanView').style.display = 'none';
-      document.getElementById('staffView').style.display = 'block';
-      document.getElementById('staffBackBtn').style.display = 'none';
-      document.getElementById('manageStaffBtn').style.display = 'none';
-      const addBtn = document.getElementById('adminAddStaffBtn');
-      const shareBtn = document.getElementById('adminShareStaffBtn');
-      if (addBtn) addBtn.style.display = 'none';
-      if (shareBtn) shareBtn.style.display = 'none';
+  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'block';
+  document.getElementById('sarabanView').style.display = 'none';
+  document.getElementById('staffView').style.display = 'block';
+  const backBtn = document.getElementById('backToSarabanBtn');
+  if (backBtn) backBtn.style.display = 'none';
+  const manageBtn = document.getElementById('manageStaffBtn');
+  if (manageBtn) manageBtn.style.display = 'none';
       return;
     }
 

@@ -72,6 +72,29 @@
     .btn-nav-logout:hover { background-color: #93232e !important; color: #ffffff !important; }
     .cursor-pointer { cursor: pointer; }
 
+    /* 🔄 ปุ่มรีเฟรช พื้นหลังสีฟ้าเข้ม */
+.btn-nav-refresh {
+  background-color: #0284c7 !important;
+  color: #ffffff !important;
+  border: 1px solid #0369a1 !important;
+}
+.btn-nav-refresh:hover {
+  background-color: #0369a1 !important;
+  color: #ffffff !important;
+}
+
+/* ⬅️ ปุ่มย้อนกลับ พื้นหลังสีส้มอ่อน */
+.btn-nav-back {
+  background-color: #fed7aa !important;
+  color: #7c2d12 !important;
+  border: 1px solid #fb923c !important;
+}
+.btn-nav-back:hover {
+  background-color: #fdba74 !important;
+  color: #7c2d12 !important;
+}
+
+
     /* 🎨 สไตล์ปุ่มทึบสำหรับแถบส่งหนังสือ (Compact Action Bar) */
     .btn-action-dept {
       background-color: #e57399 !important; /* สีชมพูอ่อนนวลตา (Soft Rose Pink) */
@@ -538,7 +561,7 @@
 
   /* ปุ่มเมนูกระจายตัวเต็มความกว้างเท่ากันทุกปุ่ม */
   .btn-nav-action {
-    display: inline-flex !important;
+    display: inline-flex;
     flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
@@ -580,7 +603,7 @@
   }
 
   .btn-nav-action {
-    display: inline-flex !important;
+    display: inline-flex;
     flex-direction: row !important;
     align-items: center !important;
     gap: 5px !important;
@@ -673,9 +696,10 @@
       <!-- 📌 โซน 3: ปุ่มระบบ (มือถือ: แถวบนขวาตลอดกาล | PC: ขวาสุด) -->
       <div class="nav-system-section">
         <!-- ปุ่มย้อนกลับจะแสดงอยู่หน้าปุ่มรีเฟรชเสมอเมื่อเข้าเมนูย่อย -->
-        <button id="backToSarabanBtn" class="btn btn-sm btn-warning text-dark shadow-sm fw-bold px-2 py-1" style="display:none;" onclick="switchToSarabanView()">
-          ⬅️ ย้อนกลับ
-        </button>
+        <!-- ✅ เปลี่ยนเป็น -->
+<button id="backToSarabanBtn" class="btn btn-sm btn-nav-back shadow-sm fw-bold px-2 py-1" style="display:none;" onclick="switchToSarabanView()">
+  ⬅️ ย้อนกลับ
+</button>
         <button id="refreshBtn" class="btn btn-sm btn-nav-refresh shadow-sm fw-bold px-2 py-1" onclick="refreshApp()" title="รีเฟรชข้อมูลหน้านี้">
           🔄 <span class="d-none d-md-inline" style="font-size: 0.8rem;">รีเฟรช</span>
         </button>
@@ -3208,11 +3232,12 @@ function updateNavForView(viewName) {
   };
 
   // 3. ฟังก์ชันช่วยไฮไลต์ปุ่มเป็นสีทองเมื่อเลือกหน้านั้น
-  const setBtnActive = (btn) => {
-    if (!btn) return;
-    btn.style.backgroundColor = '#ffc107'; // สีทอง
-    btn.style.color = '#000000';
-  };
+  // ✅ เปลี่ยนเป็น
+const setBtnActive = (btn) => {
+  if (!btn) return;
+  btn.style.backgroundColor = '#d8b4fe'; // สีม่วงอ่อน (Soft Lavender)
+  btn.style.color = '#3b0764';           // สีตัวอักษรม่วงเข้มคมชัด
+};
 
   // รีเซ็ตสีปุ่มทั้งหมดกลับเป็นสีขาว
   [staffBtn, dutyBtn, exportBtn, dbBtn].forEach(setBtnNormal);
@@ -3225,9 +3250,9 @@ function updateNavForView(viewName) {
   }
   if (dutyBtn) dutyBtn.style.display = 'inline-flex';
 
-  // ปุ่มส่งออกและแก้ไขฐานข้อมูล -> แสดงเฉพาะ Admin เท่านั้น (User ห้ามแสดงเด็ดขาด)
-  if (exportBtn) exportBtn.style.display = isAdmin ? 'inline-flex' : 'none';
-  if (dbBtn) dbBtn.style.display = isAdmin ? 'inline-flex' : 'none';
+  // ✅ เปลี่ยนเป็น
+if (exportBtn) exportBtn.style.setProperty('display', isAdmin ? 'inline-flex' : 'none', 'important');
+if (dbBtn) dbBtn.style.setProperty('display', isAdmin ? 'inline-flex' : 'none', 'important');
 
   // 5. ไฮไลต์สีทองตามหน้าย่อยที่กำลังเปิดอยู่
   if (viewName === 'staff') setBtnActive(staffBtn);

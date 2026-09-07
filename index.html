@@ -3480,21 +3480,18 @@ async function refreshApp() {
   }
 }
 
-  // 🔄 ฟังก์ชันสลับปุ่มระหว่าง "ออกจากระบบ" (บนคอม) กับ "ปิดแอป" (บนมือถือ)
   function setupExitButton() {
     const btn = document.getElementById('logoutBtn');
     if (!btn) return;
 
-    // ตรวจสอบว่าเป็นมือถือหรือเปิดในโหมดแอป PWA (Standalone) หรือไม่
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || 
                      window.matchMedia('(display-mode: standalone)').matches || 
                      window.innerWidth <= 768;
 
     if (isMobile) {
-      btn.innerHTML = "❌ ปิดแอป";
-      btn.onclick = closeApp;
-      btn.title = "ปิดแอปพลิเคชัน";
+      btn.style.setProperty('display', 'none', 'important');
     } else {
+      btn.style.display = 'inline-block';
       btn.innerHTML = "ออกจากระบบ";
       btn.onclick = logout;
       btn.title = "ออกจากระบบและล้างสิทธิ์";

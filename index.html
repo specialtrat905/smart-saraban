@@ -1212,6 +1212,16 @@
               <a id="pdfModalExternalBtn" href="#" target="_blank" class="btn btn-sm btn-outline-light text-nowrap" style="font-size: 0.75rem;">
                 ↗️ เปิดใน Drive
               </a>
+              <!-- ✅ เพิ่มปุ่มนี้: ผู้ใช้เลือกกดสแกนเองเมื่อจำเป็น -->
+<button
+  id="scanQrBtn"
+  type="button"
+  class="btn btn-sm btn-outline-info text-white text-nowrap fw-bold"
+  style="font-size: 0.75rem;"
+  onclick="scanCurrentPdfQr()"
+  title="ค้นหา QR Code ในหนังสือ">
+  🔍 สแกน QR
+</button>
               <!-- 🔴 ปุ่มปิดสีแดงเด่นชัด มองเห็นและกดง่าย -->
               <button type="button" class="btn btn-danger btn-sm px-2 py-1 fw-bold shadow-sm d-flex align-items-center gap-1" data-bs-dismiss="modal" title="ปิดหน้าต่าง" style="font-size: 0.8rem; border-radius: 6px;">
                 <span>✕</span> <span>ปิด</span>
@@ -4494,7 +4504,6 @@ async function refreshApp() {
     document.getElementById('pdfModalIframe').src = previewUrl;
 
     // ซ่อนแถบ QR Code ไว้ก่อน
-    const qrBar = document.getElementById('qrResultBar');
     if (qrBar) qrBar.style.setProperty('display', 'none', 'important');
 
     if (!pdfModalInstance) {
@@ -4507,10 +4516,120 @@ async function refreshApp() {
     pdfModalInstance.show();
 
     // 🔍 เริ่มกระบวนการสแกนหา QR Code ในหน้าแรกของหนังสือ
-    if (fileId) {
-      scanPdfForQrCode(fileId);
+    // ✅ เปลี่ยนเป็น: เก็บรหัสไฟล์ไว้ และให้ผู้ใช้กดปุ่ม "สแกน QR" เอง
+currentPdfFileId = fileId || '';
+
+// ซ่อนผลการสแกนเดิมทุกครั้งที่เปิดหนังสือเล่มใหม่
+const qrBar = document.getElementById('qrResultBar');
+const countDisplay = document.getElementById('qrCountDisplay');
+const container = document.getElementById('qrButtonsContainer');
+const scanBtn = document.getElementById('scanQrBtn');
+
+if (qrBar) {
+  qrBar.style.setProperty('display', 'none', 'important');
+}
+
+if (countDisplay) {
+  countDisplay.innerText = '0';
+}
+
+if (container) {
+  container.innerHTML = '';
+}
+
+// ปิดปุ่มไว้หากหนังสือไม่มี fileId
+if (scanBtn) {
+  scanBtn.disabled = !currentPdfFileId;
+}
+  }
+// ✅ เพิ่มครั้งเดียว: เก็บไฟล์ PDF ของหนังสือที่กำลังเปิดอยู่
+let currentPdfFileId = '';
+let isQrScanning = false;
+
+// เรียกเมื่อผู้ใช้กดปุ่ม "สแกน QR"
+async function scanCurrentPdfQr() {
+  if (!currentPdfFileId) {
+    alert('ไม่พบไฟล์ PDF สำหรับสแกน QR Code');
+    return;
+  }
+
+  // ป้องกันการกดซ้ำระหว่างระบบกำลังสแกน
+  if (isQrScanning) {
+    return;
+  }
+
+  const scanBtn = document.getElementById('scanQrBtn');
+
+  try {
+    isQrScanning = true;
+
+    if (scanBtn) {
+      scanBtn.disabled = true;
+      scanBtn.innerHTML = '⏳ กำลังสแกน...';
+    }
+
+    await scanPdfForQrCode(currentPdfFileId);
+
+  } finally {
+    isQrScanning = false;
+
+    if (scanBtn) {
+      scanBtn.disabled = false;
+      scanBtn.innerHTML = '🔍 สแกน QR';
     }
   }
+}
+
+// ✅ เพิ่มครั้งเดียว: เปลี่ยนภาพเป็นขาว-ดำเพื่อช่วยอ่าน QR ที่มีข้อมูลยาว เช่น URL
+function makeQrThresholdImage(imageData, threshold = 165) {
+  const output = new Uint8ClampedArray(imageData.data);
+
+  for (let i = 0; i < output.length; i += 4) {
+    const red = output[i];
+    const green = output[i + 1];
+    const blue = output[i + 2];
+
+    // คำนวณความสว่างของแต่ละพิกเซล
+    const brightness = (red * 0.299) + (green * 0.587) + (blue * 0.114);
+
+    // ทำให้เป็นสีดำหรือขาวชัดเจน
+    const color = brightness < threshold ? 0 : 255;
+
+    output[i] = color;
+    output[i + 1] = color;
+    output[i + 2] = color;
+    output[i + 3] = 255;
+  }
+
+  return new ImageData(output, imageData.width, imageData.height);
+}
+
+// ✅ เพิ่มครั้งเดียว: ลองอ่านทั้งภาพปกติและภาพขาว-ดำหลายระดับ
+function decodeQrImage(imageData) {
+  const testImages = [
+    imageData,
+    makeQrThresholdImage(imageData, 130),
+    makeQrThresholdImage(imageData, 165),
+    makeQrThresholdImage(imageData, 200)
+  ];
+
+  for (const testImage of testImages) {
+    const qrCode = jsQR(
+      testImage.data,
+      testImage.width,
+      testImage.height,
+      {
+        inversionAttempts: 'attemptBoth'
+      }
+    );
+
+    if (qrCode && qrCode.data) {
+      return qrCode.data.trim();
+    }
+  }
+
+  return null;
+}
 
   /// ✅ เปลี่ยนเป็น (ล้างผลเก่า และแจ้งสถานะก่อนเริ่มสแกน)
 
@@ -4578,7 +4697,7 @@ for (let pageNum = 1; pageNum <= pagesToScan; pageNum++) {
 
   const page = await pdf.getPage(pageNum);
         // ✅ เปลี่ยนเป็น (เพิ่มความคมชัด เพื่ออ่าน QR ขนาดเล็กได้ดีขึ้น)
-const viewport = page.getViewport({ scale: 4 });
+const viewport = page.getViewport({ scale: 3.5 });
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         canvas.width = viewport.width;
@@ -4618,23 +4737,13 @@ for (let row = 0; row < rows; row++) {
     const section = ctx.getImageData(startX, startY, width, height);
 
     // ทดลองอ่านทั้ง QR สีปกติและ QR ที่มีสี/พื้นหลังกลับด้าน
-    const qrCode = jsQR(
-      section.data,
-      section.width,
-      section.height,
-      {
-        inversionAttempts: 'attemptBoth'
-      }
-    );
+    // ✅ เปลี่ยนเป็น: ทดลองสแกนภาพปกติ + ภาพที่ปรับเป็นขาวดำ
+const qrText = decodeQrImage(section);
 
-    if (qrCode && qrCode.data) {
-      const qrText = qrCode.data.trim();
+if (qrText && !detectedUrls.includes(qrText)) {
+  detectedUrls.push(qrText);
+}
 
-      // ป้องกันข้อมูล QR ซ้ำกัน
-      if (qrText && !detectedUrls.includes(qrText)) {
-        detectedUrls.push(qrText);
-      }
-    }
   }
 }
       }
@@ -4659,13 +4768,16 @@ if (uniqueUrls.length > 0) {
       }
 
       // หาก QR เป็นลิงก์เว็บ ให้สร้างปุ่มเปิดลิงก์
-      if (/^https?:\/\//i.test(url)) {
+      // ✅ เปลี่ยนเป็น: ตัดช่องว่าง/ขึ้นบรรทัดใหม่ที่อาจติดมากับข้อมูล QR ก่อนตรวจ URL
+const cleanUrl = String(url || '').trim();
+
+if (/^https?:\/\//i.test(cleanUrl)) {
         return `
-          <a href="${url}"
+          <a href="${cleanUrl}"
              target="_blank"
              rel="noopener noreferrer"
              class="btn btn-sm btn-light border text-success fw-bold d-flex align-items-center gap-1 shadow-sm px-2 py-1"
-             title="${url}"
+             title="${cleanUrl}"
              style="font-size: 0.76rem;">
             <span>🌐 ${label}</span>
             <span class="text-muted" style="font-size: 0.68rem;">↗️</span>

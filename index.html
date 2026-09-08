@@ -4938,25 +4938,26 @@ for (let pageNum = 1; pageNum <= pagesToScan; pageNum++) {
   // ✅ เพิ่ม: ค้นหา URL ที่เป็นข้อความจริงในหน้า PDF
 // ใช้ได้แม้ QR ในภาพอ่านไม่สำเร็จ
 try {
+  const detectedUrls = new Set();
   const textContent = await page.getTextContent();
 
   const pageText = textContent.items
     .map(item => item.str || '')
     .join(' ');
 
-  const foundUrls = pageText.match(
-    /https?:\/\/[^\s<>"'|]+/gi
-  ) || [];
+  // ปรับ Regex ให้ครอบคลุม URL ที่อาจมีเครื่องหมายปิดท้าย
 
-  foundUrls.forEach(foundUrl => {
-    // ตัดอักขระที่มักติดท้าย URL จากเอกสาร
-    const cleanUrl = foundUrl.replace(/[.,;:!?)\]}]+$/g, '');
+const foundUrls = pageText.match(/https?:\/\/[^\s<>"'|]+/gi) || [];
 
-    if (cleanUrl && !detectedUrls.includes(cleanUrl)) {
-      detectedUrls.push(cleanUrl);
-      console.log('✅ พบ URL จากข้อความใน PDF:', cleanUrl);
-    }
-  });
+foundUrls.forEach(url => {
+
+  // ล้างอักขระส่วนเกินท้ายลิงก์ เช่น จุด หรือ วงเล็บ
+
+  const cleanUrl = url.replace(/[.,;:!?)\]}]+$/g, '');
+
+  if (cleanUrl) detectedUrls.add(cleanUrl);
+
+});
 
 } catch (textError) {
   console.warn(`อ่านข้อความจากหน้า ${pageNum} ไม่สำเร็จ:`, textError);

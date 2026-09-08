@@ -1241,7 +1241,12 @@
     <div id="qrButtonsContainer" class="d-flex flex-wrap gap-1"></div>
   </div>
 
-  <iframe id="pdfModalIframe" src="" class="w-100 h-100 border-0" allow="autoplay"></iframe>
+  <iframe
+  id="pdfModalIframe"
+  src=""
+  class="w-100 h-100 border-0"
+  allow="autoplay; fullscreen">
+</iframe>
 </div>
         </div>
       </div>
@@ -4504,7 +4509,8 @@ async function refreshApp() {
     const title = decodeURIComponent(encodedTitle).replace(/<[^>]*>?/gm, '').trim();
     const idMatch = fileUrl.match(/[-\w]{25,}/);
     const fileId = idMatch ? idMatch[0] : null;
-    const previewUrl = fileId ? `https://drive.google.com/file/d/${fileId}/preview` : fileUrl;
+    // ✅ URL สำหรับแสดง PDF ใน iframe
+const previewUrl = `https://drive.google.com/file/d/${fileId}/preview`;
 
     document.getElementById('pdfModalTitle').innerText = title;
     document.getElementById('pdfModalExternalBtn').href = fileUrl;
@@ -4657,12 +4663,67 @@ try {
 // ✅ เปลี่ยนทั้งฟังก์ชัน: ใช้ ZXing เป็นตัวหลัก และ jsQR เป็นตัวสำรอง
 async function readQrFromCanvas(scanCanvas) {
   // 1) ใช้ ZXing ก่อน เพราะอ่าน QR URL ได้แม่นกว่า
-  const zxingResults = await readQrWithZxing(scanCanvas);
+  // ✅ เปลี่ยนเป็น: ลองอ่านภาพเดิมก่อน
+let zxingResults = await readQrWithZxing(scanCanvas);
+
+if (zxingResults.length > 0) {
+  return zxingResults;
+}
+
+// ✅ หากภาพจาก PDF มีสีเทา/รอยสแกน/พื้นหลังรบกวน
+// ให้ทำภาพขาว-ดำ แล้วลองอ่านซ้ำ
+const sourceCtx = scanCanvas.getContext('2d', {
+  willReadFrequently: true
+});
+
+const sourceImage = sourceCtx.getImageData(
+  0,
+  0,
+  scanCanvas.width,
+  scanCanvas.height
+);
+
+const blackWhiteCanvas = document.createElement('canvas');
+blackWhiteCanvas.width = scanCanvas.width;
+blackWhiteCanvas.height = scanCanvas.height;
+
+const blackWhiteCtx = blackWhiteCanvas.getContext('2d', {
+  willReadFrequently: true
+});
+
+const blackWhiteImage = blackWhiteCtx.createImageData(
+  scanCanvas.width,
+  scanCanvas.height
+);
+
+// ทดลองระดับขาว-ดำ 2 ระดับ
+for (const threshold of [150, 190]) {
+  for (let i = 0; i < sourceImage.data.length; i += 4) {
+    const red = sourceImage.data[i];
+    const green = sourceImage.data[i + 1];
+    const blue = sourceImage.data[i + 2];
+
+    const brightness =
+      (red * 0.299) +
+      (green * 0.587) +
+      (blue * 0.114);
+
+    const color = brightness < threshold ? 0 : 255;
+
+    blackWhiteImage.data[i] = color;
+    blackWhiteImage.data[i + 1] = color;
+    blackWhiteImage.data[i + 2] = color;
+    blackWhiteImage.data[i + 3] = 255;
+  }
+
+  blackWhiteCtx.putImageData(blackWhiteImage, 0, 0);
+
+  zxingResults = await readQrWithZxing(blackWhiteCanvas);
 
   if (zxingResults.length > 0) {
-    console.log('✅ ZXing อ่าน QR สำเร็จ:', zxingResults);
     return zxingResults;
   }
+}
 
   // 2) หาก ZXing ไม่พบ ค่อยลอง jsQR เป็นตัวสำรอง
   if (typeof jsQR !== 'undefined') {
@@ -4724,35 +4785,86 @@ function createQrCropCanvas(sourceCanvas, x, y, width, height) {
 
 // สแกน QR จาก canvas ด้วย ZXing
 // เหมาะกับ QR ที่เก็บ URL หรือข้อมูลจำนวนมาก
+// ✅ เปลี่ยนเป็น: อ่านพิกเซลจาก canvas โดยตรง
+// ไม่แปลง canvas เป็น Data URL ก่อน จึงเหมาะกับหน้า PDF มากกว่า
 async function readQrWithZxing(scanCanvas) {
-  // ตรวจสอบว่า ZXing โหลดสำเร็จหรือไม่
   if (typeof ZXing === 'undefined') {
-    throw new Error('ไม่สามารถโหลดระบบสแกน QR (ZXing) ได้');
+    console.warn('ZXing ยังโหลดไม่สำเร็จ');
+    return [];
   }
 
-  const results = [];
-
   try {
-    // สร้างตัวอ่าน QR Code
-    const reader = new ZXing.BrowserQRCodeReader();
+    const scanCtx = scanCanvas.getContext('2d', {
+      willReadFrequently: true
+    });
 
-    // แปลงภาพจาก canvas เป็น PNG Data URL
-    const imageDataUrl = scanCanvas.toDataURL('image/png');
+    const imageData = scanCtx.getImageData(
+      0,
+      0,
+      scanCanvas.width,
+      scanCanvas.height
+    );
 
-    // ให้ ZXing อ่าน QR จากภาพ
-    const result = await reader.decodeFromImageUrl(imageDataUrl);
+    // ZXing ต้องการค่าความสว่าง 1 ค่า ต่อ 1 พิกเซล
+    const luminance = new Uint8ClampedArray(
+      scanCanvas.width * scanCanvas.height
+    );
+
+    for (let pixel = 0, luminanceIndex = 0;
+         pixel < imageData.data.length;
+         pixel += 4, luminanceIndex++) {
+      const red = imageData.data[pixel];
+      const green = imageData.data[pixel + 1];
+      const blue = imageData.data[pixel + 2];
+
+      // แปลง RGB เป็นค่าความสว่าง
+      luminance[luminanceIndex] = Math.round(
+        (red * 0.299) +
+        (green * 0.587) +
+        (blue * 0.114)
+      );
+    }
+
+    const hints = new Map();
+    hints.set(
+      ZXing.DecodeHintType.POSSIBLE_FORMATS,
+      [ZXing.BarcodeFormat.QR_CODE]
+    );
+    hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+
+    const reader = new ZXing.MultiFormatReader();
+    reader.setHints(hints);
+
+    const source = new ZXing.RGBLuminanceSource(
+      luminance,
+      scanCanvas.width,
+      scanCanvas.height
+    );
+
+    const bitmap = new ZXing.BinaryBitmap(
+      new ZXing.HybridBinarizer(source)
+    );
+
+    const result = reader.decode(bitmap);
 
     if (result && result.getText()) {
-      results.push(result.getText().trim());
+      const value = result.getText().trim();
+
+      console.log('✅ ZXing อ่าน QR สำเร็จ:', value);
+
+      return value ? [value] : [];
     }
 
   } catch (err) {
-    // ZXing จะ throw error ปกติเมื่อไม่พบ QR
-    // จึงไม่ต้องแสดง error ให้ผู้ใช้ในจุดนี้
-    console.log('ZXing: ไม่พบ QR ในพื้นที่นี้');
+    // NotFoundException เป็นเหตุการณ์ปกติ หากพื้นที่นั้นไม่มี QR
+    const errorName = err?.name || 'UnknownError';
+
+    if (errorName !== 'NotFoundException') {
+      console.warn('ZXing อ่าน QR ไม่สำเร็จ:', err);
+    }
   }
 
-  return [...new Set(results)];
+  return [];
 }
   
   /// ✅ เปลี่ยนเป็น (ล้างผลเก่า และแจ้งสถานะก่อนเริ่มสแกน)
@@ -4823,6 +4935,32 @@ for (let pageNum = 1; pageNum <= pagesToScan; pageNum++) {
   console.log(`🔍 กำลังสแกน QR หน้า ${pageNum}/${pagesToScan}`);
 
   const page = await pdf.getPage(pageNum);
+  // ✅ เพิ่ม: ค้นหา URL ที่เป็นข้อความจริงในหน้า PDF
+// ใช้ได้แม้ QR ในภาพอ่านไม่สำเร็จ
+try {
+  const textContent = await page.getTextContent();
+
+  const pageText = textContent.items
+    .map(item => item.str || '')
+    .join(' ');
+
+  const foundUrls = pageText.match(
+    /https?:\/\/[^\s<>"'|]+/gi
+  ) || [];
+
+  foundUrls.forEach(foundUrl => {
+    // ตัดอักขระที่มักติดท้าย URL จากเอกสาร
+    const cleanUrl = foundUrl.replace(/[.,;:!?)\]}]+$/g, '');
+
+    if (cleanUrl && !detectedUrls.includes(cleanUrl)) {
+      detectedUrls.push(cleanUrl);
+      console.log('✅ พบ URL จากข้อความใน PDF:', cleanUrl);
+    }
+  });
+
+} catch (textError) {
+  console.warn(`อ่านข้อความจากหน้า ${pageNum} ไม่สำเร็จ:`, textError);
+}
         // ✅ เปลี่ยนเป็น (เพิ่มความคมชัด เพื่ออ่าน QR ขนาดเล็กได้ดีขึ้น)
 const viewport = page.getViewport({ scale: 3.5 });
         const canvas = document.createElement('canvas');

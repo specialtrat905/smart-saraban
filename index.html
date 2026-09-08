@@ -663,6 +663,21 @@
     margin-left: auto !important;
   }
 }
+
+/* ✨ เพิ่มมิติ 3D นุ่มนวลและเงาสะท้อนให้ปุ่มทุกประเภทในแอป โดยคงสีเดิม */
+.btn {
+  transition: transform 0.12s ease, box-shadow 0.12s ease !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -3px 0 rgba(0, 0, 0, 0.2) !important;
+}
+.btn:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18), inset 0 1px 1px rgba(255, 255, 255, 0.55), inset 0 -3px 0 rgba(0, 0, 0, 0.2) !important;
+}
+.btn:active {
+  transform: translateY(1px) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15), inset 0 2px 5px rgba(0, 0, 0, 0.3) !important;
+}
+
   </style>
   <!-- ⚡ Firebase App & Realtime Database SDK (Compat Version) -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>

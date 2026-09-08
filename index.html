@@ -4578,7 +4578,7 @@ for (let pageNum = 1; pageNum <= pagesToScan; pageNum++) {
 
   const page = await pdf.getPage(pageNum);
         // ✅ เปลี่ยนเป็น (เพิ่มความคมชัด เพื่ออ่าน QR ขนาดเล็กได้ดีขึ้น)
-const viewport = page.getViewport({ scale: 2.5 });
+const viewport = page.getViewport({ scale: 4 });
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         canvas.width = viewport.width;
@@ -4586,27 +4586,57 @@ const viewport = page.getViewport({ scale: 2.5 });
 
         await page.render({ canvasContext: ctx, viewport: viewport }).promise;
 
-        // ✅ เปลี่ยนเป็น (รองรับ QR ได้สูงสุด 10 อันต่อหน้า)
-let maxPerPages = 10;
-        while (maxPerPages > 0) {
-          const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          const qr = jsQR(imgData.data, canvas.width, canvas.height);
-          if (!qr || !qr.data) break;
+        // ✅ เปลี่ยนเป็น (แบ่งภาพทั้งหน้าเป็นช่องย่อย เพื่อให้ jsQR อ่าน QR ขนาดเล็กได้ดีขึ้น)
+const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-          if (!detectedUrls.includes(qr.data)) {
-            detectedUrls.push(qr.data);
-          }
+// แบ่งกระดาษเป็น 3 คอลัมน์ × 4 แถว = 12 พื้นที่สแกน
+// เหมาะกับเอกสารตารางที่มี QR หลายตำแหน่ง
+const columns = 3;
+const rows = 4;
 
-          // ระบายสีขาวทับ QR ตัวที่พบแล้ว เพื่อค้นหาตัวถัดไปในหน้าเดียวกัน
-          const loc = qr.location;
-          const minX = Math.min(loc.topLeftCorner.x, loc.bottomLeftCorner.x);
-          const maxX = Math.max(loc.topRightCorner.x, loc.bottomRightCorner.x);
-          const minY = Math.min(loc.topLeftCorner.y, loc.topRightCorner.y);
-          const maxY = Math.max(loc.bottomLeftCorner.y, loc.bottomRightCorner.y);
-          ctx.fillStyle = "#ffffff";
-          ctx.fillRect(minX - 5, minY - 5, (maxX - minX) + 10, (maxY - minY) + 10);
-          maxPerPages--;
-        }
+for (let row = 0; row < rows; row++) {
+  for (let col = 0; col < columns; col++) {
+    const x = Math.floor((canvas.width / columns) * col);
+    const y = Math.floor((canvas.height / rows) * row);
+
+    // ขยายขอบเขตของแต่ละช่องเล็กน้อย
+    // เพื่อป้องกัน QR อยู่คาบระหว่างช่อง
+    const padding = 40;
+    const startX = Math.max(0, x - padding);
+    const startY = Math.max(0, y - padding);
+
+    const width = Math.min(
+      Math.ceil(canvas.width / columns) + (padding * 2),
+      canvas.width - startX
+    );
+
+    const height = Math.min(
+      Math.ceil(canvas.height / rows) + (padding * 2),
+      canvas.height - startY
+    );
+
+    const section = ctx.getImageData(startX, startY, width, height);
+
+    // ทดลองอ่านทั้ง QR สีปกติและ QR ที่มีสี/พื้นหลังกลับด้าน
+    const qrCode = jsQR(
+      section.data,
+      section.width,
+      section.height,
+      {
+        inversionAttempts: 'attemptBoth'
+      }
+    );
+
+    if (qrCode && qrCode.data) {
+      const qrText = qrCode.data.trim();
+
+      // ป้องกันข้อมูล QR ซ้ำกัน
+      if (qrText && !detectedUrls.includes(qrText)) {
+        detectedUrls.push(qrText);
+      }
+    }
+  }
+}
       }
 
       // 5. แสดงผลลิงก์ที่ตรวจพบทั้งหมดบนแถบด้านบน

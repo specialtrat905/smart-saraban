@@ -1653,7 +1653,7 @@
  // --- 1. การตั้งค่าสิทธิ์พื้นฐานองค์กร ---
   const GH_OWNER = "specialtrat905";
   const GH_REPO = "smart-saraban";
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyjiSeDm_jz9qVmdNvHNKHsl5zkuHABBiSRcv6-VCcnLQiV4ZvnS8USIqQgyO50QavOcg/execc";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyjiSeDm_jz9qVmdNvHNKHsl5zkuHABBiSRcv6-VCcnLQiV4ZvnS8USIqQgyO50QavOcg/exec";
 // ⚡ กำหนดค่าเชื่อมต่อ Firebase (ตาม Config ของคุณ)
 const firebaseConfig = {
   apiKey: "AIzaSyBL_Jv3x_UxEkzcVnN6lpQpZdWoIaJvMNM",
@@ -4541,10 +4541,20 @@ async function scanPdfForQrCode(fileId) {
         pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
       }
 
-      // 2. ดึงไฟล์ Base64 ผ่าน Apps Script
-      const res = await fetch(`${SCRIPT_URL}?action=getPdfBase64&fileId=${fileId}`);
-      const data = await res.json();
-      if (!data.success || !data.base64) return;
+      // ✅ เปลี่ยนเป็น — ตรวจสอบว่า Apps Script ตอบกลับถูกต้องก่อนใช้งาน
+const res = await fetch(
+  `${SCRIPT_URL}?action=getPdfBase64&fileId=${encodeURIComponent(fileId)}`
+);
+
+if (!res.ok) {
+  throw new Error(`Apps Script ตอบกลับผิดพลาด: HTTP ${res.status}`);
+}
+
+const data = await res.json();
+
+if (!data.success || !data.base64) {
+  throw new Error('Apps Script ไม่สามารถส่งข้อมูล PDF กลับมาได้');
+}
 
       // 3. แปลง Base64 เป็น Uint8Array ที่ถูกต้องตามมาตรฐาน PDF.js
       const raw = atob(data.base64);
@@ -4681,16 +4691,16 @@ if (qrBar) {
 
       }
 
-    // ✅ เปลี่ยนเป็น (แสดงสาเหตุบนหน้าเว็บแทนการค้างที่ ...)
+    // ✅ เปลี่ยนเป็น — แสดงรายละเอียดที่ตรวจสอบได้
 } catch (err) {
-  console.warn("การสแกน QR Code ล้มเหลว:", err);
+  console.error("การสแกน QR Code ล้มเหลว:", err);
 
   if (countDisplay) countDisplay.innerText = 'ผิดพลาด';
 
   if (container) {
     container.innerHTML = `
       <span class="small text-danger">
-        ไม่สามารถสแกน QR Code ได้ กรุณาลองเปิดใหม่อีกครั้ง
+        ไม่สามารถสแกน QR Code ได้: ${err.message || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ'}
       </span>
     `;
   }

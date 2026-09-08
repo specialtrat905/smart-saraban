@@ -4658,108 +4658,90 @@ try {
   console.warn('ไม่สามารถเปิดใช้ BarcodeDetector ได้:', err);
 }
 
-// อ่าน QR จาก canvas 1 ชิ้น
-// ใช้ BarcodeDetector ก่อน แล้วจึงใช้ jsQR เป็นตัวสำรอง
-// ✅ เปลี่ยนทั้งฟังก์ชัน: ใช้ ZXing เป็นตัวหลัก และ jsQR เป็นตัวสำรอง
+// อ่าน QR Code ทั้งหมดที่มีใน Canvas (รองรับตรวจจับหลาย QR พร้อมกันในรูปเดียว)
 async function readQrFromCanvas(scanCanvas) {
-  // 1) ใช้ ZXing ก่อน เพราะอ่าน QR URL ได้แม่นกว่า
-  // ✅ เปลี่ยนเป็น: ลองอ่านภาพเดิมก่อน
-let zxingResults = await readQrWithZxing(scanCanvas);
+  const detectedList = [];
 
-if (zxingResults.length > 0) {
-  return zxingResults;
-}
-
-// ✅ หากภาพจาก PDF มีสีเทา/รอยสแกน/พื้นหลังรบกวน
-// ให้ทำภาพขาว-ดำ แล้วลองอ่านซ้ำ
-const sourceCtx = scanCanvas.getContext('2d', {
-  willReadFrequently: true
-});
-
-const sourceImage = sourceCtx.getImageData(
-  0,
-  0,
-  scanCanvas.width,
-  scanCanvas.height
-);
-
-const blackWhiteCanvas = document.createElement('canvas');
-blackWhiteCanvas.width = scanCanvas.width;
-blackWhiteCanvas.height = scanCanvas.height;
-
-const blackWhiteCtx = blackWhiteCanvas.getContext('2d', {
-  willReadFrequently: true
-});
-
-const blackWhiteImage = blackWhiteCtx.createImageData(
-  scanCanvas.width,
-  scanCanvas.height
-);
-
-// ทดลองระดับขาว-ดำ 2 ระดับ
-for (const threshold of [150, 190]) {
-  for (let i = 0; i < sourceImage.data.length; i += 4) {
-    const red = sourceImage.data[i];
-    const green = sourceImage.data[i + 1];
-    const blue = sourceImage.data[i + 2];
-
-    const brightness =
-      (red * 0.299) +
-      (green * 0.587) +
-      (blue * 0.114);
-
-    const color = brightness < threshold ? 0 : 255;
-
-    blackWhiteImage.data[i] = color;
-    blackWhiteImage.data[i + 1] = color;
-    blackWhiteImage.data[i + 2] = color;
-    blackWhiteImage.data[i + 3] = 255;
-  }
-
-  blackWhiteCtx.putImageData(blackWhiteImage, 0, 0);
-
-  zxingResults = await readQrWithZxing(blackWhiteCanvas);
-
-  if (zxingResults.length > 0) {
-    return zxingResults;
-  }
-}
-
-  // 2) หาก ZXing ไม่พบ ค่อยลอง jsQR เป็นตัวสำรอง
-  if (typeof jsQR !== 'undefined') {
+  // 1) ใช้ Native BarcodeDetector (เร็วที่สุด และกวาดอ่านทุก QR ในภาพได้พร้อมกันทันที)
+  if ('BarcodeDetector' in window) {
     try {
-      const scanCtx = scanCanvas.getContext('2d', {
-        willReadFrequently: true
-      });
-
-      const imageData = scanCtx.getImageData(
-        0,
-        0,
-        scanCanvas.width,
-        scanCanvas.height
-      );
-
-      const qrCode = jsQR(
-        imageData.data,
-        imageData.width,
-        imageData.height,
-        {
-          inversionAttempts: 'attemptBoth'
+      const nativeDetector = new BarcodeDetector({ formats: ['qr_code'] });
+      const barcodes = await nativeDetector.detect(scanCanvas);
+      if (barcodes && barcodes.length > 0) {
+        barcodes.forEach(b => {
+          const val = (b.rawValue || '').trim();
+          if (val && !detectedList.includes(val)) {
+            detectedList.push(val);
+          }
+        });
+        if (detectedList.length > 0) {
+          return detectedList;
         }
-      );
-
-      if (qrCode && qrCode.data) {
-        const value = qrCode.data.trim();
-        console.log('✅ jsQR อ่าน QR สำเร็จ:', value);
-        return [value];
       }
-
     } catch (err) {
-      console.warn('jsQR อ่าน QR ไม่สำเร็จ:', err);
+      console.warn('BarcodeDetector fallback:', err);
     }
   }
 
-  return [];
+  // 2) ใช้ jsQR ร่วมกับเทคนิค Whiteout Masking (อ่านเจอแล้วถมขาวทับ เพื่อสแกนหาตัวถัดไปในภาพเดิม)
+  if (typeof jsQR !== 'undefined') {
+    try {
+      const workCanvas = document.createElement('canvas');
+      workCanvas.width = scanCanvas.width;
+      workCanvas.height = scanCanvas.height;
+      const ctx = workCanvas.getContext('2d', { willReadFrequently: true });
+      ctx.drawImage(scanCanvas, 0, 0);
+
+      // วนลูปสแกนหา QR ต่อเนื่องได้สูงสุด 15 ตัวต่อหนึ่งผืนผ้าใบ
+      for (let attempt = 0; attempt < 15; attempt++) {
+        const imgData = ctx.getImageData(0, 0, workCanvas.width, workCanvas.height);
+        const code = jsQR(imgData.data, imgData.width, imgData.height, {
+          inversionAttempts: 'attemptBoth'
+        });
+
+        if (!code || !code.data) break;
+
+        const val = code.data.trim();
+        if (val && !detectedList.includes(val)) {
+          detectedList.push(val);
+        }
+
+        // ลบพื้นที่ QR ตัวเดิมด้วยการถมสีขาว เพื่อไม่ให้ตัวตรวจจับล็อกติดตัวเดิม
+        const loc = code.location;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.moveTo(loc.topLeftCorner.x, loc.topLeftCorner.y);
+        ctx.lineTo(loc.topRightCorner.x, loc.topRightCorner.y);
+        ctx.lineTo(loc.bottomRightCorner.x, loc.bottomRightCorner.y);
+        ctx.lineTo(loc.bottomLeftCorner.x, loc.bottomLeftCorner.y);
+        ctx.closePath();
+        ctx.fill();
+
+        // ระบายขาวรอบนอกเพิ่ม 15px เพื่อลบส่วนลายมุม (Finder Pattern) ให้เกลี้ยง
+        const minX = Math.min(loc.topLeftCorner.x, loc.bottomLeftCorner.x) - 15;
+        const maxX = Math.max(loc.topRightCorner.x, loc.bottomRightCorner.x) + 15;
+        const minY = Math.min(loc.topLeftCorner.y, loc.topRightCorner.y) - 15;
+        const maxY = Math.max(loc.bottomLeftCorner.y, loc.bottomRightCorner.y) + 15;
+        ctx.fillRect(minX, minY, maxX - minX, maxY - minY);
+      }
+    } catch (err) {
+      console.warn('jsQR Multi-scan fallback:', err);
+    }
+  }
+
+  // 3) เสริมด้วย ZXing กรณีภาพมีลายเส้นหรือรอยสแกนรบกวน
+  if (detectedList.length === 0) {
+    try {
+      const zxingResults = await readQrWithZxing(scanCanvas);
+      zxingResults.forEach(val => {
+        if (val && !detectedList.includes(val)) detectedList.push(val);
+      });
+    } catch (err) {
+      console.warn('ZXing fallback:', err);
+    }
+  }
+
+  return detectedList;
 }
 
 // สร้าง canvas สำหรับสแกนเฉพาะพื้นที่หนึ่งของหน้า PDF
@@ -4935,33 +4917,44 @@ for (let pageNum = 1; pageNum <= pagesToScan; pageNum++) {
   console.log(`🔍 กำลังสแกน QR หน้า ${pageNum}/${pagesToScan}`);
 
   const page = await pdf.getPage(pageNum);
-  // ✅ เพิ่ม: ค้นหา URL ที่เป็นข้อความจริงในหน้า PDF
-// ใช้ได้แม้ QR ในภาพอ่านไม่สำเร็จ
-try {
-  const detectedUrls = new Set();
-  const textContent = await page.getTextContent();
 
-  const pageText = textContent.items
-    .map(item => item.str || '')
-    .join(' ');
+  // 1. ตรวจจับ Hyperlink ที่ฝังเป็นปุ่มกดหรือลิงก์ซ่อนในไฟล์ PDF โดยตรง
+  try {
+    const annotations = await page.getAnnotations();
+    annotations.forEach(annot => {
+      const linkUrl = annot.url || annot.unsafeUrl;
+      if (annot.subtype === 'Link' && linkUrl) {
+        const cleanUrl = linkUrl.trim().replace(/[.,;:!?)\]}]+$/g, '');
+        if (cleanUrl && !detectedUrls.includes(cleanUrl)) {
+          detectedUrls.push(cleanUrl);
+          console.log('✅ พบ URL จาก Hyperlink ใน PDF:', cleanUrl);
+        }
+      }
+    });
+  } catch (annError) {
+    console.warn(`อ่าน Hyperlink หน้า ${pageNum} ไม่สำเร็จ:`, annError);
+  }
 
-  // ปรับ Regex ให้ครอบคลุม URL ที่อาจมีเครื่องหมายปิดท้าย
+  // 2. ตรวจหาข้อความ URL ในหน้าเอกสาร (รองรับทั้ง http/https และลิงก์สั้นที่ไม่มี https นำหน้า)
+  try {
+    const textContent = await page.getTextContent();
+    const pageText = textContent.items.map(item => item.str || '').join(' ');
+    const urlRegex = /(https?:\/\/[^\s<>"'|]+|(?:forms\.gle|bit\.ly|line\.me|drive\.google\.com|goo\.gl)\/[^\s<>"'|]+)/gi;
+    const foundUrls = pageText.match(urlRegex) || [];
 
-const foundUrls = pageText.match(/https?:\/\/[^\s<>"'|]+/gi) || [];
-
-foundUrls.forEach(url => {
-
-  // ล้างอักขระส่วนเกินท้ายลิงก์ เช่น จุด หรือ วงเล็บ
-
-  const cleanUrl = url.replace(/[.,;:!?)\]}]+$/g, '');
-
-  if (cleanUrl) detectedUrls.add(cleanUrl);
-
-});
-
-} catch (textError) {
-  console.warn(`อ่านข้อความจากหน้า ${pageNum} ไม่สำเร็จ:`, textError);
-}
+    foundUrls.forEach(rawUrl => {
+      let cleanUrl = rawUrl.trim().replace(/[.,;:!?)\]}]+$/g, '');
+      if (!/^https?:\/\//i.test(cleanUrl)) {
+        cleanUrl = 'https://' + cleanUrl;
+      }
+      if (cleanUrl && !detectedUrls.includes(cleanUrl)) {
+        detectedUrls.push(cleanUrl);
+        console.log('✅ พบ URL จากข้อความใน PDF:', cleanUrl);
+      }
+    });
+  } catch (textError) {
+    console.warn(`อ่านข้อความจากหน้า ${pageNum} ไม่สำเร็จ:`, textError);
+  }
         // ✅ เปลี่ยนเป็น (เพิ่มความคมชัด เพื่ออ่าน QR ขนาดเล็กได้ดีขึ้น)
 const viewport = page.getViewport({ scale: 3.5 });
         const canvas = document.createElement('canvas');

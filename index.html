@@ -4560,8 +4560,13 @@ async function scanPdfForQrCode(fileId) {
 
       // ✅ เปลี่ยนเป็น (สแกน QR Code จากทุกหน้าในหนังสือ)
 const pagesToScan = pdf.numPages;
-      for (let pageNum = 1; pageNum <= pagesToScan; pageNum++) {
-        const page = await pdf.getPage(pageNum);
+      // ✅ เปลี่ยนเป็น (บอกผู้ใช้ว่าระบบกำลังสแกนถึงหน้าไหน)
+for (let pageNum = 1; pageNum <= pagesToScan; pageNum++) {
+  if (countDisplay) {
+    countDisplay.innerText = `กำลังสแกนหน้า ${pageNum}/${pagesToScan}`;
+  }
+
+  const page = await pdf.getPage(pageNum);
         // ✅ เปลี่ยนเป็น (เพิ่มความคมชัด เพื่ออ่าน QR ขนาดเล็กได้ดีขึ้น)
 const viewport = page.getViewport({ scale: 2.5 });
         const canvas = document.createElement('canvas');
@@ -4597,38 +4602,62 @@ let maxPerPages = 10;
       // 5. แสดงผลลิงก์ที่ตรวจพบทั้งหมดบนแถบด้านบน
       const uniqueUrls = Array.from(new Set(detectedUrls));
       // ✅ เปลี่ยนเป็น (ใช้ตัวแปรเดิมที่ประกาศไว้ด้านบน)
-      if (uniqueUrls.length > 0) {
+      // ✅ เปลี่ยนเป็น (แสดงผลทั้งกรณีพบ QR และไม่พบ QR)
+if (uniqueUrls.length > 0) {
+  if (countDisplay) countDisplay.innerText = uniqueUrls.length;
 
+  if (container) {
+    container.innerHTML = uniqueUrls.map((url, index) => {
+      let label = `ลิงก์ที่ ${index + 1}`;
 
-        if (countDisplay) countDisplay.innerText = uniqueUrls.length;
-        if (container) {
-          container.innerHTML = uniqueUrls.map((url, index) => {
-            let label = `ลิงก์ที่ ${index + 1}`;
-            if (url.includes('line.me')) label = `LINE ${index + 1}`;
-            else if (url.includes('forms.gle') || url.includes('google.com/forms')) label = `ฟอร์ม ${index + 1}`;
-            else if (url.includes('drive.google.com')) label = `Drive ${index + 1}`;
+      if (url.includes('line.me')) {
+        label = `LINE ${index + 1}`;
+      } else if (url.includes('forms.gle') || url.includes('google.com/forms')) {
+        label = `ฟอร์ม ${index + 1}`;
+      } else if (url.includes('drive.google.com')) {
+        label = `Drive ${index + 1}`;
+      }
 
-            // ✅ เปลี่ยนเป็น (เปิดลิงก์ในแท็บใหม่ และป้องกันหน้าเว็บปลายทางเข้าถึงหน้าต้นทาง)
-return `
-  <a href="${url}"
-     target="_blank"
-     rel="noopener noreferrer"
-     class="btn btn-sm btn-light border text-success fw-bold d-flex align-items-center gap-1 shadow-sm px-2 py-1"
-     title="${url}"
-     style="font-size: 0.76rem;">
-    <span>🌐 ${label}</span>
-    <span class="text-muted" style="font-size: 0.68rem;">↗️</span>
-  </a>
-`;
-          }).join('');
-        }
+      // หาก QR เป็นลิงก์เว็บ ให้สร้างปุ่มเปิดลิงก์
+      if (/^https?:\/\//i.test(url)) {
+        return `
+          <a href="${url}"
+             target="_blank"
+             rel="noopener noreferrer"
+             class="btn btn-sm btn-light border text-success fw-bold d-flex align-items-center gap-1 shadow-sm px-2 py-1"
+             title="${url}"
+             style="font-size: 0.76rem;">
+            <span>🌐 ${label}</span>
+            <span class="text-muted" style="font-size: 0.68rem;">↗️</span>
+          </a>
+        `;
+      }
 
-        // ✅ เปลี่ยนเป็น (แสดงผลทั้งกรณีพบและไม่พบ QR)
+      // หาก QR ไม่ใช่ URL ให้แสดงข้อมูลที่อ่านได้
+      return `
+        <div class="badge text-bg-light border text-dark p-2">
+          QR ${index + 1}: ${url}
+        </div>
+      `;
+    }).join('');
+  }
 
-        if (qrBar) qrBar.style.setProperty('display', 'block', 'important');
+} else {
+  // สแกนเสร็จแล้ว แต่ไม่พบ QR
+  if (countDisplay) countDisplay.innerText = '0';
 
+  if (container) {
+    container.innerHTML = `
+      <span class="small text-muted">
+        สแกนเสร็จแล้ว แต่ไม่พบ QR Code ที่อ่านได้ในหนังสือเล่มนี้
+      </span>
+    `;
+  };
+}
 
-      } else {
+if (qrBar) {
+  qrBar.style.setProperty('display', 'block', 'important');
+} else {
 
         // ไม่พบ QR Code ในหนังสือ
 
@@ -4652,9 +4681,24 @@ return `
 
       }
 
-    } catch (err) {
-      console.warn("การสแกน QR Code ล้มเหลว:", err);
-    }
+    // ✅ เปลี่ยนเป็น (แสดงสาเหตุบนหน้าเว็บแทนการค้างที่ ...)
+} catch (err) {
+  console.warn("การสแกน QR Code ล้มเหลว:", err);
+
+  if (countDisplay) countDisplay.innerText = 'ผิดพลาด';
+
+  if (container) {
+    container.innerHTML = `
+      <span class="small text-danger">
+        ไม่สามารถสแกน QR Code ได้ กรุณาลองเปิดใหม่อีกครั้ง
+      </span>
+    `;
+  }
+
+  if (qrBar) {
+    qrBar.style.setProperty('display', 'block', 'important');
+  }
+}
   }
   
 

@@ -232,6 +232,41 @@
     .row-missing { background-color: #ffeea8 !important; /* สีเหลืองนวลจางๆ */}
     .text-missing { color: #d93025; /* สีแดงเข้มแบบ Google เพื่อให้ดู Soft ลงแต่ยังเด่น */ font-weight: bold; }
 
+/* 🎯 กรอบไฮไลต์ครอบตำแหน่ง QR Code */
+.qr-highlight-box {
+  position: absolute;
+  border: 2px dashed #0284c7;
+  background: rgba(2, 132, 199, 0.18);
+  border-radius: 6px;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.2s ease;
+}
+.qr-highlight-box:hover {
+  background: rgba(2, 132, 199, 0.35);
+  transform: scale(1.02);
+}
+
+/* 💬 บอลลูน Popup แสดง URL */
+.qr-popup-bubble {
+  position: absolute;
+  bottom: 105%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #0f172a;
+  color: #ffffff;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 20;
+}
+
+
     /* 👤 สไตล์การ์ดข้อมูลบุคลากร */
     .staff-card {
       border: 1px solid #e2e8f0;
@@ -632,6 +667,8 @@
   <!-- ⚡ Firebase App & Realtime Database SDK (Compat Version) -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 </head>
 <body>
 
@@ -650,7 +687,7 @@
     <div class="small mb-1" style="color: #fef08a; text-shadow: 0 1px 6px rgba(0,0,0,0.6); letter-spacing: 0.3px;">ศูนย์การศึกษาพิเศษประจำจังหวัดตราด</div>
   </div>
 
-<div id="loginPage" class="container mt-5" style="max-width: 400px;">
+<div id="loginPage" class="container mt-5" style="display: none; max-width: 400px;">
   <div class="card p-4 shadow-lg text-center border-0">
     <!-- 🏫 โลโก้หน้าเข้าสู่ระบบ (ดึงจาก logo2.png) -->
     <div class="mb-3 text-center">
@@ -4856,7 +4893,7 @@ function copyDeepLink(fileUrl, encodedTitle) {
     // 🌟 สั่งปิด Splash Screen ภายใน 2 วินาที (เฉพาะบนมือถือ หากเปิดบนคอมจะปิดทันที 0ms)
     const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     if (isMobile) {
-      setTimeout(dismissSplashScreen, 2000);
+      setTimeout(dismissSplashScreen, 3000);
     } else {
       dismissSplashScreen();
     }
@@ -4904,6 +4941,47 @@ function copyDeepLink(fileUrl, encodedTitle) {
     }
   });
   
+// 🔍 ฟังก์ชันสแกนหา QR Code จาก Canvas แล้วสร้างกรอบลิงก์ตรงพิกัดจริง
+function scanAndOverlayQRCodes(canvas, overlayContainer) {
+  const ctx = canvas.getContext('2d');
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+  // ใช้ jsQR สแกนพิกเซลบน Canvas
+  const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+  if (code && code.data) {
+    const loc = code.location;
+    const minX = Math.min(loc.topLeftCorner.x, loc.bottomLeftCorner.x);
+    const maxX = Math.max(loc.topRightCorner.x, loc.bottomRightCorner.x);
+    const minY = Math.min(loc.topLeftCorner.y, loc.topRightCorner.y);
+    const maxY = Math.max(loc.bottomLeftCorner.y, loc.bottomRightCorner.y);
+
+    // คำนวณเป็นเปอร์เซ็นต์เทียบกับขนาดหน้ากระดาษ
+    const leftPct = (minX / canvas.width) * 100;
+    const topPct = (minY / canvas.height) * 100;
+    const widthPct = ((maxX - minX) / canvas.width) * 100;
+    const heightPct = ((maxY - minY) / canvas.height) * 100;
+
+    // สร้างกรอบคลิกได้วางทับตำแหน่ง QR Code
+    const box = document.createElement('div');
+    box.className = 'qr-highlight-box';
+    box.style.left = `${leftPct}%`;
+    box.style.top = `${topPct}%`;
+    box.style.width = `${widthPct}%`;
+    box.style.height = `${heightPct}%`;
+
+    // เมื่อแตะหรือชี้ ให้เปิดลิงก์ทันที
+    box.onclick = (e) => {
+      e.stopPropagation();
+      if (confirm(`🔗 ต้องการเปิดลิงก์จาก QR Code นี้ใช่หรือไม่?\n${code.data}`)) {
+        window.open(code.data, '_blank');
+      }
+    };
+
+    overlayContainer.appendChild(box);
+  }
+}
+
 </script>
 </body>
 </html>

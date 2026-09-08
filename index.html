@@ -4494,6 +4494,11 @@ async function refreshApp() {
   let pdfModalInstance = null;
 
   async function openPdfViewer(fileUrl, encodedTitle) {
+  // อ้างอิงส่วนแสดงผล QR ก่อนนำไปใช้งาน
+  const qrBar = document.getElementById('qrResultBar');
+  const countDisplay = document.getElementById('qrCountDisplay');
+  const container = document.getElementById('qrButtonsContainer');
+  const scanBtn = document.getElementById('scanQrBtn');
     const title = decodeURIComponent(encodedTitle).replace(/<[^>]*>?/gm, '').trim();
     const idMatch = fileUrl.match(/[-\w]{25,}/);
     const fileId = idMatch ? idMatch[0] : null;
@@ -4519,11 +4524,6 @@ async function refreshApp() {
     // ✅ เปลี่ยนเป็น: เก็บรหัสไฟล์ไว้ และให้ผู้ใช้กดปุ่ม "สแกน QR" เอง
 currentPdfFileId = fileId || '';
 
-// ซ่อนผลการสแกนเดิมทุกครั้งที่เปิดหนังสือเล่มใหม่
-const qrBar = document.getElementById('qrResultBar');
-const countDisplay = document.getElementById('qrCountDisplay');
-const container = document.getElementById('qrButtonsContainer');
-const scanBtn = document.getElementById('scanQrBtn');
 
 if (qrBar) {
   qrBar.style.setProperty('display', 'none', 'important');
@@ -4547,7 +4547,12 @@ let currentPdfFileId = '';
 let isQrScanning = false;
 
 // เรียกเมื่อผู้ใช้กดปุ่ม "สแกน QR"
+// ✅ เพิ่มใต้ async function scanCurrentPdfQr() {
 async function scanCurrentPdfQr() {
+  if (typeof pdfjsLib === 'undefined' || typeof jsQR === 'undefined') {
+    alert('ระบบสแกน QR Code ยังโหลดไม่สมบูรณ์ กรุณารีเฟรชหน้าเว็บแล้วลองใหม่');
+    return;
+  }
   if (!currentPdfFileId) {
     alert('ไม่พบไฟล์ PDF สำหรับสแกน QR Code');
     return;

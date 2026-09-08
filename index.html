@@ -669,6 +669,8 @@
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<!-- ✅ เพิ่มตรงนี้ -->
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
 </head>
 <body>
 
@@ -4652,55 +4654,51 @@ try {
 
 // อ่าน QR จาก canvas 1 ชิ้น
 // ใช้ BarcodeDetector ก่อน แล้วจึงใช้ jsQR เป็นตัวสำรอง
+// ✅ เปลี่ยนทั้งฟังก์ชัน: ใช้ ZXing เป็นตัวหลัก และ jsQR เป็นตัวสำรอง
 async function readQrFromCanvas(scanCanvas) {
-  const results = [];
+  // 1) ใช้ ZXing ก่อน เพราะอ่าน QR URL ได้แม่นกว่า
+  const zxingResults = await readQrWithZxing(scanCanvas);
 
-  // วิธีหลัก: ตัวอ่าน QR ที่มากับเบราว์เซอร์
-  if (qrNativeDetector) {
+  if (zxingResults.length > 0) {
+    console.log('✅ ZXing อ่าน QR สำเร็จ:', zxingResults);
+    return zxingResults;
+  }
+
+  // 2) หาก ZXing ไม่พบ ค่อยลอง jsQR เป็นตัวสำรอง
+  if (typeof jsQR !== 'undefined') {
     try {
-      const detected = await qrNativeDetector.detect(scanCanvas);
-
-      detected.forEach(item => {
-        const value = String(item.rawValue || '').trim();
-
-        if (value) {
-          results.push(value);
-        }
+      const scanCtx = scanCanvas.getContext('2d', {
+        willReadFrequently: true
       });
-    } catch (err) {
-      console.warn('BarcodeDetector อ่าน QR ไม่สำเร็จ:', err);
-    }
-  }
 
-  // วิธีสำรอง: ใช้ jsQR
-  // ใช้เฉพาะเมื่อ BarcodeDetector ยังไม่พบข้อมูล
-  if (results.length === 0 && typeof jsQR !== 'undefined') {
-    const scanCtx = scanCanvas.getContext('2d', {
-      willReadFrequently: true
-    });
+      const imageData = scanCtx.getImageData(
+        0,
+        0,
+        scanCanvas.width,
+        scanCanvas.height
+      );
 
-    const imageData = scanCtx.getImageData(
-      0,
-      0,
-      scanCanvas.width,
-      scanCanvas.height
-    );
+      const qrCode = jsQR(
+        imageData.data,
+        imageData.width,
+        imageData.height,
+        {
+          inversionAttempts: 'attemptBoth'
+        }
+      );
 
-    const qrCode = jsQR(
-      imageData.data,
-      imageData.width,
-      imageData.height,
-      {
-        inversionAttempts: 'attemptBoth'
+      if (qrCode && qrCode.data) {
+        const value = qrCode.data.trim();
+        console.log('✅ jsQR อ่าน QR สำเร็จ:', value);
+        return [value];
       }
-    );
 
-    if (qrCode && qrCode.data) {
-      results.push(qrCode.data.trim());
+    } catch (err) {
+      console.warn('jsQR อ่าน QR ไม่สำเร็จ:', err);
     }
   }
 
-  return [...new Set(results)];
+  return [];
 }
 
 // สร้าง canvas สำหรับสแกนเฉพาะพื้นที่หนึ่งของหน้า PDF
@@ -4721,6 +4719,42 @@ function createQrCropCanvas(sourceCanvas, x, y, width, height) {
 
   return cropCanvas;
 }
+  
+  // ✅ เพิ่มก่อน async function scanPdfForQrCode(fileId) {
+
+// สแกน QR จาก canvas ด้วย ZXing
+// เหมาะกับ QR ที่เก็บ URL หรือข้อมูลจำนวนมาก
+async function readQrWithZxing(scanCanvas) {
+  // ตรวจสอบว่า ZXing โหลดสำเร็จหรือไม่
+  if (typeof ZXing === 'undefined') {
+    throw new Error('ไม่สามารถโหลดระบบสแกน QR (ZXing) ได้');
+  }
+
+  const results = [];
+
+  try {
+    // สร้างตัวอ่าน QR Code
+    const reader = new ZXing.BrowserQRCodeReader();
+
+    // แปลงภาพจาก canvas เป็น PNG Data URL
+    const imageDataUrl = scanCanvas.toDataURL('image/png');
+
+    // ให้ ZXing อ่าน QR จากภาพ
+    const result = await reader.decodeFromImageUrl(imageDataUrl);
+
+    if (result && result.getText()) {
+      results.push(result.getText().trim());
+    }
+
+  } catch (err) {
+    // ZXing จะ throw error ปกติเมื่อไม่พบ QR
+    // จึงไม่ต้องแสดง error ให้ผู้ใช้ในจุดนี้
+    console.log('ZXing: ไม่พบ QR ในพื้นที่นี้');
+  }
+
+  return [...new Set(results)];
+}
+  
   /// ✅ เปลี่ยนเป็น (ล้างผลเก่า และแจ้งสถานะก่อนเริ่มสแกน)
 
 async function scanPdfForQrCode(fileId) {
@@ -4780,14 +4814,17 @@ if (!data.success || !data.base64) {
       // ✅ เปลี่ยนเป็น (สแกน QR Code จากทุกหน้าในหนังสือ)
 const pagesToScan = pdf.numPages;
       // ✅ เปลี่ยนเป็น (บอกผู้ใช้ว่าระบบกำลังสแกนถึงหน้าไหน)
+// ✅ เปลี่ยนเป็น: แสดงความคืบหน้า และช่วยตรวจสอบว่าระบบกำลังสแกนจริง
 for (let pageNum = 1; pageNum <= pagesToScan; pageNum++) {
   if (countDisplay) {
     countDisplay.innerText = `กำลังสแกนหน้า ${pageNum}/${pagesToScan}`;
   }
 
+  console.log(`🔍 กำลังสแกน QR หน้า ${pageNum}/${pagesToScan}`);
+
   const page = await pdf.getPage(pageNum);
         // ✅ เปลี่ยนเป็น (เพิ่มความคมชัด เพื่ออ่าน QR ขนาดเล็กได้ดีขึ้น)
-const viewport = page.getViewport({ scale: 5 });
+const viewport = page.getViewport({ scale: 3.5 });
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         canvas.width = viewport.width;
@@ -4807,13 +4844,10 @@ fullPageResults.forEach(qrText => {
   }
 });
 
-// 2. สแกนซ้ำเป็นช่องย่อยแบบเหลื่อมกัน
-// ใช้สำหรับ QR ขนาดเล็ก หรือกรณีหนึ่งหน้ามี QR หลายอัน
-const columns = 3;
-const rows = 4;
-
-// ให้พื้นที่แต่ละช่องเหลื่อมกัน เพื่อไม่ให้ QR ที่อยู่ตามรอยต่อถูกตัดขาด
-const overlap = 160;
+// ✅ เปลี่ยนเป็น: ช่องใหญ่ขึ้น ลดโอกาส QR ถูกตัดขาด
+const columns = 2;
+const rows = 3;
+const overlap = 220;
 
 for (let row = 0; row < rows; row++) {
   for (let col = 0; col < columns; col++) {

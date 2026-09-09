@@ -4256,7 +4256,10 @@ async function refreshApp() {
         { user: "aad",   pass: "1234", role: "ฝ่ายบริหารวิชาการ", name: "ฝ่ายบริหารวิชาการ" },
         { user: "hrm",   pass: "1234", role: "ฝ่ายบริหารงานบุคคล", name: "ฝ่ายบริหารงานบุคคล" },
         { user: "gad",   pass: "1234", role: "ฝ่ายบริหารทั่วไป", name: "ฝ่ายบริหารทั่วไป" },
-        { user: "pdb",   pass: "1234", role: "ฝ่ายบริหารงบประมาณ", name: "ฝ่ายบริหารงบประมาณ" }
+        { user: "pdb",   pass: "1234", role: "ฝ่ายบริหารงบประมาณ", name: "ฝ่ายบริหารงบประมาณ" },
+        
+        // ⭐️ เพิ่ม User ของรองผู้อำนวยการ (กำหนด user: "dep" หรือตามสะดวก)
+        { user: "dep",   pass: "1234", role: "รองผู้อำนวยการ", name: "รองผู้อำนวยการ" }
       ];
 
       const result = usersDB.find(item => item.user === u && item.pass === p);

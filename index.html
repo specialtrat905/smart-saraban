@@ -664,18 +664,40 @@
   }
 }
 
-/* ✨ เพิ่มมิติ 3D นุ่มนวลและเงาสะท้อนให้ปุ่มทุกประเภทในแอป โดยคงสีเดิม */
+/* ✨ สไตล์ปุ่มแบบ Glossy Gel (เงาวาว 3D เหมือนในภาพ) โดยคงสีเดิม */
 .btn {
+  border-radius: 50px !important;
+  position: relative !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(0, 0, 0, 0.25) !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
+  background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.15) 51%, rgba(0, 0, 0, 0.05) 100%) !important;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35) !important;
+  font-weight: bold !important;
   transition: transform 0.12s ease, box-shadow 0.12s ease !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -3px 0 rgba(0, 0, 0, 0.2) !important;
 }
+
+/* ชั้นแสงสะท้อนเงาวาวด้านบน (Glossy Highlight) */
+.btn::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 6px;
+  right: 6px;
+  height: 45%;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.1) 100%);
+  border-radius: 30px 30px 15px 15px;
+  pointer-events: none;
+}
+
 .btn:hover {
   transform: translateY(-2px) !important;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18), inset 0 1px 1px rgba(255, 255, 255, 0.55), inset 0 -3px 0 rgba(0, 0, 0, 0.2) !important;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
 }
+
 .btn:active {
   transform: translateY(1px) !important;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15), inset 0 2px 5px rgba(0, 0, 0, 0.3) !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), inset 0 2px 4px rgba(0, 0, 0, 0.3) !important;
 }
 
   </style>

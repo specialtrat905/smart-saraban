@@ -664,40 +664,124 @@
   }
 }
 
-/* ✨ สไตล์ปุ่มแบบ Glossy Gel (เงาวาว 3D เหมือนในภาพ) โดยคงสีเดิม */
+/* 🎮 สไตล์ปุ่มแคปซูล 3D นุ่มนวล (แก้ปัญหา Error CSS และจัดระเบียบปุ่ม) */
 .btn {
   border-radius: 50px !important;
   position: relative !important;
   overflow: hidden !important;
-  border: 1px solid rgba(0, 0, 0, 0.25) !important;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.6) !important;
-  background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0) 50%, rgba(0, 0, 0, 0.15) 51%, rgba(0, 0, 0, 0.05) 100%) !important;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35) !important;
+  border: none !important;
+  box-shadow: none !important;
+  background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.1) 34%, rgba(0, 0, 0, 0.08) 35%, rgba(0, 0, 0, 0.02) 100%) !important;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25) !important;
   font-weight: bold !important;
-  transition: transform 0.12s ease, box-shadow 0.12s ease !important;
+  letter-spacing: 0.3px !important;
+  transition: all 0.15s ease !important;
 }
 
-/* ชั้นแสงสะท้อนเงาวาวด้านบน (Glossy Highlight) */
+.btn::before {
+  display: none !important;
+}
+
 .btn::after {
   content: '';
   position: absolute;
   top: 2px;
-  left: 6px;
-  right: 6px;
-  height: 45%;
-  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.1) 100%);
-  border-radius: 30px 30px 15px 15px;
+  left: 12px;
+  right: 12px;
+  height: 25%;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 100%);
+  border-radius: 30px;
   pointer-events: none;
 }
 
 .btn:hover {
-  transform: translateY(-2px) !important;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
 }
 
 .btn:active {
   transform: translateY(1px) !important;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), inset 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+  box-shadow: none !important;
+}
+
+/* 🎯 1. ปุ่ม 4 เมนูด้านบนและปุ่มสีขาวทั่วไป: ขอบเขียวมินต์ ชี้แล้วเปลี่ยนเป็นเขียวพาสเทล */
+.btn-nav-action, .btn-light, .btn-filter-chip {
+  background-color: #ffffff !important;
+  background-image: linear-gradient(to bottom, rgba(255, 255, 255, 1) 0%, rgba(240, 247, 245, 1) 100%) !important;
+  color: #004d40 !important;
+  border: 1.5px solid #b2dfdb !important;
+  text-shadow: none !important;
+}
+
+.btn-nav-action:hover, .btn-light:hover, .btn-filter-chip:hover {
+  background-color: #e0f2f1 !important;
+  background-image: linear-gradient(to bottom, #e0f2f1 0%, #b2dfdb 100%) !important;
+  color: #00251a !important;
+  border-color: #00796b !important;
+}
+
+/* 🎯 กลุ่มปุ่มรอง (ปุ่มคัดลอก, ปุ่มแชร์ลิงก์, คัดลอกตาราง, ดาวน์โหลด Excel, พิมพ์): แคปซูล 3D นูนเด่น โทนสีเหลืองอมส้ม พร้อมเงาเข้มชัดเจน */
+.btn-copy, 
+#adminShareStaffBtn,
+.card-border-green .btn-outline-primary, 
+.card-border-green .btn-outline-success, 
+.card-border-green .btn-outline-dark, 
+.card-border-green .btn-outline-secondary {
+  border-radius: 50px !important;
+  position: relative !important;
+  overflow: hidden !important;
+  background-color: #ffffff !important;
+  background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.9) 0%, rgba(254, 243, 199, 0.7) 34%, rgba(245, 158, 11, 0.25) 35%, rgba(217, 119, 6, 0.1) 100%) !important;
+  color: #b45309 !important;
+  border: 1.5px solid #fcd34d !important;
+  /* เพิ่มเงาด้านล่างให้เข้มและมีมิติชัดเจนขึ้น */
+  box-shadow: 0 4px 6px rgba(180, 83, 9, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+  text-shadow: none !important;
+  font-weight: bold !important;
+  letter-spacing: 0.3px !important;
+  transition: all 0.15s ease !important;
+}
+
+/* เพิ่มแสงไฮไลต์ด้านบนให้ดูนูนลอย */
+.btn-copy::after, 
+#adminShareStaffBtn::after,
+.card-border-green .btn-outline-primary::after, 
+.card-border-green .btn-outline-success::after, 
+.card-border-green .btn-outline-dark::after, 
+.card-border-green .btn-outline-secondary::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 12px;
+  right: 12px;
+  height: 30%;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0) 100%);
+  border-radius: 30px;
+  pointer-events: none;
+}
+
+.btn-copy:hover, 
+#adminShareStaffBtn:hover,
+.card-border-green .btn-outline-primary:hover, 
+.card-border-green .btn-outline-success:hover, 
+.card-border-green .btn-outline-dark:hover, 
+.card-border-green .btn-outline-secondary:hover {
+  transform: translateY(-2px) !important;
+  background-color: #fef3c7 !important;
+  background-image: linear-gradient(to bottom, #fef3c7 0%, #fde68a 100%) !important;
+  color: #78350f !important;
+  border-color: #f59e0b !important;
+  box-shadow: 0 6px 12px rgba(245, 158, 11, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+}
+
+.btn-copy:active, 
+#adminShareStaffBtn:active,
+.card-border-green .btn-outline-primary:active, 
+.card-border-green .btn-outline-success:active, 
+.card-border-green .btn-outline-dark:active, 
+.card-border-green .btn-outline-secondary:active {
+  transform: translateY(1px) !important;
+  box-shadow: 0 2px 3px rgba(180, 83, 9, 0.2) !important;
 }
 
   </style>
@@ -1732,13 +1816,29 @@ function loadLogsFromFirebase(year) {
   
   rtdb.ref('logs_' + year).on('value', (snapshot) => {
     const rawData = snapshot.val();
-    if (rawData && rawData.length > 0) {
-      console.log(`🔥 [Firebase SUCCESS] ซิงก์ข้อมูลปี ${year} ครบทั้งปี (${rawData.length} รายการ)`);
-      allLogs = Array.isArray(rawData) ? rawData : Object.values(rawData);
+    const dataList = rawData ? (Array.isArray(rawData) ? rawData : Object.values(rawData)) : [];
+    
+    if (dataList.length > 0) {
+      console.log(`🔥 [Firebase SUCCESS] ซิงก์ข้อมูลปี ${year} ครบทั้งปี (${dataList.length} รายการ)`);
+      allLogs = dataList;
       applyClientSideFilter(); // กรองข้อมูลบนเครื่องทันที 0ms
     } else {
-      allLogs = [];
-      displayTable([]);
+      // ⚡ Fallback: ดึงข้อมูลสดจาก Apps Script ทันทีเมื่อ Firebase ยังไม่มีข้อมูล
+      fetch(`${SCRIPT_URL}?year=${year}&dept=all&search=&offset=0&limit=500&t=${new Date().getTime()}`)
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data) && data.length > 0) {
+            allLogs = data;
+            applyClientSideFilter();
+            try { rtdb.ref('logs_' + year).set(data); } catch(e){}
+          } else {
+            allLogs = [];
+            displayTable([]);
+          }
+        }).catch(() => {
+          allLogs = [];
+          displayTable([]);
+        });
     }
   });
 }
@@ -4088,7 +4188,7 @@ async function refreshApp() {
     printWindow.document.close();
   }
 
-  // --- 7. ระบบตรวจสอบสิทธิ์ล็อกอินผ่าน Google ชีตปิด (แก้ปัญหาตัวแดง 429) ---
+// --- 7. ระบบตรวจสอบสิทธิ์ล็อกอินผ่าน Google ชีตปิด (แก้ปัญหาตัวแดง 429) ---
   // 🔐 ฟังก์ชันเข้าสู่ระบบความเร็วสูง 0ms (Local Auth - ปลอดภัย เสถียรที่สุด 100%)
   // 🔐 ฟังก์ชันเข้าสู่ระบบความเร็วสูง + เอฟเฟกต์ตอบโต้ปุ่มกด (Interactive UX)
   function login() {
@@ -4129,9 +4229,7 @@ async function refreshApp() {
             document.getElementById('deptFilterContainer').style.display = 'none';
         }
 
-        // 2. 👈 วางคำสั่งนี้ตรงนี้ครับ
         updateNavForView('saraban');
-
         setupExitButton();
 
         document.getElementById('loginPage').style.display = 'none';
@@ -4144,7 +4242,6 @@ async function refreshApp() {
         document.getElementById('loginErr').innerText = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
       }
 
-      // คืนค่าปุ่มกดให้กลับมาสแตนด์บายปกติกรณีใส่รหัสผิด
       btn.disabled = false;
       btn.innerHTML = `เข้าสู่ระบบ`;
     }, 200);
@@ -4153,11 +4250,10 @@ async function refreshApp() {
   // --- 8. ฟังก์ชันจัดคิวและดาวน์โหลดข้อมูลสลับหน้าความเสถียรสูง ---
   function resetAndReloadLogs() {
     isLoading = false;
-    currentFirebaseYear = null; // 👈 รีเซ็ตเพื่อให้โหลดข้อมูลอัปเดตล่าสุด
+    currentFirebaseYear = null;
     allLogs = [];
     loadLogs();
   }
-
 
   // ⚡ ฟังก์ชันกรองข้อมูลในหน่วยความจำเครื่อง (พร้อมระบบคำนวณเลขที่ยังไม่ลงระบบ ❌)
   function applyClientSideFilter() {
@@ -4194,7 +4290,7 @@ async function refreshApp() {
             missingRows.push([
               "❌",
               "SYSTEM",
-              `<span style="color: red; font-weight: bold;">${i}-${targetYear}</span>`,
+              `<span class="text-missing">${i}-${targetYear}</span>`,
               "ยังไม่มีข้อมูล",
               "#"
             ]);
@@ -4238,7 +4334,6 @@ async function refreshApp() {
       return matchSearch && matchDept;
     });
 
-    // นำรายการที่ยังไม่ลงระบบมารวมแสดงผล (กรณีเลือกทุกกลุ่มงานและไม่ได้ค้นหา)
     if (selectedDept === "all" && searchTerm === "") {
       filtered = filtered.concat(missingRows);
     }
@@ -4272,7 +4367,7 @@ async function refreshApp() {
   }
 
   function handleSearchInput() {
-    applyClientSideFilter(); // พิมพ์แล้วกรองทันที 0ms
+    applyClientSideFilter();
   }
 
   // --- 9. ระบบอัปโหลดหลายกลุ่มงานพร้อม Progress Bar และยกเลิกกลุ่มงานอัตโนมัติ ---
@@ -4281,12 +4376,12 @@ async function refreshApp() {
     if (selectedFilesArray.length === 0) return alert("กรุณาเลือกไฟล์หนังสือที่จะส่ง");
 
     const deptColors = {
-    "ฝ่ายบริหารวิชาการ": "#ffde59", "บริหารงานวิชาการ": "#ffde59",
-    "ฝ่ายบริหารงบประมาณ": "#ff5757", "บริหารแผนงานและงบประมาณ": "#ff5757",
-    "ฝ่ายบริหารงานบุคคล": "#0cc0df", "บริหารงานบุคคล": "#0cc0df",
-    "ฝ่ายบริหารทั่วไป": "#8c52ff", "บริหารงานทั่วไป": "#8c52ff",
-    "ผู้อำนวยการ": "#add8e6", "รองผู้อำนวยการ": "#d2b48c", "อื่นๆ": "#adb5bd"
-  };
+      "ฝ่ายบริหารวิชาการ": "#ffde59", "บริหารงานวิชาการ": "#ffde59",
+      "ฝ่ายบริหารงบประมาณ": "#ff5757", "บริหารแผนงานและงบประมาณ": "#ff5757",
+      "ฝ่ายบริหารงานบุคคล": "#0cc0df", "บริหารงานบุคคล": "#0cc0df",
+      "ฝ่ายบริหารทั่วไป": "#8c52ff", "บริหารงานทั่วไป": "#8c52ff",
+      "ผู้อำนวยการ": "#add8e6", "รองผู้อำนวยการ": "#d2b48c", "อื่นๆ": "#adb5bd"
+    };
 
     const modalTargetDept = document.getElementById('modalTargetDept');
     modalTargetDept.innerHTML = selectedDepartments.map(d => {
@@ -4305,7 +4400,6 @@ async function refreshApp() {
       </li>
     `).join('');
 
-    // 🔍 ระบบตรวจจับหนังสือซ้ำในฐานข้อมูล
     const duplicateList = [];
     selectedFilesArray.forEach(file => {
       const cleanUploadName = file.name.replace(/\s*\[.*?\]/, "").replace(/\.pdf$/i, "").trim();
@@ -4331,7 +4425,6 @@ async function refreshApp() {
       dupUl.innerHTML = '';
     }
 
-    // รีเซ็ตแถบความก้าวหน้า (Progress Bar) และปุ่มกดให้กลับเป็นค่าเริ่มต้น
     document.getElementById('uploadProgressSection').style.display = 'none';
     document.getElementById('uploadProgressBar').style.width = '0%';
     document.getElementById('uploadPercentText').innerText = '0%';
@@ -4356,7 +4449,6 @@ async function refreshApp() {
     const statusText = document.getElementById('uploadStatusText');
     const percentText = document.getElementById('uploadPercentText');
 
-    // ล็อกปุ่มป้องกันการปิดหน้าต่างระหว่างส่ง
     cancelBtn.style.display = 'none';
     confirmBtn.disabled = true;
     confirmBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> กำลังส่ง...`;
@@ -4439,11 +4531,9 @@ async function refreshApp() {
       if (uploadModalInstance) uploadModalInstance.hide();
       alert(`สำเร็จ! ส่งหนังสือ ${totalFilesCount} ฉบับ ให้กับ ${totalDeptsCount} กลุ่มงาน เรียบร้อยแล้ว`);
       
-      // ล้างไฟล์แนบ
       selectedFilesArray = []; 
       renderFileList(); 
 
-      // 🧹 รีเซ็ตการเลือกกลุ่มงานและรายชื่อผู้รับทั้งหมดให้กลับสู่ค่าเริ่มต้น
       selectedDepartments = [];
       otherStaffNames = [];
       document.querySelectorAll('.dept-checkbox').forEach(cb => cb.checked = false);
@@ -4458,7 +4548,6 @@ async function refreshApp() {
       console.error("Upload Error:", err);
       alert("⚠️ เกิดข้อผิดพลาดในระหว่างการส่งหนังสือ กรุณาลองใหม่อีกครั้ง");
     } finally {
-      // 🔄 ปลดล็อกและคืนค่าสถานะปุ่มกดยืนยันให้พร้อมส่งรอบใหม่เสมอ
       confirmBtn.disabled = false;
       confirmBtn.innerHTML = `✅ ยืนยันการส่ง`;
       cancelBtn.style.display = 'inline-block';
@@ -4470,7 +4559,7 @@ async function refreshApp() {
   }
 
   // --- 10. ระบบจัดการแก้ไขฐานข้อมูล (เลือกลบ หรือ แก้ไขกลุ่มงาน) ---
-  let currentDbMode = null; // null | 'delete' | 'editDept'
+  let currentDbMode = null;
   let currentEditingIndex = null;
   let editOtherStaffNames = [];
   let dbActionModalInstance = null;
@@ -4490,6 +4579,7 @@ async function refreshApp() {
 
   function updateEditDbButtonUI() {
     const btn = document.getElementById('editDbBtn');
+    if (!btn) return;
     if (currentDbMode === null) {
       btn.className = "btn btn-sm btn-nav-edit shadow-sm text-nowrap";
       btn.innerHTML = "⚙️ แก้ไขฐานข้อมูล";
@@ -4507,7 +4597,6 @@ async function refreshApp() {
     }
   }
 
-  // --- ส่วนของโหมดลบหนังสือ ---
   function toggleSelectBookForDelete(encodedFileName, isChecked) {
     const fileName = decodeURIComponent(encodedFileName);
     if (isChecked) {
@@ -4534,26 +4623,24 @@ async function refreshApp() {
     }
     deleteModalInstance.show();
   }
+
   // --- 11. ระบบ In-App PDF Viewer (เปิดดูเอกสารในหน้าเว็บ) ---
   let pdfModalInstance = null;
 
   async function openPdfViewer(fileUrl, encodedTitle) {
-  // อ้างอิงส่วนแสดงผล QR ก่อนนำไปใช้งาน
-  const qrBar = document.getElementById('qrResultBar');
-  const countDisplay = document.getElementById('qrCountDisplay');
-  const container = document.getElementById('qrButtonsContainer');
-  const scanBtn = document.getElementById('scanQrBtn');
+    const qrBar = document.getElementById('qrResultBar');
+    const countDisplay = document.getElementById('qrCountDisplay');
+    const container = document.getElementById('qrButtonsContainer');
+    const scanBtn = document.getElementById('scanQrBtn');
     const title = decodeURIComponent(encodedTitle).replace(/<[^>]*>?/gm, '').trim();
     const idMatch = fileUrl.match(/[-\w]{25,}/);
     const fileId = idMatch ? idMatch[0] : null;
-    // ✅ URL สำหรับแสดง PDF ใน iframe
-const previewUrl = `https://drive.google.com/file/d/${fileId}/preview`;
+    const previewUrl = `https://drive.google.com/file/d/${fileId}/preview`;
 
     document.getElementById('pdfModalTitle').innerText = title;
     document.getElementById('pdfModalExternalBtn').href = fileUrl;
     document.getElementById('pdfModalIframe').src = previewUrl;
 
-    // ซ่อนแถบ QR Code ไว้ก่อน
     if (qrBar) qrBar.style.setProperty('display', 'none', 'important');
 
     if (!pdfModalInstance) {
@@ -4565,490 +4652,437 @@ const previewUrl = `https://drive.google.com/file/d/${fileId}/preview`;
     }
     pdfModalInstance.show();
 
-    // 🔍 เริ่มกระบวนการสแกนหา QR Code ในหน้าแรกของหนังสือ
-    // ✅ เปลี่ยนเป็น: เก็บรหัสไฟล์ไว้ และให้ผู้ใช้กดปุ่ม "สแกน QR" เอง
-currentPdfFileId = fileId || '';
+    currentPdfFileId = fileId || '';
 
-
-if (qrBar) {
-  qrBar.style.setProperty('display', 'none', 'important');
-}
-
-if (countDisplay) {
-  countDisplay.innerText = '0';
-}
-
-if (container) {
-  container.innerHTML = '';
-}
-
-// ปิดปุ่มไว้หากหนังสือไม่มี fileId
-if (scanBtn) {
-  scanBtn.disabled = !currentPdfFileId;
-}
-  }
-// ✅ เพิ่มครั้งเดียว: เก็บไฟล์ PDF ของหนังสือที่กำลังเปิดอยู่
-let currentPdfFileId = '';
-let isQrScanning = false;
-
-// เรียกเมื่อผู้ใช้กดปุ่ม "สแกน QR"
-// ✅ เพิ่มใต้ async function scanCurrentPdfQr() {
-async function scanCurrentPdfQr() {
-  if (typeof pdfjsLib === 'undefined' || typeof jsQR === 'undefined') {
-    alert('ระบบสแกน QR Code ยังโหลดไม่สมบูรณ์ กรุณารีเฟรชหน้าเว็บแล้วลองใหม่');
-    return;
-  }
-  if (!currentPdfFileId) {
-    alert('ไม่พบไฟล์ PDF สำหรับสแกน QR Code');
-    return;
+    if (qrBar) qrBar.style.setProperty('display', 'none', 'important');
+    if (countDisplay) countDisplay.innerText = '0';
+    if (container) container.innerHTML = '';
+    if (scanBtn) scanBtn.disabled = !currentPdfFileId;
   }
 
-  // ป้องกันการกดซ้ำระหว่างระบบกำลังสแกน
-  if (isQrScanning) {
-    return;
-  }
+  let currentPdfFileId = '';
+  let isQrScanning = false;
 
-  const scanBtn = document.getElementById('scanQrBtn');
-
-  try {
-    isQrScanning = true;
-
-    if (scanBtn) {
-      scanBtn.disabled = true;
-      scanBtn.innerHTML = '⏳ กำลังสแกน...';
+  async function scanCurrentPdfQr() {
+    if (typeof pdfjsLib === 'undefined' || typeof jsQR === 'undefined') {
+      alert('ระบบสแกน QR Code ยังโหลดไม่สมบูรณ์ กรุณารีเฟรชหน้าเว็บแล้วลองใหม่');
+      return;
+    }
+    if (!currentPdfFileId) {
+      alert('ไม่พบไฟล์ PDF สำหรับสแกน QR Code');
+      return;
     }
 
-    await scanPdfForQrCode(currentPdfFileId);
+    if (isQrScanning) return;
 
-  } finally {
-    isQrScanning = false;
+    const scanBtn = document.getElementById('scanQrBtn');
 
-    if (scanBtn) {
-      scanBtn.disabled = false;
-      scanBtn.innerHTML = '🔍 สแกน QR';
-    }
-  }
-}
-
-// ✅ เพิ่มครั้งเดียว: เปลี่ยนภาพเป็นขาว-ดำเพื่อช่วยอ่าน QR ที่มีข้อมูลยาว เช่น URL
-function makeQrThresholdImage(imageData, threshold = 165) {
-  const output = new Uint8ClampedArray(imageData.data);
-
-  for (let i = 0; i < output.length; i += 4) {
-    const red = output[i];
-    const green = output[i + 1];
-    const blue = output[i + 2];
-
-    // คำนวณความสว่างของแต่ละพิกเซล
-    const brightness = (red * 0.299) + (green * 0.587) + (blue * 0.114);
-
-    // ทำให้เป็นสีดำหรือขาวชัดเจน
-    const color = brightness < threshold ? 0 : 255;
-
-    output[i] = color;
-    output[i + 1] = color;
-    output[i + 2] = color;
-    output[i + 3] = 255;
-  }
-
-  return new ImageData(output, imageData.width, imageData.height);
-}
-
-// ✅ เพิ่มครั้งเดียว: ลองอ่านทั้งภาพปกติและภาพขาว-ดำหลายระดับ
-function decodeQrImage(imageData) {
-  const testImages = [
-    imageData,
-    makeQrThresholdImage(imageData, 130),
-    makeQrThresholdImage(imageData, 165),
-    makeQrThresholdImage(imageData, 200)
-  ];
-
-  for (const testImage of testImages) {
-    const qrCode = jsQR(
-      testImage.data,
-      testImage.width,
-      testImage.height,
-      {
-        inversionAttempts: 'attemptBoth'
-      }
-    );
-
-    if (qrCode && qrCode.data) {
-      return qrCode.data.trim();
-    }
-  }
-
-  return null;
-}
-// ✅ เพิ่มก่อน async function scanPdfForQrCode(fileId) {
-
-// สร้างตัวอ่าน QR ของเบราว์เซอร์ (Chrome / Android รองรับได้ดี)
-let qrNativeDetector = null;
-
-try {
-  if ('BarcodeDetector' in window) {
-    qrNativeDetector = new BarcodeDetector({
-      formats: ['qr_code']
-    });
-  }
-} catch (err) {
-  console.warn('ไม่สามารถเปิดใช้ BarcodeDetector ได้:', err);
-}
-
-// 1. อ่าน QR Code พร้อมบันทึกพิกัด (x, y) เทียบกับหน้ากระดาษเต็มแผ่น
-async function readQrFromCanvas(scanCanvas, offsetX = 0, offsetY = 0) {
-  const detectedList = [];
-
-  // 1) ใช้ Native BarcodeDetector
-  if ('BarcodeDetector' in window) {
     try {
-      const nativeDetector = new BarcodeDetector({ formats: ['qr_code'] });
-      const barcodes = await nativeDetector.detect(scanCanvas);
-      if (barcodes && barcodes.length > 0) {
-        barcodes.forEach(b => {
-          const val = (b.rawValue || '').trim();
-          if (val) {
-            const box = b.boundingBox;
-            const bx = box ? (box.x || box.left || 0) : 0;
-            const by = box ? (box.y || box.top || 0) : 0;
-            if (!detectedList.some(d => d.url === val)) {
-              detectedList.push({
-                url: val,
-                x: Math.round(offsetX + bx),
-                y: Math.round(offsetY + by)
-              });
-            }
-          }
-        });
-        if (detectedList.length > 0) return detectedList;
+      isQrScanning = true;
+      if (scanBtn) {
+        scanBtn.disabled = true;
+        scanBtn.innerHTML = '⏳ กำลังสแกน...';
       }
-    } catch (err) {}
-  }
-
-  // 2) ใช้ jsQR ร่วมกับเทคนิค Whiteout Masking
-  if (typeof jsQR !== 'undefined') {
-    try {
-      const workCanvas = document.createElement('canvas');
-      workCanvas.width = scanCanvas.width;
-      workCanvas.height = scanCanvas.height;
-      const ctx = workCanvas.getContext('2d', { willReadFrequently: true });
-      ctx.drawImage(scanCanvas, 0, 0);
-
-      for (let attempt = 0; attempt < 15; attempt++) {
-        const imgData = ctx.getImageData(0, 0, workCanvas.width, workCanvas.height);
-        const code = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: 'attemptBoth' });
-        if (!code || !code.data) break;
-
-        const val = code.data.trim();
-        const loc = code.location;
-        const cx = loc.topLeftCorner.x;
-        const cy = loc.topLeftCorner.y;
-
-        if (!detectedList.some(d => d.url === val)) {
-          detectedList.push({
-            url: val,
-            x: Math.round(offsetX + cx),
-            y: Math.round(offsetY + cy)
-          });
-        }
-
-        // ถมสีขาวทับ QR ที่ตรวจพบแล้ว เพื่อสแกนหาตัวถัดไปในภาพเดิม
-        const minX = Math.min(loc.topLeftCorner.x, loc.bottomLeftCorner.x) - 15;
-        const maxX = Math.max(loc.topRightCorner.x, loc.bottomRightCorner.x) + 15;
-        const minY = Math.min(loc.topLeftCorner.y, loc.topRightCorner.y) - 15;
-        const maxY = Math.max(loc.bottomLeftCorner.y, loc.bottomRightCorner.y) + 15;
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(minX, minY, maxX - minX, maxY - minY);
+      await scanPdfForQrCode(currentPdfFileId);
+    } finally {
+      isQrScanning = false;
+      if (scanBtn) {
+        scanBtn.disabled = false;
+        scanBtn.innerHTML = '🔍 สแกน QR';
       }
-    } catch (err) {}
+    }
   }
 
-  // 3) เสริมด้วย ZXing กรณีภาพมีรอยสแกนรบกวน
-  if (detectedList.length === 0) {
-    try {
-      const zxingResults = await readQrWithZxing(scanCanvas, offsetX, offsetY);
-      zxingResults.forEach(item => {
-        if (!detectedList.some(d => d.url === item.url)) detectedList.push(item);
-      });
-    } catch (err) {}
+  function makeQrThresholdImage(imageData, threshold = 165) {
+    const output = new Uint8ClampedArray(imageData.data);
+
+    for (let i = 0; i < output.length; i += 4) {
+      const red = output[i];
+      const green = output[i + 1];
+      const blue = output[i + 2];
+      const brightness = (red * 0.299) + (green * 0.587) + (blue * 0.114);
+      const color = brightness < threshold ? 0 : 255;
+
+      output[i] = color;
+      output[i + 1] = color;
+      output[i + 2] = color;
+      output[i + 3] = 255;
+    }
+
+    return new ImageData(output, imageData.width, imageData.height);
   }
 
-  return detectedList;
-}
+  function decodeQrImage(imageData) {
+    const testImages = [
+      imageData,
+      makeQrThresholdImage(imageData, 130),
+      makeQrThresholdImage(imageData, 165),
+      makeQrThresholdImage(imageData, 200)
+    ];
 
-// สร้าง Canvas ตัดเฉพาะส่วน
-function createQrCropCanvas(sourceCanvas, x, y, width, height) {
-  const cropCanvas = document.createElement('canvas');
-  cropCanvas.width = width;
-  cropCanvas.height = height;
-  const cropCtx = cropCanvas.getContext('2d', { willReadFrequently: true });
-  cropCtx.drawImage(sourceCanvas, x, y, width, height, 0, 0, width, height);
-  return cropCanvas;
-}
+    for (const testImage of testImages) {
+      const qrCode = jsQR(
+        testImage.data,
+        testImage.width,
+        testImage.height,
+        { inversionAttempts: 'attemptBoth' }
+      );
 
-// สแกน QR ด้วย ZXing พร้อมบันทึกตำแหน่ง (x, y)
-async function readQrWithZxing(scanCanvas, offsetX = 0, offsetY = 0) {
-  if (typeof ZXing === 'undefined') return [];
+      if (qrCode && qrCode.data) {
+        return qrCode.data.trim();
+      }
+    }
+
+    return null;
+  }
+
+  let qrNativeDetector = null;
   try {
-    const scanCtx = scanCanvas.getContext('2d', { willReadFrequently: true });
-    const imageData = scanCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
-    const luminance = new Uint8ClampedArray(scanCanvas.width * scanCanvas.height);
-    for (let p = 0, l = 0; p < imageData.data.length; p += 4, l++) {
-      luminance[l] = Math.round((imageData.data[p] * 0.299) + (imageData.data[p + 1] * 0.587) + (imageData.data[p + 2] * 0.114));
+    if ('BarcodeDetector' in window) {
+      qrNativeDetector = new BarcodeDetector({ formats: ['qr_code'] });
     }
-
-    const hints = new Map();
-    hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [ZXing.BarcodeFormat.QR_CODE]);
-    hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
-
-    const reader = new ZXing.MultiFormatReader();
-    reader.setHints(hints);
-    const source = new ZXing.RGBLuminanceSource(luminance, scanCanvas.width, scanCanvas.height);
-    const bitmap = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(source));
-    const result = reader.decode(bitmap);
-
-    if (result && result.getText()) {
-      const val = result.getText().trim();
-      const points = result.getResultPoints ? result.getResultPoints() : [];
-      let minX = 0, minY = 0;
-      if (points && points.length > 0) {
-        minX = Math.min(...points.map(pt => pt.getX()));
-        minY = Math.min(...points.map(pt => pt.getY()));
-      }
-      return [{
-        url: val,
-        x: Math.round(offsetX + minX),
-        y: Math.round(offsetY + minY)
-      }];
-    }
-  } catch (err) {}
-  return [];
-}
-
-// 🔍 ฟังก์ชันหลักสแกน PDF ทุกหน้า จัดเรียงจากบนลงล่าง / ซ้ายไปขวา และจัดกลุ่มตามหน้า
-async function scanPdfForQrCode(fileId) {
-  const qrBar = document.getElementById('qrResultBar');
-  const countDisplay = document.getElementById('qrCountDisplay');
-  const container = document.getElementById('qrButtonsContainer');
-
-  if (container) container.innerHTML = '';
-  if (countDisplay) countDisplay.innerText = '...';
-  if (qrBar) qrBar.style.setProperty('display', 'block', 'important');
-
-  try {
-    if (typeof pdfjsLib !== 'undefined') {
-      pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-    }
-
-    const res = await fetch(`${SCRIPT_URL}?action=getPdfBase64&fileId=${encodeURIComponent(fileId)}`);
-    if (!res.ok) throw new Error(`Apps Script ตอบกลับผิดพลาด: HTTP ${res.status}`);
-    const data = await res.json();
-    if (!data.success || !data.base64) throw new Error('Apps Script ไม่สามารถส่งข้อมูล PDF กลับมาได้');
-
-    const raw = atob(data.base64);
-    const uint8Array = new Uint8Array(raw.length);
-    for (let i = 0; i < raw.length; i++) {
-      uint8Array[i] = raw.charCodeAt(i);
-    }
-
-    const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
-    const pdf = await loadingTask.promise;
-
-    let allDetectedItems = [];
-    const pagesToScan = pdf.numPages;
-
-    for (let pageNum = 1; pageNum <= pagesToScan; pageNum++) {
-      if (countDisplay) {
-        countDisplay.innerText = `กำลังสแกนหน้า ${pageNum}/${pagesToScan}`;
-      }
-
-      const page = await pdf.getPage(pageNum);
-      const viewport = page.getViewport({ scale: 3.5 });
-
-      // 1. ตรวจจับ Hyperlink ฝังใน PDF
-      try {
-        const annotations = await page.getAnnotations();
-        annotations.forEach(annot => {
-          const linkUrl = annot.url || annot.unsafeUrl;
-          if (annot.subtype === 'Link' && linkUrl) {
-            const cleanUrl = linkUrl.trim().replace(/[.,;:!?)\]}]+$/g, '');
-            const [ax, ay] = annot.rect ? viewport.convertToViewportPoint(annot.rect[0], annot.rect[3]) : [0, 0];
-            if (cleanUrl) {
-              allDetectedItems.push({
-                url: cleanUrl,
-                page: pageNum,
-                x: Math.round(ax),
-                y: Math.round(ay)
-              });
-            }
-          }
-        });
-      } catch (annError) {}
-
-      // 2. ตรวจหาข้อความ URL ในหน้าเอกสาร
-      try {
-        const textContent = await page.getTextContent();
-        textContent.items.forEach(item => {
-          const str = (item.str || '').trim();
-          const urlRegex = /(https?:\/\/[^\s<>"'|]+|(?:forms\.gle|bit\.ly|line\.me|drive\.google\.com|shorturl\.moe\.go\.th)\/[^\s<>"'|]+)/gi;
-          const matches = str.match(urlRegex);
-          if (matches) {
-            const [tx, ty] = item.transform ? viewport.convertToViewportPoint(item.transform[4], item.transform[5]) : [0, 0];
-            matches.forEach(rawUrl => {
-              let cleanUrl = rawUrl.trim().replace(/[.,;:!?)\]}]+$/g, '');
-              if (!/^https?:\/\//i.test(cleanUrl)) cleanUrl = 'https://' + cleanUrl;
-              allDetectedItems.push({
-                url: cleanUrl,
-                page: pageNum,
-                x: Math.round(tx),
-                y: Math.round(ty)
-              });
-            });
-          }
-        });
-      } catch (textError) {}
-
-      // 3. เรนเดอร์ Canvas
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-      await page.render({ canvasContext: ctx, viewport: viewport }).promise;
-
-      // 4. สแกน QR ภาพเต็มหน้า
-      const fullPageResults = await readQrFromCanvas(canvas, 0, 0);
-      fullPageResults.forEach(qr => {
-        allDetectedItems.push({
-          url: qr.url,
-          page: pageNum,
-          x: qr.x,
-          y: qr.y
-        });
-      });
-
-      // 5. สแกนแบบตารางย่อยเหลื่อมกัน
-      const columns = 2;
-      const rows = 3;
-      const overlap = 220;
-
-      for (let row = 0; row < rows; row++) {
-        for (let col = 0; col < columns; col++) {
-          const baseX = Math.floor((canvas.width / columns) * col);
-          const baseY = Math.floor((canvas.height / rows) * row);
-          const startX = Math.max(0, baseX - overlap);
-          const startY = Math.max(0, baseY - overlap);
-          const cropWidth = Math.min(Math.ceil(canvas.width / columns) + (overlap * 2), canvas.width - startX);
-          const cropHeight = Math.min(Math.ceil(canvas.height / rows) + (overlap * 2), canvas.height - startY);
-
-          if (cropWidth <= 0 || cropHeight <= 0) continue;
-
-          const cropCanvas = createQrCropCanvas(canvas, startX, startY, cropWidth, cropHeight);
-          const cropResults = await readQrFromCanvas(cropCanvas, startX, startY);
-          cropResults.forEach(qr => {
-            allDetectedItems.push({
-              url: qr.url,
-              page: pageNum,
-              x: qr.x,
-              y: qr.y
-            });
-          });
-        }
-      }
-    }
-
-    // 6. กำจัด URL ซ้ำในหน้าเดียวกัน (เลือกพิกัดตัวที่อยู่บนซ้ายสุด)
-    const pageMap = new Map();
-    allDetectedItems.forEach(item => {
-      const cleanUrl = item.url.trim();
-      const key = `${item.page}___${cleanUrl}`;
-      if (!pageMap.has(key)) {
-        pageMap.set(key, { ...item, url: cleanUrl });
-      } else {
-        const existing = pageMap.get(key);
-        if (item.y < existing.y - 30 || (Math.abs(item.y - existing.y) <= 30 && item.x < existing.x)) {
-          pageMap.set(key, { ...item, url: cleanUrl });
-        }
-      }
-    });
-
-    const uniqueItems = Array.from(pageMap.values());
-
-    // 7. จัดเรียงตามลำดับสายตาจริง: หน้า -> แนวตั้ง (y) จากบนลงล่าง -> แนวนอน (x) จากซ้ายไปขวา
-    const rowTolerance = 60;
-    uniqueItems.sort((a, b) => {
-      if (a.page !== b.page) return a.page - b.page;
-      if (Math.abs(a.y - b.y) > rowTolerance) return a.y - b.y;
-      return a.x - b.x;
-    });
-
-    // 8. แสดงผลแยกกลุ่มตามเลขหน้า
-    if (uniqueItems.length > 0) {
-      if (countDisplay) countDisplay.innerText = uniqueItems.length;
-
-      const groupedByPage = {};
-      uniqueItems.forEach(item => {
-        if (!groupedByPage[item.page]) groupedByPage[item.page] = [];
-        groupedByPage[item.page].push(item);
-      });
-
-      if (container) {
-        let html = '';
-        for (const pNum in groupedByPage) {
-          const pItems = groupedByPage[pNum];
-          html += `
-            <div class="w-100 mb-2 pb-2 border-bottom border-success border-opacity-25">
-              <div class="fw-bold text-dark mb-1" style="font-size: 0.8rem;">
-                📄 หน้าที่ ${pNum} (${pItems.length} รายการ):
-              </div>
-              <div class="d-flex flex-wrap gap-1">
-                ${pItems.map((it, idx) => {
-                  const url = it.url;
-                  const isUrl = /^https?:\/\/[^\s]+$/i.test(url);
-                  if (isUrl) {
-                    return `
-                      <a href="${url}" target="_blank" rel="noopener noreferrer"
-                         class="btn btn-sm btn-success fw-bold d-inline-flex align-items-center gap-1 shadow-sm px-2 py-1"
-                         title="${url}" style="font-size: 0.75rem;">
-                        <span>🌐 เปิดลิงก์จาก QR ${idx + 1}</span>
-                        <span style="font-size: 0.65rem;">↗</span>
-                      </a>
-                    `;
-                  }
-                  return `
-                    <div class="badge text-bg-light border text-dark p-2" style="font-size: 0.75rem;">
-                      QR ${idx + 1}: ${url}
-                    </div>
-                  `;
-                }).join('')}
-              </div>
-            </div>
-          `;
-        }
-        container.innerHTML = html;
-      }
-    } else {
-      if (countDisplay) countDisplay.innerText = '0';
-      if (container) {
-        container.innerHTML = `<span class="small text-muted">สแกนเสร็จแล้ว แต่ไม่พบ QR Code ในหนังสือเล่มนี้</span>`;
-      }
-    }
-
-    if (qrBar) qrBar.style.setProperty('display', 'block', 'important');
-
   } catch (err) {
-    console.error("การสแกน QR Code ล้มเหลว:", err);
-    if (countDisplay) countDisplay.innerText = 'ผิดพลาด';
-    if (container) {
-      container.innerHTML = `<span class="small text-danger">ไม่สามารถสแกน QR Code ได้: ${err.message || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ'}</span>`;
-    }
-    if (qrBar) qrBar.style.setProperty('display', 'block', 'important');
+    console.warn('ไม่สามารถเปิดใช้ BarcodeDetector ได้:', err);
   }
-}
-  
-  
 
-// --- 13. ระบบ In-App Deep Linking & คัดลอกลิงก์เปิดอ่านในแอป ---
-function copyDeepLink(fileUrl, encodedTitle) {
+  async function readQrFromCanvas(scanCanvas, offsetX = 0, offsetY = 0) {
+    const detectedList = [];
+
+    if ('BarcodeDetector' in window) {
+      try {
+        const nativeDetector = new BarcodeDetector({ formats: ['qr_code'] });
+        const barcodes = await nativeDetector.detect(scanCanvas);
+        if (barcodes && barcodes.length > 0) {
+          barcodes.forEach(b => {
+            const val = (b.rawValue || '').trim();
+            if (val) {
+              const box = b.boundingBox;
+              const bx = box ? (box.x || box.left || 0) : 0;
+              const by = box ? (box.y || box.top || 0) : 0;
+              if (!detectedList.some(d => d.url === val)) {
+                detectedList.push({
+                  url: val,
+                  x: Math.round(offsetX + bx),
+                  y: Math.round(offsetY + by)
+                });
+              }
+            }
+          });
+          if (detectedList.length > 0) return detectedList;
+        }
+      } catch (err) {}
+    }
+
+    if (typeof jsQR !== 'undefined') {
+      try {
+        const workCanvas = document.createElement('canvas');
+        workCanvas.width = scanCanvas.width;
+        workCanvas.height = scanCanvas.height;
+        const ctx = workCanvas.getContext('2d', { willReadFrequently: true });
+        ctx.drawImage(scanCanvas, 0, 0);
+
+        for (let attempt = 0; attempt < 15; attempt++) {
+          const imgData = ctx.getImageData(0, 0, workCanvas.width, workCanvas.height);
+          const code = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: 'attemptBoth' });
+          if (!code || !code.data) break;
+
+          const val = code.data.trim();
+          const loc = code.location;
+          const cx = loc.topLeftCorner.x;
+          const cy = loc.topLeftCorner.y;
+
+          if (!detectedList.some(d => d.url === val)) {
+            detectedList.push({
+              url: val,
+              x: Math.round(offsetX + cx),
+              y: Math.round(offsetY + cy)
+            });
+          }
+
+          const minX = Math.min(loc.topLeftCorner.x, loc.bottomLeftCorner.x) - 15;
+          const maxX = Math.max(loc.topRightCorner.x, loc.bottomRightCorner.x) + 15;
+          const minY = Math.min(loc.topLeftCorner.y, loc.topRightCorner.y) - 15;
+          const maxY = Math.max(loc.bottomLeftCorner.y, loc.bottomRightCorner.y) + 15;
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(minX, minY, maxX - minX, maxY - minY);
+        }
+      } catch (err) {}
+    }
+
+    if (detectedList.length === 0) {
+      try {
+        const zxingResults = await readQrWithZxing(scanCanvas, offsetX, offsetY);
+        zxingResults.forEach(item => {
+          if (!detectedList.some(d => d.url === item.url)) detectedList.push(item);
+        });
+      } catch (err) {}
+    }
+
+    return detectedList;
+  }
+
+  function createQrCropCanvas(sourceCanvas, x, y, width, height) {
+    const cropCanvas = document.createElement('canvas');
+    cropCanvas.width = width;
+    cropCanvas.height = height;
+    const cropCtx = cropCanvas.getContext('2d', { willReadFrequently: true });
+    cropCtx.drawImage(sourceCanvas, x, y, width, height, 0, 0, width, height);
+    return cropCanvas;
+  }
+
+  async function readQrWithZxing(scanCanvas, offsetX = 0, offsetY = 0) {
+    if (typeof ZXing === 'undefined') return [];
+    try {
+      const scanCtx = scanCanvas.getContext('2d', { willReadFrequently: true });
+      const imageData = scanCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
+      const luminance = new Uint8ClampedArray(scanCanvas.width * scanCanvas.height);
+      for (let p = 0, l = 0; p < imageData.data.length; p += 4, l++) {
+        luminance[l] = Math.round((imageData.data[p] * 0.299) + (imageData.data[p + 1] * 0.587) + (imageData.data[p + 2] * 0.114));
+      }
+
+      const hints = new Map();
+      hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [ZXing.BarcodeFormat.QR_CODE]);
+      hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+
+      const reader = new ZXing.MultiFormatReader();
+      reader.setHints(hints);
+      const source = new ZXing.RGBLuminanceSource(luminance, scanCanvas.width, scanCanvas.height);
+      const bitmap = new ZXing.BinaryBitmap(new ZXing.HybridBinarizer(source));
+      const result = reader.decode(bitmap);
+
+      if (result && result.getText()) {
+        const val = result.getText().trim();
+        const points = result.getResultPoints ? result.getResultPoints() : [];
+        let minX = 0, minY = 0;
+        if (points && points.length > 0) {
+          minX = Math.min(...points.map(pt => pt.getX()));
+          minY = Math.min(...points.map(pt => pt.getY()));
+        }
+        return [{
+          url: val,
+          x: Math.round(offsetX + minX),
+          y: Math.round(offsetY + minY)
+        }];
+      }
+    } catch (err) {}
+    return [];
+  }
+
+  async function scanPdfForQrCode(fileId) {
+    const qrBar = document.getElementById('qrResultBar');
+    const countDisplay = document.getElementById('qrCountDisplay');
+    const container = document.getElementById('qrButtonsContainer');
+
+    if (container) container.innerHTML = '';
+    if (countDisplay) countDisplay.innerText = '...';
+    if (qrBar) qrBar.style.setProperty('display', 'block', 'important');
+
+    try {
+      if (typeof pdfjsLib !== 'undefined') {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+      }
+
+      const res = await fetch(`${SCRIPT_URL}?action=getPdfBase64&fileId=${encodeURIComponent(fileId)}`);
+      if (!res.ok) throw new Error(`Apps Script ตอบกลับผิดพลาด: HTTP ${res.status}`);
+      const data = await res.json();
+      if (!data.success || !data.base64) throw new Error('Apps Script ไม่สามารถส่งข้อมูล PDF กลับมาได้');
+
+      const raw = atob(data.base64);
+      const uint8Array = new Uint8Array(raw.length);
+      for (let i = 0; i < raw.length; i++) {
+        uint8Array[i] = raw.charCodeAt(i);
+      }
+
+      const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
+      const pdf = await loadingTask.promise;
+
+      let allDetectedItems = [];
+      const pagesToScan = pdf.numPages;
+
+      for (let pageNum = 1; pageNum <= pagesToScan; pageNum++) {
+        if (countDisplay) {
+          countDisplay.innerText = `กำลังสแกนหน้า ${pageNum}/${pagesToScan}`;
+        }
+
+        const page = await pdf.getPage(pageNum);
+        const viewport = page.getViewport({ scale: 3.5 });
+
+        try {
+          const annotations = await page.getAnnotations();
+          annotations.forEach(annot => {
+            const linkUrl = annot.url || annot.unsafeUrl;
+            if (annot.subtype === 'Link' && linkUrl) {
+              const cleanUrl = linkUrl.trim().replace(/[.,;:!?)\]}]+$/g, '');
+              const [ax, ay] = annot.rect ? viewport.convertToViewportPoint(annot.rect[0], annot.rect[3]) : [0, 0];
+              if (cleanUrl) {
+                allDetectedItems.push({
+                  url: cleanUrl,
+                  page: pageNum,
+                  x: Math.round(ax),
+                  y: Math.round(ay)
+                });
+              }
+            }
+          });
+        } catch (annError) {}
+
+        try {
+          const textContent = await page.getTextContent();
+          textContent.items.forEach(item => {
+            const str = (item.str || '').trim();
+            const urlRegex = /(https?:\/\/[^\s<>"'|]+|(?:forms\.gle|bit\.ly|line\.me|drive\.google\.com|shorturl\.moe\.go\.th)\/[^\s<>"'|]+)/gi;
+            const matches = str.match(urlRegex);
+            if (matches) {
+              const [tx, ty] = item.transform ? viewport.convertToViewportPoint(item.transform[4], item.transform[5]) : [0, 0];
+              matches.forEach(rawUrl => {
+                let cleanUrl = rawUrl.trim().replace(/[.,;:!?)\]}]+$/g, '');
+                if (!/^https?:\/\//i.test(cleanUrl)) cleanUrl = 'https://' + cleanUrl;
+                allDetectedItems.push({
+                  url: cleanUrl,
+                  page: pageNum,
+                  x: Math.round(tx),
+                  y: Math.round(ty)
+                });
+              });
+            }
+          });
+        } catch (textError) {}
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+
+        const fullPageResults = await readQrFromCanvas(canvas, 0, 0);
+        fullPageResults.forEach(qr => {
+          allDetectedItems.push({
+            url: qr.url,
+            page: pageNum,
+            x: qr.x,
+            y: qr.y
+          });
+        });
+
+        const columns = 2;
+        const rows = 3;
+        const overlap = 220;
+
+        for (let row = 0; row < rows; row++) {
+          for (let col = 0; col < columns; col++) {
+            const baseX = Math.floor((canvas.width / columns) * col);
+            const baseY = Math.floor((canvas.height / rows) * row);
+            const startX = Math.max(0, baseX - overlap);
+            const startY = Math.max(0, baseY - overlap);
+            const cropWidth = Math.min(Math.ceil(canvas.width / columns) + (overlap * 2), canvas.width - startX);
+            const cropHeight = Math.min(Math.ceil(canvas.height / rows) + (overlap * 2), canvas.height - startY);
+
+            if (cropWidth <= 0 || cropHeight <= 0) continue;
+
+            const cropCanvas = createQrCropCanvas(canvas, startX, startY, cropWidth, cropHeight);
+            const cropResults = await readQrFromCanvas(cropCanvas, startX, startY);
+            cropResults.forEach(qr => {
+              allDetectedItems.push({
+                url: qr.url,
+                page: pageNum,
+                x: qr.x,
+                y: qr.y
+              });
+            });
+          }
+        }
+      }
+
+      const pageMap = new Map();
+      allDetectedItems.forEach(item => {
+        const cleanUrl = (item.url || '').trim();
+        const key = `${item.page}___${cleanUrl}`;
+        if (!pageMap.has(key)) {
+          pageMap.set(key, { ...item, url: cleanUrl });
+        } else {
+          const existing = pageMap.get(key);
+          if (item.y < existing.y - 30 || (Math.abs(item.y - existing.y) <= 30 && item.x < existing.x)) {
+            pageMap.set(key, { ...item, url: cleanUrl });
+          }
+        }
+      });
+
+      const uniqueItems = Array.from(pageMap.values());
+
+      const rowTolerance = 60;
+      uniqueItems.sort((a, b) => {
+        if (a.page !== b.page) return a.page - b.page;
+        if (Math.abs(a.y - b.y) > rowTolerance) return a.y - b.y;
+        return a.x - b.x;
+      });
+
+      if (uniqueItems.length > 0) {
+        if (countDisplay) countDisplay.innerText = uniqueItems.length;
+
+        const groupedByPage = {};
+        uniqueItems.forEach(item => {
+          if (!groupedByPage[item.page]) groupedByPage[item.page] = [];
+          groupedByPage[item.page].push(item);
+        });
+
+        if (container) {
+          let html = '';
+          for (const pNum in groupedByPage) {
+            const pItems = groupedByPage[pNum];
+            html += `
+              <div class="w-100 mb-2 pb-2 border-bottom border-success border-opacity-25">
+                <div class="fw-bold text-dark mb-1" style="font-size: 0.8rem;">
+                  📄 หน้าที่ ${pNum} (${pItems.length} รายการ):
+                </div>
+                <div class="d-flex flex-wrap gap-1">
+                  ${pItems.map((it, idx) => {
+                    const url = it.url;
+                    const isUrl = /^https?:\/\/[^\s]+$/i.test(url);
+                    if (isUrl) {
+                      return `
+                        <a href="${url}" target="_blank" rel="noopener noreferrer"
+                           class="btn btn-sm btn-success fw-bold d-inline-flex align-items-center gap-1 shadow-sm px-2 py-1"
+                           title="${url}" style="font-size: 0.75rem;">
+                          <span>🌐 เปิดลิงก์จาก QR ${idx + 1}</span>
+                          <span style="font-size: 0.65rem;">↗</span>
+                        </a>
+                      `;
+                    }
+                    return `
+                      <div class="badge text-bg-light border text-dark p-2" style="font-size: 0.75rem;">
+                        QR ${idx + 1}: ${url}
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+            `;
+          }
+          container.innerHTML = html;
+        }
+      } else {
+        if (countDisplay) countDisplay.innerText = '0';
+        if (container) {
+          container.innerHTML = `<span class="small text-muted">สแกนเสร็จแล้ว แต่ไม่พบ QR Code ในหนังสือเล่มนี้</span>`;
+        }
+      }
+
+      if (qrBar) qrBar.style.setProperty('display', 'block', 'important');
+
+    } catch (err) {
+      console.error("การสแกน QR Code ล้มเหลว:", err);
+      if (countDisplay) countDisplay.innerText = 'ผิดพลาด';
+      if (container) {
+        container.innerHTML = `<span class="small text-danger">ไม่สามารถสแกน QR Code ได้: ${err.message || 'เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ'}</span>`;
+      }
+      if (qrBar) {
+        qrBar.style.setProperty('display', 'block', 'important');
+      }
+    }
+  }
+
+  // --- 13. ระบบ In-App Deep Linking & คัดลอกลิงก์เปิดอ่านในแอป ---
+  function copyDeepLink(fileUrl, encodedTitle) {
     navigator.clipboard.writeText(fileUrl).then(() => {
       alert("✅ คัดลอกลิงก์ Google Drive แล้ว!");
     }).catch(() => {
@@ -5114,8 +5148,6 @@ function copyDeepLink(fileUrl, encodedTitle) {
     }
 
     const now = new Date();
-    const todayStr = `${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear() + 543}`;
-
     const filtered = allLogs.filter(row => {
       if (!row || row[0] === "❌") return false;
       const rawDate = row[0].split(/[T\s,]+/)[0];
@@ -5187,14 +5219,12 @@ function copyDeepLink(fileUrl, encodedTitle) {
     }
   });
 
-// 🗑️ สั่งลบหนังสือรายฉบับจากหน้าจัดการฐานข้อมูล
   function deleteBookFromDbManage(encodedFileName) {
     const fileName = decodeURIComponent(encodedFileName);
     selectedBooksToDelete = [{ fileName: fileName }];
     openDeleteConfirmModal();
   }
 
-  // 🗑️ ยืนยันการลบหนังสือ (ปรับให้รีโหลดหน้าจัดการฐานข้อมูลทันที)
   async function executeDelete() {
     const confirmBtn = document.getElementById('confirmDeleteBtn');
     confirmBtn.disabled = true;
@@ -5249,14 +5279,12 @@ function copyDeepLink(fileUrl, encodedTitle) {
     }
   }
 
-  // --- ส่วนของโหมดแก้ไขกลุ่มงาน / รายชื่อผู้รับ ---
-  let currentEditingBook = null; // เก็บข้อมูลหนังสือฉบับที่กำลังเปิดแก้ไขจริง
+  let currentEditingBook = null;
 
   function openEditBookDeptModal(target) {
     const isDbManage = (document.getElementById('dbManageView') && document.getElementById('dbManageView').style.display === 'block');
     const sourceList = isDbManage ? dbManageLogsData : allLogs;
 
-    // ค้นหาหนังสือจากชื่อไฟล์ (ถ้าส่งมาเป็น encoded string) หรือจาก index เดิม
     let book = null;
     if (typeof target === 'string') {
       const fileName = decodeURIComponent(target);
@@ -5276,7 +5304,6 @@ function copyDeepLink(fileUrl, encodedTitle) {
 
     document.getElementById('editTargetBookName').innerText = fullFileName;
 
-    // ตรวจสอบรายชื่อในเครื่องหมายก้ามปู [ ... ]
     const nameMatch = fullFileName.match(/\[(.*?)\]/);
     if (nameMatch) {
       editOtherStaffNames = nameMatch[1].split(',').map(s => s.trim()).filter(Boolean);
@@ -5284,7 +5311,6 @@ function copyDeepLink(fileUrl, encodedTitle) {
       editOtherStaffNames = [];
     }
 
-    // ติ๊ก Checkbox กลุ่มงานเดิมที่เคยเลือกไว้
     const deptAliasMap = {
       "ฝ่ายบริหารวิชาการ": "บริหารงานวิชาการ", "บริหารงานวิชาการ": "ฝ่ายบริหารวิชาการ",
       "ฝ่ายบริหารงานบุคคล": "บริหารงานบุคคล", "บริหารงานบุคคล": "ฝ่ายบริหารงานบุคคล",
@@ -5362,7 +5388,6 @@ function copyDeepLink(fileUrl, encodedTitle) {
     const existingDepts = book[3] ? book[3].split(',').map(s => s.trim()) : [];
     const notifyLine = document.getElementById('editNotifyLineCheck').checked;
 
-    // คำนวณชื่อไฟล์ใหม่ (แทรกหรือตัดรายชื่อ [ ... ])
     let baseFileName = oldFileName.replace(/\[.*?\]/, "").trim();
     let newFileName = baseFileName;
     if (newSelectedDepts.includes("อื่นๆ") && editOtherStaffNames.length > 0) {
@@ -5372,7 +5397,6 @@ function copyDeepLink(fileUrl, encodedTitle) {
         : baseFileName + suffix;
     }
 
-    // ตรวจสอบปี พ.ศ. ให้ตรงกับหน้าที่ผู้ใช้งานกำลังเปิดอยู่
     const isDbManage = (document.getElementById('dbManageView') && document.getElementById('dbManageView').style.display === 'block');
     let targetYear;
     if (isDbManage) {
@@ -5425,7 +5449,7 @@ function copyDeepLink(fileUrl, encodedTitle) {
     }
   }
 
-  // --- 10. ฟังก์ชันติดตั้งความจำและควบคุมการดึงพารามิเตอร์ลิงก์ทางลัดเมื่อโหลดเสร็จ ---
+  // --- 18. ฟังก์ชันติดตั้งความจำและควบคุมการดึงพารามิเตอร์ลิงก์ทางลัดเมื่อโหลดเสร็จ ---
   function dismissSplashScreen() {
     const splash = document.getElementById('appSplashScreen');
     if (splash) {
@@ -5443,7 +5467,6 @@ function copyDeepLink(fileUrl, encodedTitle) {
     fetchAppVersion(); 
     setupDragAndDrop();
 
-    // 🌟 สั่งปิด Splash Screen ภายใน 2 วินาที (เฉพาะบนมือถือ หากเปิดบนคอมจะปิดทันที 0ms)
     const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     if (isMobile) {
       setTimeout(dismissSplashScreen, 3000);
@@ -5465,16 +5488,15 @@ function copyDeepLink(fileUrl, encodedTitle) {
 
     const p = new URLSearchParams(window.location.search);
     
-    // 🔗 หากเปิดจากลิงก์แชร์ ?view=staff ให้แสดงหน้ารายชื่อ 6 คอลัมน์ทันทีโดยไม่ต้องล็อกอิน
     if (p.get('view') === 'staff') {
-  document.getElementById('loginPage').style.display = 'none';
-  document.getElementById('mainApp').style.display = 'block';
-  document.getElementById('sarabanView').style.display = 'none';
-  document.getElementById('staffView').style.display = 'block';
-  const backBtn = document.getElementById('backToSarabanBtn');
-  if (backBtn) backBtn.style.display = 'none';
-  const manageBtn = document.getElementById('manageStaffBtn');
-  if (manageBtn) manageBtn.style.display = 'none';
+      document.getElementById('loginPage').style.display = 'none';
+      document.getElementById('mainApp').style.display = 'block';
+      document.getElementById('sarabanView').style.display = 'none';
+      document.getElementById('staffView').style.display = 'block';
+      const backBtn = document.getElementById('backToSarabanBtn');
+      if (backBtn) backBtn.style.display = 'none';
+      const manageBtn = document.getElementById('manageStaffBtn');
+      if (manageBtn) manageBtn.style.display = 'none';
       return;
     }
 
@@ -5493,8 +5515,6 @@ function copyDeepLink(fileUrl, encodedTitle) {
         checkSession();
     }
   });
-
-
 </script>
 </body>
 </html>

@@ -1850,7 +1850,7 @@
  // --- 1. การตั้งค่าสิทธิ์พื้นฐานองค์กร ---
   const GH_OWNER = "specialtrat905";
   const GH_REPO = "smart-saraban";
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxjI-XwsT1GYGin68nGmUAJOSDsODbBn2UKyobY_1Onk84EO7CeqFnd0ZxMe6Zfqoe9MA/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxbmmiRxgYHUjFsu3S3p2ldy2wPHINmYPyvrCFWLtsDIUgBd8vyfLsuml9gso6La3pyWw/exec";
 // ⚡ กำหนดค่าเชื่อมต่อ Firebase (ตาม Config ของคุณ)
 const firebaseConfig = {
   apiKey: "AIzaSyBL_Jv3x_UxEkzcVnN6lpQpZdWoIaJvMNM",
@@ -5375,7 +5375,7 @@ async function refreshApp() {
       statusLabel.innerText = "✨ ถอดข้อความและแยกหมวดหมู่สำเร็จ พร้อมบันทึกลงฐานข้อมูล:";
       renderCategorizedLinks(uniqueQr, uniqueUrls, uniqueEmails);
 
-      // 💾 สเต็ป 3: สั่งบันทึกข้อมูลผ่าน POST แบบ text/plain ปลอดภัย ไม่ติด CORS และรองรับข้อความยาว
+      // 💾 สเต็ป 3: สั่งบันทึกข้อมูลผ่าน POST พร้อมระบบป้องกันตอบกลับเป็น HTML
       if (finalExtractedText) {
         const payloadData = {
           action: "saveOcrCache",
@@ -5391,11 +5391,21 @@ async function refreshApp() {
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify(payloadData)
         })
-        .then(res => res.json())
-        .then(res => console.log("✅ บันทึก OCR Cache ลงชีตเรียบร้อย:", res))
+        .then(async res => {
+          const textRes = await res.text();
+          if (textRes.trim().startsWith("<!DOCTYPE") || textRes.trim().startsWith("<html")) {
+            console.warn("⚠️ Google Apps Script ส่งหน้า HTML กลับมา (ตรวจสอบสิทธิ์ Deployment เป็น Anyone หรือยัง)");
+            return;
+          }
+          try {
+            const jsonRes = JSON.parse(textRes);
+            console.log("✅ บันทึก OCR Cache ลงชีตเรียบร้อย:", jsonRes);
+          } catch (e) {
+            console.warn("⚠️ ไม่สามารถแปลงผลลัพธ์เป็น JSON ได้:", textRes);
+          }
+        })
         .catch(err => console.warn("Save cache error:", err));
       }
-
     } catch (err) {
       console.error("Scanner Error:", err);
       textArea.value = `❌ เกิดข้อผิดพลาด: ${err.message || 'ไม่ทราบสาเหตุ'}`;
@@ -5408,7 +5418,6 @@ async function refreshApp() {
       }
     }
   }
-
   function copyExtractedText() {
     const textArea = document.getElementById('pdfExtractedTextArea');
     if (!textArea || !textArea.value.trim()) return;

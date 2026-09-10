@@ -5375,21 +5375,25 @@ async function refreshApp() {
       statusLabel.innerText = "✨ ถอดข้อความและแยกหมวดหมู่สำเร็จ พร้อมบันทึกลงฐานข้อมูล:";
       renderCategorizedLinks(uniqueQr, uniqueUrls, uniqueEmails);
 
-      // 💾 สเต็ป 3: สั่งบันทึกข้อมูลผ่าน GET เข้าแท็บ ocr_cache โดยตรง
+      // 💾 สเต็ป 3: สั่งบันทึกข้อมูลผ่าน POST แบบ text/plain ปลอดภัย ไม่ติด CORS และรองรับข้อความยาว
       if (finalExtractedText) {
-        const params = new URLSearchParams({
+        const payloadData = {
           action: "saveOcrCache",
           fileId: currentPdfFileId,
           text: finalExtractedText,
-          qrLinks: JSON.stringify(uniqueQr),
-          urls: JSON.stringify(uniqueUrls),
-          emails: JSON.stringify(uniqueEmails)
-        });
+          qrLinks: uniqueQr,
+          urls: uniqueUrls,
+          emails: uniqueEmails
+        };
 
-        fetch(`${SCRIPT_URL}?${params.toString()}`)
-          .then(res => res.json())
-          .then(res => console.log("✅ บันทึก OCR Cache ลงชีตเรียบร้อย:", res))
-          .catch(err => console.warn("Save cache error:", err));
+        fetch(SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payloadData)
+        })
+        .then(res => res.json())
+        .then(res => console.log("✅ บันทึก OCR Cache ลงชีตเรียบร้อย:", res))
+        .catch(err => console.warn("Save cache error:", err));
       }
 
     } catch (err) {

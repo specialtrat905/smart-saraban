@@ -5375,7 +5375,7 @@ async function refreshApp() {
       statusLabel.innerText = "✨ ถอดข้อความและแยกหมวดหมู่สำเร็จ พร้อมบันทึกลงฐานข้อมูล:";
       renderCategorizedLinks(uniqueQr, uniqueUrls, uniqueEmails);
 
-      // 💾 สเต็ป 3: สั่งบันทึกข้อมูลผ่าน GET ปลอดภัย ไม่ติด CORS แน่นอน
+      // 💾 สเต็ป 3: สั่งบันทึกข้อมูลผ่าน GET เข้าแท็บ ocr_cache โดยตรง
       if (finalExtractedText) {
         const params = new URLSearchParams({
           action: "saveOcrCache",

@@ -1348,16 +1348,6 @@
   title="ค้นหา QR Code ในหนังสือ">
   🔍 สแกน QR
 </button>
-<!-- ปุ่มสแกนข้อความ (วางต่อจากปุ่ม scanQrBtn) -->
-<button
-  id="scanTextBtn"
-  type="button"
-  class="btn btn-sm btn-outline-warning text-white text-nowrap fw-bold"
-  style="font-size: 0.75rem;"
-  onclick="scanCurrentPdfText()"
-  title="คัดลอกข้อความหนังสือ">
-  📝 สแกนข้อความ
-</button>
               <!-- 🔴 ปุ่มปิดสีแดงเด่นชัด มองเห็นและกดง่าย -->
               <button type="button" class="btn btn-danger btn-sm px-2 py-1 fw-bold shadow-sm d-flex align-items-center gap-1" data-bs-dismiss="modal" title="ปิดหน้าต่าง" style="font-size: 0.8rem; border-radius: 6px;">
                 <span>✕</span> <span>ปิด</span>
@@ -1845,119 +1835,7 @@
   </div> <!-- ปิด container -->
   
 </div> <!-- ปิด mainApp -->
-// ==========================================
-// 📝 ระบบสกัดข้อความจากเอกสาร PDF (Text Extractor)
-// ==========================================
-let pdfTextModalInstance = null;
-let isTextExtracting = false;
 
-async function scanCurrentPdfText() {
-  if (typeof pdfjsLib === 'undefined') {
-    alert('ระบบอ่าน PDF ยังโหลดไม่สมบูรณ์ กรุณารีเฟรชหน้าเว็บแล้วลองใหม่');
-    return;
-  }
-  if (!currentPdfFileId) {
-    alert('ไม่พบไฟล์ PDF สำหรับดึงข้อความ');
-    return;
-  }
-  if (isTextExtracting) return;
-
-  const scanTextBtn = document.getElementById('scanTextBtn');
-  const textArea = document.getElementById('pdfExtractedTextArea');
-  const statusLabel = document.getElementById('pdfTextStatus');
-
-  if (!pdfTextModalInstance) {
-    pdfTextModalInstance = new bootstrap.Modal(document.getElementById('pdfTextExtractorModal'));
-  }
-
-  textArea.value = "กำลังเชื่อมต่อและดาวน์โหลดไฟล์ PDF เพื่ออ่านข้อความ กรุณารอสักครู่...";
-  statusLabel.innerText = "กำลังประมวลผล...";
-  pdfTextModalInstance.show();
-
-  try {
-    isTextExtracting = true;
-    if (scanTextBtn) {
-      scanTextBtn.disabled = true;
-      scanTextBtn.innerHTML = '⏳ กำลังสกัด...';
-    }
-
-    // 1. ดึง Base64 ของ PDF ผ่าน Apps Script ตัวเดิมที่มีอยู่แล้ว
-    const res = await fetch(`${SCRIPT_URL}?action=getPdfBase64&fileId=${encodeURIComponent(currentPdfFileId)}`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    if (!data.success || !data.base64) throw new Error('ไม่สามารถดึงข้อมูลไฟล์ได้');
-
-    const raw = atob(data.base64);
-    const uint8Array = new Uint8Array(raw.length);
-    for (let i = 0; i < raw.length; i++) {
-      uint8Array[i] = raw.charCodeAt(i);
-    }
-
-    // 2. ใช้ pdf.js อ่านข้อความทีละหน้า
-    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-    const loadingTask = pdfjsLib.getDocument({ data: uint8Array });
-    const pdf = await loadingTask.promise;
-
-    let fullExtractedText = "";
-
-    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-      statusLabel.innerText = `กำลังอ่านข้อความหน้าที่ ${pageNum} / ${pdf.numPages}...`;
-      const page = await pdf.getPage(pageNum);
-      const textContent = await page.getTextContent();
-
-      let lastY = null;
-      let pageText = "";
-
-      textContent.items.forEach(item => {
-        // จัดการขึ้นบรรทัดใหม่ตามตำแหน่งแกน Y ของตัวอักษร
-        if (lastY !== null && Math.abs(item.transform[5] - lastY) > 8) {
-          pageText += "\n";
-        } else if (lastY !== null && pageText.length > 0 && !pageText.endsWith(" ") && !item.str.startsWith(" ")) {
-          pageText += " ";
-        }
-        pageText += item.str;
-        lastY = item.transform[5];
-      });
-
-      if (pageText.trim()) {
-        fullExtractedText += `--- หน้าที่ ${pageNum} ---\n` + pageText.trim() + "\n\n";
-      }
-    }
-
-    // 3. แสดงผลลัพธ์
-    if (fullExtractedText.trim()) {
-      textArea.value = fullExtractedText.trim();
-      statusLabel.innerText = `สกัดข้อความสำเร็จทั้งหมด ${pdf.numPages} หน้า:`;
-    } else {
-      textArea.value = "⚠️ ไม่พบข้อความในเอกสารนี้\n\nสาเหตุ: หนังสือฉบับนี้เป็นไฟล์ภาพสแกนหรือภาพถ่ายกระดาษ (ไม่มีเลเยอร์ข้อความดิจิทัล)";
-      statusLabel.innerText = "ไม่พบข้อความตัวพิมพ์";
-    }
-
-  } catch (err) {
-    console.error("Text Extraction Error:", err);
-    textArea.value = `❌ เกิดข้อผิดพลาดในการดึงข้อความ: ${err.message || 'ไม่ทราบสาเหตุ'}`;
-    statusLabel.innerText = "การสกัดข้อความล้มเหลว";
-  } finally {
-    isTextExtracting = false;
-    if (scanTextBtn) {
-      scanTextBtn.disabled = false;
-      scanTextBtn.innerHTML = '📝 สแกนข้อความ';
-    }
-  }
-}
-
-function copyExtractedText() {
-  const textArea = document.getElementById('pdfExtractedTextArea');
-  if (!textArea || !textArea.value.trim()) return;
-
-  navigator.clipboard.writeText(textArea.value).then(() => {
-    alert("✅ คัดลอกข้อความทั้งหมดลง Clipboard เรียบร้อยแล้ว!");
-  }).catch(() => {
-    textArea.select();
-    document.execCommand("copy");
-    alert("✅ คัดลอกข้อความทั้งหมดเรียบร้อยแล้ว!");
-  });
-}
 <script>
  // --- 1. การตั้งค่าสิทธิ์พื้นฐานองค์กร ---
   const GH_OWNER = "specialtrat905";
@@ -5860,31 +5738,5 @@ async function refreshApp() {
     initPwaInstallPrompt();
   });
 </script>
-<!-- 📝 Modal แสดงข้อความที่สกัดได้จาก PDF พร้อมปุ่มคัดลอก -->
-<div class="modal fade" id="pdfTextExtractorModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
-      <div class="modal-header bg-dark text-white py-2 px-3">
-        <h6 class="modal-title fw-bold mb-0 d-flex align-items-center gap-2">
-          <span>📝</span>
-          <span>ข้อความในเอกสาร</span>
-        </h6>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body p-3 bg-light">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-          <small id="pdfTextStatus" class="text-muted fw-bold">พบข้อความในเอกสาร:</small>
-          <button type="button" class="btn btn-sm btn-success fw-bold shadow-sm px-3" onclick="copyExtractedText()">
-            📋 คัดลอกข้อความทั้งหมด
-          </button>
-        </div>
-        <textarea id="pdfExtractedTextArea" class="form-control" rows="14" style="font-size: 0.88rem; line-height: 1.6; background-color: #ffffff;" placeholder="กำลังสกัดข้อความ..."></textarea>
-      </div>
-      <div class="modal-footer bg-white p-2">
-        <button type="button" class="btn btn-sm btn-secondary px-4 fw-bold" data-bs-dismiss="modal">ปิด</button>
-      </div>
-    </div>
-  </div>
-</div>
 </body>
 </html>

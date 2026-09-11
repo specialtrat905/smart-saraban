@@ -815,18 +815,35 @@
 
 <div id="loginPage" class="container mt-5" style="max-width: 400px;">
   <div class="card p-4 shadow-lg text-center border-0">
-    <!-- 🏫 โลโก้หน้าเข้าสู่ระบบ (ดึงจาก logo2.png) -->
     <div class="mb-3 text-center">
       <img src="./logo2.png" alt="Logo ศกศ.ตราด" class="img-fluid" style="max-height: 95px; width: auto; object-fit: contain; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));">
     </div>
     <h3 class="fw-bold text-success mb-4">ระบบส่งหนังสือ ศกศ.ตราด</h3>
-    <input type="text" id="user" class="form-control mb-3" placeholder="ชื่อผู้ใช้">
-    <input type="password" id="pass" class="form-control mb-3" placeholder="รหัสผ่าน">
-    <!--  เปลี่ยนจากแท็กปุ่มเดิม มาเป็นรูปแบบนี้ครับ -->
-<button id="loginBtn" onclick="login()" class="btn btn-success w-100 py-2 fw-bold shadow-sm btn-interactive">
-  เข้าสู่ระบบ
-</button>
-    <div id="loginErr" class="text-danger mt-3 small"></div>
+    
+    <!-- สเต็ป 1: กรอกผู้ใช้และรหัสผ่าน -->
+    <div id="loginStep1">
+      <input type="text" id="user" class="form-control mb-3" placeholder="ชื่อผู้ใช้">
+      <input type="password" id="pass" class="form-control mb-3" placeholder="รหัสผ่าน">
+      <button id="loginBtn" onclick="login()" class="btn btn-success w-100 py-2 fw-bold shadow-sm btn-interactive">
+        เข้าสู่ระบบ
+      </button>
+    </div>
+
+    <!-- สเต็ป 2: กรอกรหัส Google Authenticator (แสดงเฉพาะ Admin) -->
+    <div id="loginStep2" style="display: none;">
+      <div class="alert alert-success py-2 px-3 small mb-3 text-start">
+        🛡️ กรุณาเปิดแอป <b>Google Authenticator</b> แล้วกรอกรหัส 6 หลัก:
+      </div>
+      <input type="tel" id="totpInput" class="form-control text-center mb-3 fw-bold fs-3" placeholder="• • • • • •" maxlength="6" style="letter-spacing: 6px;">
+      <button id="verifyTotpBtn" onclick="submitAdminTotp()" class="btn btn-success w-100 py-2 fw-bold shadow-sm btn-interactive mb-2">
+        ยืนยันตัวตน
+      </button>
+      <button type="button" class="btn btn-link text-muted btn-sm text-decoration-none" onclick="cancelTotpStep()">
+        ⬅️ ย้อนกลับ
+      </button>
+    </div>
+
+    <div id="loginErr" class="text-danger mt-3 small fw-bold"></div>
   </div>
 </div>
 
@@ -1561,7 +1578,7 @@
             <p class="text-danger small mb-3">⚠️ คำเตือน: ข้อมูลจะถูกลบออกจากฐานข้อมูลชีตอย่างถาวร</p>
             
             <label class="form-label fw-bold small text-dark mb-1">🔒 กรุณากรอกรหัสผ่านเพื่อยืนยันการลบ:</label>
-            <input type="password" id="deleteStaffPassInput" class="form-control" placeholder="กรอกรหัสผ่าน (1234)..." onkeydown="if(event.key==='Enter'){event.preventDefault();executeDeleteStaffWithPassword();}">
+            <input type="password" id="deleteStaffPassInput" class="form-control" placeholder="กรอกรหัสผ่าน " onkeydown="if(event.key==='Enter'){event.preventDefault();executeDeleteStaffWithPassword();}">
             <div id="delStaffErr" class="text-danger small mt-2 fw-bold"></div>
           </div>
           <div class="modal-footer bg-light">
@@ -1850,7 +1867,7 @@
  // --- 1. การตั้งค่าสิทธิ์พื้นฐานองค์กร ---
   const GH_OWNER = "specialtrat905";
   const GH_REPO = "smart-saraban";
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz5IYx1AecH052pyD9nrLTqzVBXvRTNB71stpd643wdvkU4oEwPM8ojezdqezQifIy8yg/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz12rSnlf3XaO9Sp00NuqVeqGm4uxdACcmnecHcNRaL6ALWkk_rdPGyXlcE0xJhAqXr/exec";
 // ⚡ กำหนดค่าเชื่อมต่อ Firebase (ตาม Config ของคุณ)
 const firebaseConfig = {
   apiKey: "AIzaSyBL_Jv3x_UxEkzcVnN6lpQpZdWoIaJvMNM",
@@ -4308,27 +4325,40 @@ async function refreshApp() {
   }
 
 // --- 7. ระบบตรวจสอบสิทธิ์ล็อกอินผ่าน Google ชีตปิด (แก้ปัญหาตัวแดง 429) ---
-  // 🔐 ฟังก์ชันเข้าสู่ระบบความเร็วสูง 0ms (Local Auth - ปลอดภัย เสถียรที่สุด 100%)
-  // 🔐 ฟังก์ชันเข้าสู่ระบบความเร็วสูง + เอฟเฟกต์ตอบโต้ปุ่มกด (Interactive UX)
-  function login() {
+  let tempAdminAuth = { user: "", pass: "" };
+
+  async function login() {
     const u = document.getElementById('user').value.trim();
     const p = document.getElementById('pass').value.trim();
     const btn = document.getElementById('loginBtn');
-    
-    // 1. ตอบสนองทันทีที่คลิก: ล็อกปุ่มกดป้องกันกดซ้ำ + เปลี่ยนข้อความโชว์ตัวหมุน
-    btn.disabled = true;
-    btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status"></span> กำลังเข้าสู่ระบบ...`;
+    const errDiv = document.getElementById('loginErr');
+    errDiv.innerText = "";
 
-    // 2. หน่วงเวลาเล็กน้อย 200 มิลลิวินาที เพื่อให้สายตาผู้ใช้รับรู้ว่าระบบตอบรับการกดแล้ว
+    if (!u || !p) {
+      errDiv.innerText = "กรุณากรอกชื่อผู้ใช้และรหัสผ่าน";
+      return;
+    }
+
+    // 🛡️ กรณีเป็น Admin: พักข้อมูลไว้แล้วเปิดช่องให้กรอกรหัส Google Authenticator 6 หลัก
+    if (u.toLowerCase() === "admin") {
+      tempAdminAuth = { user: u, pass: p };
+      document.getElementById('loginStep1').style.display = 'none';
+      document.getElementById('loginStep2').style.display = 'block';
+      document.getElementById('totpInput').value = "";
+      document.getElementById('totpInput').focus();
+      return;
+    }
+
+    // 👥 กรณีกลุ่มงานทั่วไป: ไม่มีสิทธิ์ Admin เข้าสู่ระบบทันที
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> กำลังเข้าสู่ระบบ...`;
+
     setTimeout(() => {
       const usersDB = [
-        { user: "admin", pass: "1234", role: "Admin", name: "งานธุรการกลาง" },
         { user: "aad",   pass: "1234", role: "ฝ่ายบริหารวิชาการ", name: "ฝ่ายบริหารวิชาการ" },
         { user: "hrm",   pass: "1234", role: "ฝ่ายบริหารงานบุคคล", name: "ฝ่ายบริหารงานบุคคล" },
         { user: "gad",   pass: "1234", role: "ฝ่ายบริหารทั่วไป", name: "ฝ่ายบริหารทั่วไป" },
         { user: "pdb",   pass: "1234", role: "ฝ่ายบริหารงบประมาณ", name: "ฝ่ายบริหารงบประมาณ" },
-        
-        // ⭐️ เพิ่ม User ของรองผู้อำนวยการ (กำหนด user: "dep" หรือตามสะดวก)
         { user: "dep",   pass: "1234", role: "รองผู้อำนวยการ", name: "รองผู้อำนวยการ" }
       ];
 
@@ -4336,37 +4366,86 @@ async function refreshApp() {
 
       if (result) {
         currentUser = { user: result.user, role: result.role, name: result.name };
-
-        // 📱 บันทึกสิทธิ์ลงเครื่องถาวร (เปิดผ่านไอคอนแอปได้ตลอดเวลา ไม่หลุด)
         localStorage.setItem('sarabanUser', JSON.stringify(currentUser));
-
-        document.getElementById('logoutBtn').style.display = 'block';
-
-        // 1. ควบคุมแถบเครื่องมือในหน้าสารบรรณ
-        if (currentUser.role === 'Admin') {
-            document.getElementById('adminView').style.display = 'block';
-            document.getElementById('deptFilterContainer').style.display = 'block';
-        } else {
-            document.getElementById('adminView').style.display = 'none';
-            document.getElementById('deptFilterContainer').style.display = 'none';
-        }
-
-        updateNavForView('saraban');
-        setupExitButton();
-
-        document.getElementById('loginPage').style.display = 'none';
-        document.getElementById('mainApp').style.display = 'block';
-        renderUserNavbar();
-
-        updateYearOptions();
-        resetAndReloadLogs();
+        proceedToMainApp();
       } else {
-        document.getElementById('loginErr').innerText = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
+        errDiv.innerText = "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
       }
 
       btn.disabled = false;
       btn.innerHTML = `เข้าสู่ระบบ`;
     }, 200);
+  }
+
+  // 🔢 ฟังก์ชันส่งรหัส Admin พร้อม TOTP ไปตรวจที่ Google Sheet หลังบ้าน
+  async function submitAdminTotp() {
+    const otp = document.getElementById('totpInput').value.trim();
+    const btn = document.getElementById('verifyTotpBtn');
+    const errDiv = document.getElementById('loginErr');
+    errDiv.innerText = "";
+
+    if (otp.length !== 6) {
+      errDiv.innerText = "กรุณากรอกรหัส 6 หลักให้ครบถ้วน";
+      return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> กำลังตรวจสอบ...`;
+
+    try {
+      const response = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: "loginAdminTotp",
+          user: tempAdminAuth.user,
+          pass: tempAdminAuth.pass,
+          otp: otp
+        })
+      });
+      const resData = await response.json();
+
+      if (resData.success && resData.user) {
+        currentUser = resData.user;
+        localStorage.setItem('sarabanUser', JSON.stringify(currentUser));
+        proceedToMainApp();
+      } else {
+        errDiv.innerText = resData.message || "รหัสยืนยันตัวตนไม่ถูกต้อง";
+      }
+    } catch (e) {
+      errDiv.innerText = "เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์";
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `ยืนยันตัวตน`;
+    }
+  }
+
+  function cancelTotpStep() {
+    document.getElementById('loginStep2').style.display = 'none';
+    document.getElementById('loginStep1').style.display = 'block';
+    document.getElementById('loginErr').innerText = "";
+  }
+
+  function proceedToMainApp() {
+    document.getElementById('logoutBtn').style.display = 'block';
+
+    if (currentUser.role === 'Admin') {
+      document.getElementById('adminView').style.display = 'block';
+      document.getElementById('deptFilterContainer').style.display = 'block';
+    } else {
+      document.getElementById('adminView').style.display = 'none';
+      document.getElementById('deptFilterContainer').style.display = 'none';
+    }
+
+    updateNavForView('saraban');
+    setupExitButton();
+
+    document.getElementById('loginPage').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    renderUserNavbar();
+
+    updateYearOptions();
+    resetAndReloadLogs();
   }
 
   // --- 8. ฟังก์ชันจัดคิวและดาวน์โหลดข้อมูลสลับหน้าความเสถียรสูง ---

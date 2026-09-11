@@ -1867,7 +1867,7 @@
  // --- 1. การตั้งค่าสิทธิ์พื้นฐานองค์กร ---
   const GH_OWNER = "specialtrat905";
   const GH_REPO = "smart-saraban";
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz12rSnlf3XaO9Sp00NuqVeqGm4uxdACcmnecHcNRaL6ALWkk_rdPGyXlcE0xJhAqXr/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwZuNNcK1vsV79agaV7Uz2w-doNyYdcemyHdC2kwQstgsnMwyIjq0hibtjrlrF5qK6a/exec";
 // ⚡ กำหนดค่าเชื่อมต่อ Firebase (ตาม Config ของคุณ)
 const firebaseConfig = {
   apiKey: "AIzaSyBL_Jv3x_UxEkzcVnN6lpQpZdWoIaJvMNM",
@@ -4377,7 +4377,7 @@ async function refreshApp() {
     }, 200);
   }
 
-  // 🔢 ฟังก์ชันส่งรหัส Admin พร้อม TOTP ไปตรวจที่ Google Sheet หลังบ้าน
+  // 🔢 ฟังก์ชันส่งรหัส Admin พร้อม TOTP ไปตรวจที่ Google Sheet หลังบ้าน (เวอร์ชันปลอดภัย)
   async function submitAdminTotp() {
     const otp = document.getElementById('totpInput').value.trim();
     const btn = document.getElementById('verifyTotpBtn');
@@ -4403,7 +4403,22 @@ async function refreshApp() {
           otp: otp
         })
       });
-      const resData = await response.json();
+
+      const textRes = await response.text();
+      
+      // ป้องกันกรณี Apps Script ส่งหน้า HTML แจ้งเตือนสิทธิ์กลับมา
+      if (textRes.trim().startsWith("<!DOCTYPE") || textRes.trim().startsWith("<html")) {
+        errDiv.innerText = "⚠️ เซิร์ฟเวอร์ส่งหน้า HTML กลับมา (โปรดตรวจสอบสิทธิ์ Deploy ให้เป็น Anyone)";
+        return;
+      }
+
+      let resData;
+      try {
+        resData = JSON.parse(textRes);
+      } catch (jsonErr) {
+        errDiv.innerText = "⚠️ ผลลัพธ์จากเซิร์ฟเวอร์ไม่ถูกต้อง: " + textRes.substring(0, 80);
+        return;
+      }
 
       if (resData.success && resData.user) {
         currentUser = resData.user;
@@ -4413,7 +4428,7 @@ async function refreshApp() {
         errDiv.innerText = resData.message || "รหัสยืนยันตัวตนไม่ถูกต้อง";
       }
     } catch (e) {
-      errDiv.innerText = "เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์";
+      errDiv.innerText = "เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์: " + (e.message || "");
     } finally {
       btn.disabled = false;
       btn.innerHTML = `ยืนยันตัวตน`;

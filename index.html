@@ -4629,15 +4629,24 @@ async function refreshApp() {
         if (uploadedFiles.length > 0) {
           updateProgress(`กำลังแจ้งเตือน LINE ไปยัง [${dept}]...`);
           try {
-            await fetch(SCRIPT_URL, {
-              method: 'POST',
-              body: JSON.stringify({
-                action: "sendBatchNotification", 
-                department: dept,
-                sender: currentUser.name, 
-                fileList: uploadedFiles
-              })
-            });
+            // ✅ เปลี่ยนเป็น: ข้ามการยิง batch notification เมื่อ dept คือ "อื่นๆ"
+// เพราะรายบุคคลใช้ระบบแจ้งเตือนคนละเส้นทาง (ทำตอน upload ผ่านชื่อในวงเล็บแล้ว)
+if (uploadedFiles.length > 0 && dept !== "อื่นๆ") {
+  updateProgress(`กำลังแจ้งเตือน LINE ไปยัง [${dept}]...`);
+  try {
+    await fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        action: "sendBatchNotification", 
+        department: dept,
+        sender: currentUser.name, 
+        fileList: uploadedFiles
+      })
+    });
+  } catch (err) { console.error(err); }
+} else {
+  updateProgress(`เสร็จสิ้นกลุ่มงาน [${dept}]`);
+}
           } catch (err) { console.error(err); }
         } else {
           updateProgress(`เสร็จสิ้นกลุ่มงาน [${dept}]`);

@@ -1867,7 +1867,7 @@
  // --- 1. การตั้งค่าสิทธิ์พื้นฐานองค์กร ---
   const GH_OWNER = "specialtrat905";
   const GH_REPO = "smart-saraban";
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwZuNNcK1vsV79agaV7Uz2w-doNyYdcemyHdC2kwQstgsnMwyIjq0hibtjrlrF5qK6a/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzgwRo8DOgNmqZA5yqQaa2Ub4TabwWUmvw4yr_1qqNJHOMpUGo7oM6RnIWOibgDUKzsVQ/exec";
 // ⚡ กำหนดค่าเชื่อมต่อ Firebase (ตาม Config ของคุณ)
 const firebaseConfig = {
   apiKey: "AIzaSyBL_Jv3x_UxEkzcVnN6lpQpZdWoIaJvMNM",
@@ -5109,9 +5109,23 @@ if (uploadedFiles.length > 0 && dept !== "อื่นๆ") {
       pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
       const res = await fetch(`${SCRIPT_URL}?action=getPdfBase64&fileId=${encodeURIComponent(currentPdfFileId)}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      if (!data.success || !data.base64) throw new Error('ไม่สามารถดึงข้อมูลไฟล์ PDF ได้');
+      const textRaw = await res.text();
+
+      // ดักจับกรณีที่ Google Apps Script ส่งหน้า HTML มาเตือนเรื่องสิทธิ์
+      if (textRaw.trim().startsWith("<!DOCTYPE") || textRaw.trim().startsWith("<html")) {
+        throw new Error("สิทธิ์ Web App ใน Apps Script ยังไม่ได้ตั้งค่าเป็น Anyone (โปรดตั้งค่า Deploy เป็น Anyone)");
+      }
+
+      let data;
+      try {
+        data = JSON.parse(textRaw);
+      } catch (e) {
+        throw new Error("เซิร์ฟเวอร์ส่งข้อมูลไม่ถูกต้อง: " + textRaw.substring(0, 80));
+      }
+
+      if (!data.success || !data.base64) {
+        throw new Error(data.message || 'ไม่สามารถดึงข้อมูลไฟล์ PDF ได้');
+      }
 
       const raw = atob(data.base64);
       const uint8Array = new Uint8Array(raw.length);
@@ -5392,17 +5406,44 @@ if (uploadedFiles.length > 0 && dept !== "อื่นๆ") {
         }
       } catch (cacheErr) {}
 
-      // 🚀 สเต็ป 2: ถ้าไม่มีในแคช -> สแกนหน้ากระดาษจริง
-      textArea.value = "⏳ กำลังดาวน์โหลดและเตรียมสแกนหา QR Code, เว็บไซต์, อีเมล และข้อความ...";
-      const res = await fetch(`${SCRIPT_URL}?action=getPdfBase64&fileId=${encodeURIComponent(currentPdfFileId)}`);
-      const textRaw = await res.text();
-      const data = JSON.parse(textRaw);
+      // 🚀 สเต็ป 2: ถ้าไม่มีในแคช -> สแกนหน้ากระดาษจริง (ระบบดึงไฟล์แบบทนทาน)
+      textArea.value = "⏳ กำลังดาวน์โหลดเอกสาร PDF และเตรียมประมวลผล...";
+      
+      let uint8Array = null;
 
-      if (!data.success || !data.base64) throw new Error('ไม่สามารถดึงข้อมูลไฟล์ PDF ได้');
+      // ทางเลือกที่ 1: ขอ Base64 ผ่าน Apps Script
+      try {
+        const res = await fetch(`${SCRIPT_URL}?action=getPdfBase64&fileId=${encodeURIComponent(currentPdfFileId)}`);
+        const textRaw = await res.text();
 
-      const raw = atob(data.base64);
-      const uint8Array = new Uint8Array(raw.length);
-      for (let i = 0; i < raw.length; i++) uint8Array[i] = raw.charCodeAt(i);
+        // ดักจับกรณีที่ Google Apps Script ส่งหน้า HTML มาเตือนเรื่องสิทธิ์
+        if (!textRaw.trim().startsWith("<!DOCTYPE") && !textRaw.trim().startsWith("<html")) {
+          const data = JSON.parse(textRaw);
+          if (data.success && data.base64) {
+            const raw = atob(data.base64);
+            uint8Array = new Uint8Array(raw.length);
+            for (let i = 0; i < raw.length; i++) uint8Array[i] = raw.charCodeAt(i);
+          }
+        }
+      } catch (eBase) {
+        console.warn("ดึงผ่าน Base64 ไม่สำเร็จ กำลังสลับไปใช้ช่องทางตรง...", eBase);
+      }
+
+      // ทางเลือกที่ 2: ถ้า Apps Script ตอบกลับเป็น HTML ให้ดึง Stream PDF ผ่าน Proxy URL ตรง
+      if (!uint8Array) {
+        try {
+          const directUrl = `${SCRIPT_URL}?action=downloadPdfDirect&fileId=${encodeURIComponent(currentPdfFileId)}`;
+          const resDirect = await fetch(directUrl);
+          const arrayBuffer = await resDirect.arrayBuffer();
+          uint8Array = new Uint8Array(arrayBuffer);
+        } catch (eDirect) {
+          throw new Error("ไม่สามารถดาวน์โหลดไฟล์ PDF ได้ กรุณาตรวจสอบสิทธิ์การแชร์ไฟล์ใน Google Drive");
+        }
+      }
+
+      if (!uint8Array || uint8Array.length === 0) {
+        throw new Error("ไฟล์ PDF ว่างเปล่าหรือไม่สามารถเปิดอ่านได้");
+      }
 
       pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
       const pdf = await pdfjsLib.getDocument({ data: uint8Array }).promise;
@@ -5503,7 +5544,13 @@ if (uploadedFiles.length > 0 && dept !== "อื่นๆ") {
         textArea.value = "🤖 หนังสือฉบับนี้เป็นภาพสแกน กำลังใช้ AI ถอดข้อความภาษาไทย กรุณารอสักครู่...";
 
         const ocrRes = await fetch(`${SCRIPT_URL}?action=ocrPdfWithGemini&fileId=${encodeURIComponent(currentPdfFileId)}`);
-        const ocrData = await ocrRes.json();
+        const ocrTextRaw = await ocrRes.text();
+        let ocrData = {};
+        try {
+          if (!ocrTextRaw.trim().startsWith("<!DOCTYPE") && !ocrTextRaw.trim().startsWith("<html")) {
+            ocrData = JSON.parse(ocrTextRaw);
+          }
+        } catch(eJson) {}
 
         if (ocrData.success && ocrData.text) {
           finalExtractedText = ocrData.text.trim();

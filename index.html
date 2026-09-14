@@ -965,8 +965,8 @@
             <thead class="table-light">
               <tr class="text-center align-middle">
                 <th style="width: 18%;">วันที่</th>
-                <th style="width: 57%;">ชื่อหนังสือ / ฝ่าย</th>
-                <th style="width: 25%;">จัดการ</th>
+                <th style="width: 64%;">ชื่อหนังสือ / ฝ่าย</th>
+                <th style="width: 18%;">จัดการ</th>
               </tr>
             </thead>
             <tbody id="bookData"></tbody>
@@ -4011,10 +4011,10 @@ async function refreshApp() {
       else {
         actionColumnHTML = `
           <div class="action-buttons justify-content-center">
-            <button onclick="openPdfViewer('${col[4]}', '${encodeURIComponent(plainFileName)}')" class="btn btn-sm btn-primary shadow-sm flex-grow-1">
+            <button onclick="openPdfViewer('${col[4]}', '${encodeURIComponent(plainFileName)}')" class="btn btn-sm btn-primary shadow-sm w-50 px-1 text-nowrap" style="font-size: 0.78rem;">
               เปิดดู
             </button>
-            <button onclick="copyDeepLink('${col[4]}', '${encodeURIComponent(plainFileName)}')" class="btn btn-sm btn-copy shadow-sm" title="คัดลอกลิงก์เปิดอ่านในแอป">
+            <button onclick="copyDeepLink('${col[4]}', '${encodeURIComponent(plainFileName)}')" class="btn btn-sm btn-copy shadow-sm w-50 px-1 text-nowrap" style="font-size: 0.78rem;" title="คัดลอกลิงก์เปิดอ่านในแอป">
               คัดลอก
             </button>
           </div>
@@ -4549,12 +4549,14 @@ async function refreshApp() {
     };
 
     // 1. คำนวณหาเลขหนังสือที่ยังไม่ลงระบบ (Missing Numbers)
+    // 1. คำนวณหาเลขหนังสือที่ยังไม่ลงระบบ (Missing Numbers)
     let missingRows = [];
     if ((selectedDept === "all" || selectedDept === "ยังไม่ได้ลงระบบ") && searchTerm === "") {
       const existingNumbers = allLogs.map(row => {
         if (!row || row.length < 3 || row[0] === "❌") return null;
-        const m = row[2].toString().match(/^(\d+)-25\d{2}/);
-        return m ? parseInt(m[1]) : null;
+        const cleanStr = row[2].toString().replace(/<[^>]*>?/gm, '').replace(/\[.*?\]/g, '').trim();
+        const m = cleanStr.match(/^(\d+)\s*-\s*25\d{2}/);
+        return m ? parseInt(m[1], 10) : null;
       }).filter(n => n !== null);
 
       if (existingNumbers.length > 0) {
@@ -4568,7 +4570,7 @@ async function refreshApp() {
               "❌",
               "SYSTEM",
               `<span class="text-missing">${i}-${targetYear}</span>`,
-              "ยังไม่มีข้อมูล",
+              "ยังไม่ได้ลงระบบ",
               "#"
             ]);
           }
@@ -4579,9 +4581,9 @@ async function refreshApp() {
     // 2. หากเลือกตัวกรอง "ยังไม่ได้ลงระบบ" ให้แสดงเฉพาะรายการสีแดง
     if (selectedDept === "ยังไม่ได้ลงระบบ") {
       missingRows.sort((a, b) => {
-        const matchA = a[2].match(/(\d+)-\d+/);
-        const matchB = b[2].match(/(\d+)-\d+/);
-        return (matchB ? parseInt(matchB[1]) : 0) - (matchA ? parseInt(matchA[1]) : 0);
+        const numA = parseInt((a[2].replace(/<[^>]*>?/gm, '').match(/^(\d+)/) || [0, 0])[1], 10);
+        const numB = parseInt((b[2].replace(/<[^>]*>?/gm, '').match(/^(\d+)/) || [0, 0])[1], 10);
+        return numB - numA;
       });
       displayTable(missingRows);
       return;
@@ -4611,20 +4613,28 @@ async function refreshApp() {
       return matchSearch && matchDept;
     });
 
+    // นำแถวที่ยังไม่ลงรับ (❌) มารวมกับแถวหนังสือปกติ
     if (selectedDept === "all" && searchTerm === "") {
       filtered = filtered.concat(missingRows);
     }
 
-    // 4. เรียงลำดับเลขหนังสือจากมากไปน้อย
+    // 4. เรียงลำดับแทรกตามเลขหนังสือ (มากไปน้อย) โดยตรง
     filtered.sort((a, b) => {
-      const textA = a[2].toString().replace(/<[^>]*>?/gm, '');
-      const textB = b[2].toString().replace(/<[^>]*>?/gm, '');
-      const matchA = textA.match(/^(\d+)-(\d+)/);
-      const matchB = textB.match(/^(\d+)-(\d+)/);
+      const textA = a[2].toString().replace(/<[^>]*>?/gm, '').trim();
+      const textB = b[2].toString().replace(/<[^>]*>?/gm, '').trim();
+      const matchA = textA.match(/^(\d+)\s*-\s*(\d+)/);
+      const matchB = textB.match(/^(\d+)\s*-\s*(\d+)/);
 
-      if (matchA && matchB) {
-        return parseInt(matchB[1]) - parseInt(matchA[1]);
+      const numA = matchA ? parseInt(matchA[1], 10) : -1;
+      const numB = matchB ? parseInt(matchB[1], 10) : -1;
+
+      // ถ้าทั้งสองแถวมีเลขหนังสือทั้งคู่ ให้เรียงเลขจากมากไปหาน้อย
+      if (numA !== -1 && numB !== -1) {
+        return numB - numA;
       }
+      if (numA !== -1) return -1;
+      if (numB !== -1) return 1;
+
       return b[0].toString().localeCompare(a[0].toString());
     });
 

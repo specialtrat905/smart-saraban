@@ -4427,7 +4427,7 @@ async function refreshApp() {
     }, 200);
   }
 
-  // 🔢 ฟังก์ชันส่งรหัส Admin พร้อม TOTP ไปตรวจที่ Google Sheet หลังบ้าน (เวอร์ชันปลอดภัย)
+  // 🔢 ฟังก์ชันส่งรหัส Admin พร้อม TOTP
   async function submitAdminTotp() {
     const otp = document.getElementById('totpInput').value.trim();
     const btn = document.getElementById('verifyTotpBtn');
@@ -4445,7 +4445,7 @@ async function refreshApp() {
     try {
       const response = await fetch(SCRIPT_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // 👈 ใส่บรรทัดนี้กลับคืนมา
         body: JSON.stringify({
           action: "loginAdminTotp",
           user: tempAdminAuth.user,
@@ -4482,7 +4482,6 @@ async function refreshApp() {
           proceedToMainApp();
           listenAdminSessionExpiry(todayStr);
         }).catch(() => {
-          // เผื่อกรณีเน็ตขัดข้อง ให้เข้าใช้งานเครื่องนี้ได้ก่อน
           localStorage.setItem('sarabanUser', JSON.stringify(currentUser));
           proceedToMainApp();
         });

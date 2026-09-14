@@ -3572,32 +3572,82 @@ function updateDbManageButtonUI() {
   function checkSession() {
     const savedUser = localStorage.getItem('sarabanUser');
     
-    // 📱 ถ้าเคยล็อกอินไว้ในเครื่องแล้ว ให้เปิดเข้าใช้งานได้ทันทีโดยไม่มีหมดเวลา
     if (savedUser) {
-        currentUser = JSON.parse(savedUser);
+        const parsedUser = JSON.parse(savedUser);
+
+        // 🛡️ ถ้าเป็น Admin: ให้เชื่อมต่อตรวจ Session กลางกับ Firebase
+        if (parsedUser.role === 'Admin') {
+          // ดึงวันที่ของเครื่องปัจจุบัน (รูปแบบ พ.ศ./ค.ศ. มาตรฐาน YYYY-MM-DD)
+          const now = new Date();
+          const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+          // ตรวจสอบกับ Firebase Realtime Database
+          rtdb.ref('admin_session_date').once('value', (snapshot) => {
+            const activeSessionDate = snapshot.val();
+
+            // หากใน Firebase ไม่มีข้อมูล หรือวันที่บันทึกไม่ใช่วันนี้ (เลยเที่ยงคืนแล้ว)
+            if (!activeSessionDate || activeSessionDate !== todayStr) {
+              localStorage.removeItem('sarabanUser');
+              document.getElementById('loginPage').style.display = 'block';
+              document.getElementById('mainApp').style.display = 'none';
+              return;
+            }
+
+            // ถ้าเป็นของวันนี้และถูกต้อง ให้เข้าใช้งานต่อตามปกติ
+            currentUser = parsedUser;
+            initAdminUI();
+            listenAdminSessionExpiry(todayStr); // เปิดตัวดักฟังถ้าข้ามเที่ยงคืนขณะเปิดค้างไว้
+          });
+          return;
+        }
+
+        // 👥 ถ้าเป็น User กลุ่มงานทั่วไป: จำสิทธิ์ถาวรตามเดิม ไม่ต้องเช็กวันหมดอายุ
+        currentUser = parsedUser;
         document.getElementById('loginPage').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
         renderUserNavbar();
 
-        // แสดงปุ่มออกจากระบบให้ทุกสิทธิ์ (เพื่อให้ User สลับฝ่ายหรือออกจากระบบได้)
         document.getElementById('logoutBtn').style.display = 'block'; 
-        setupExitButton(); // 👈 เพิ่มบรรทัดนี้เพื่อปรับข้อความปุ่มตามอุปกรณ์
+        setupExitButton();
 
-        // 1. ควบคุมแถบเครื่องมือในหน้าสารบรรณ
-        if (currentUser.role === 'Admin') {
-            document.getElementById('adminView').style.display = 'block';
-            document.getElementById('deptFilterContainer').style.display = 'block';
-        } else {
-            document.getElementById('adminView').style.display = 'none';
-            document.getElementById('deptFilterContainer').style.display = 'none';
-        }
+        document.getElementById('adminView').style.display = 'none';
+        document.getElementById('deptFilterContainer').style.display = 'none';
 
-        // 2. 👈 วางคำสั่งนี้ตรงนี้ครับ เพื่อจัดปุ่มบนแถบ Navbar หน้าแรก
         updateNavForView('saraban');
-
         updateYearOptions();
         resetAndReloadLogs(); 
     }
+  }
+
+  // ฟังก์ชันช่วยเปิดหน้าต่างเมื่อ Admin ได้รับอนุญาต
+  function initAdminUI() {
+    document.getElementById('loginPage').style.display = 'none';
+    document.getElementById('mainApp').style.display = 'block';
+    renderUserNavbar();
+
+    document.getElementById('logoutBtn').style.display = 'block'; 
+    setupExitButton();
+
+    document.getElementById('adminView').style.display = 'block';
+    document.getElementById('deptFilterContainer').style.display = 'block';
+
+    updateNavForView('saraban');
+    updateYearOptions();
+    resetAndReloadLogs();
+  }
+
+  // 📡 ตัวดักฟัง Realtime: หากเปิดหน้าจอค้างไว้ข้ามเที่ยงคืน หรือมีการกด Logout จากอีกเครื่อง จะดีดออกทันที
+  function listenAdminSessionExpiry(sessionDate) {
+    rtdb.ref('admin_session_date').on('value', (snapshot) => {
+      const activeDate = snapshot.val();
+      const now = new Date();
+      const currentToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+      if (currentUser.role === 'Admin' && (!activeDate || activeDate !== currentToday)) {
+        alert("🔒 หมดเวลาเซสชันผู้ดูแลระบบประจำวัน (หลังเที่ยงคืน) กรุณาลงชื่อเข้าใช้ใหม่เพื่อความปลอดภัย");
+        logout();
+      }
+    });
   }
 
 function updateNavForView(viewName) {
@@ -3714,17 +3764,17 @@ if (dbBtn) dbBtn.style.setProperty('display', isAdmin ? 'inline-flex' : 'none', 
 
   // 🚪 ฟังก์ชันออกจากระบบ + ล้างแคชและฐานข้อมูลบนเบราว์เซอร์ทิ้งหมดจด 100%
   function logout() {
-    // 1. ล้างพื้นที่จัดเก็บในเบราว์เซอร์ทั้งหมด
+    // ถ้าระดับ Admin เป็นคนกดออกจากระบบ ให้เคลียร์วันที่บน Firebase ทิ้งทันที (เครื่องอื่นจะหลุดด้วย)
+    if (currentUser && currentUser.role === 'Admin') {
+      try { rtdb.ref('admin_session_date').remove(); } catch(e){}
+    }
+
     localStorage.clear();
     sessionStorage.clear();
-    
-    // 2. เคลียร์แคชและข้อมูลตัวแปรทุกอย่างในระบบ
     dataCache = {};
     allLogs = [];
     selectedBooksToDelete = [];
     currentUser = {};
-    
-    // 3. ตัดพารามิเตอร์ลิงก์ออกทั้งหมดและโหลดหน้าใหม่อย่างปลอดภัย
     window.location.href = window.location.pathname;
   }
 
@@ -4422,8 +4472,20 @@ async function refreshApp() {
 
       if (resData.success && resData.user) {
         currentUser = resData.user;
-        localStorage.setItem('sarabanUser', JSON.stringify(currentUser));
-        proceedToMainApp();
+        
+        // 📅 ดึงวันที่วันนี้แล้วประทับตราขึ้น Firebase กลาง
+        const now = new Date();
+        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        
+        rtdb.ref('admin_session_date').set(todayStr).then(() => {
+          localStorage.setItem('sarabanUser', JSON.stringify(currentUser));
+          proceedToMainApp();
+          listenAdminSessionExpiry(todayStr);
+        }).catch(() => {
+          // เผื่อกรณีเน็ตขัดข้อง ให้เข้าใช้งานเครื่องนี้ได้ก่อน
+          localStorage.setItem('sarabanUser', JSON.stringify(currentUser));
+          proceedToMainApp();
+        });
       } else {
         errDiv.innerText = resData.message || "รหัสยืนยันตัวตนไม่ถูกต้อง";
       }

@@ -993,40 +993,40 @@
 }
 
 /* =========================================================
-   🖥️ Sidebar: ลื่นสนิท 100% ไร้การทับคำ (Clean Mini-Sidebar)
+   🖥️ PC Single Screen Dashboard Layout (พอดี 1 หน้าจอ เลื่อนเฉพาะตาราง)
    ========================================================= */
 @media (min-width: 769px) {
-  #appLayoutWrapper {
-    display: flex;
-    align-items: flex-start;
-    gap: 12px;
-    padding: 10px 14px;
-    min-height: calc(100vh - 60px);
+  /* 🔒 ล็อคหน้าจอหลักบน PC ไม่ให้เกิด Scrollbar ด้านนอกเด็ดขาด */
+  html, body {
+    height: 100vh !important;
+    overflow: hidden !important;
+    padding-bottom: 28px !important; /* เว้นที่พอดีแถบ Footer */
   }
 
-  /* 🌲 แถบ Sidebar แบบการ์ดลอย ขอบมน มีเงารอบด้าน */
+  #appLayoutWrapper {
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+    padding: 6px 12px 0 12px;        /* ดันชิดขอบบน Navbar ขึ้น */
+    height: calc(100vh - 84px);      /* คำนวณความสูงพอดีระหว่าง Navbar กับ Footer */
+    overflow: hidden;
+  }
+
+  /* 🌲 แถบ Sidebar ซ้าย ล็อคความสูง 100% เท่ากรอบ */
   #desktopSidebar {
     width: 240px;
     background-color: var(--sidebar-bg);
     border: 1.5px solid var(--border-color);
-    border-radius: 16px !important;
-    padding: 10px 8px;
+    border-radius: 14px !important;
+    padding: 8px 6px;
     display: flex;
     flex-direction: column;
     gap: 4px;
     flex-shrink: 0;
-    
-    /* 🔒 ล็อคให้อยู่กับที่ ไม่เลื่อนตามการไถหน้าจอ */
-    position: sticky;
-    top: 60px;
-    height: calc(100vh - 95px);
-    
-    /* ✨ เงารอบด้าน 4 ทิศ */
-    box-shadow: 0 4px 20px rgba(0, 77, 64, 0.15), 0 0 1px rgba(0,0,0,0.1) !important;
+    height: 100% !important;         /* สูงเต็มกรอบพอดีกับตารางด้านขวา */
+    box-shadow: 0 4px 16px rgba(0, 77, 64, 0.12) !important;
     overflow-y: auto;
     overflow-x: hidden;
-    
-    /* ⚡ ใช้ความเร็ว 0.18s เพื่อให้พับได้กระชับ ไม่หน่วงตารางฝั่งขวา */
     transition: width 0.18s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 1010;
   }
@@ -1038,7 +1038,12 @@
     box-shadow: 0 0 24px rgba(255, 255, 255, 0.08), 0 0 1px rgba(255, 255, 255, 0.2) !important;
   }
 
-  /* ล้างเงา 3D ของปุ่มใน Sidebar ทั้งหมด */
+  #desktopSidebar.collapsed {
+    width: 60px !important;
+    padding: 8px 4px !important;
+  }
+
+  /* ล้างเงา 3D ของปุ่มใน Sidebar */
   #desktopSidebar .btn,
   .btn-sidebar-item,
   .btn-toggle-sidebar {
@@ -1056,14 +1061,13 @@
     content: none !important;
   }
 
-  /* ปุ่มเมนูปกติ (ตอนเปิดเต็ม) */
   .btn-sidebar-item {
     display: flex !important;
     align-items: center !important;
     justify-content: flex-start !important;
     gap: 12px !important;
     width: 100% !important;
-    min-width: 0 !important;            /* 🛑 ปลดล็อคความกว้าง ป้องกันคำล้นทับ */
+    min-width: 0 !important;
     padding: 10px 12px !important;
     border-radius: 10px !important;
     background-color: transparent !important;
@@ -1090,7 +1094,6 @@
     stroke: #004d40 !important;
   }
 
-  /* ไอคอน SVG ล็อคขนาดให้อยู่กับที่ */
   .sidebar-svg {
     width: 20px;
     height: 20px;
@@ -1110,12 +1113,11 @@
     padding-left: 8px;
     text-transform: uppercase;
     font-weight: bold;
-    margin-top: 8px;
+    margin-top: 6px;
     margin-bottom: 2px;
     white-space: nowrap;
   }
 
-  /* ปุ่มกดซ่อน/เปิดเมนูหลัก */
   .btn-toggle-sidebar {
     display: flex !important;
     align-items: center;
@@ -1125,10 +1127,10 @@
     color: #ffffff !important;
     border: 1px solid rgba(255, 255, 255, 0.2) !important;
     border-radius: 8px !important;
-    padding: 7px 10px !important;
+    padding: 6px 10px !important;
     font-size: 0.78rem !important;
     width: 100%;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     white-space: nowrap;
     cursor: pointer !important;
   }
@@ -1143,161 +1145,112 @@
     flex-shrink: 0;
   }
 
-  /* =========================================================
-     🛑 สถานะเมื่อกด "ซ่อนเมนูหลัก" (.collapsed): 
-     ตัดคำทิ้งทันที + จัดไอคอนให้อยู่กึ่งกลางพอดีเป๊ะ (แก้คำทับ 100%)
-     ========================================================= */
-  #desktopSidebar.collapsed {
-    width: 60px !important;            /* ขนาดแถบมินิบาร์พอดีไอคอน */
-    padding: 10px 6px !important;
-  }
-
-  /* ซ่อนข้อความและหัวข้อย่อยออกทันทีเด็ดขาด ไม่ให้โผล่มาทับ */
   #desktopSidebar.collapsed .sidebar-text,
   #desktopSidebar.collapsed .sidebar-section-title {
     display: none !important;
   }
-
-  /* ปรับปุ่มให้จัดไอคอนไว้ตรงกลางแถบ */
-  #desktopSidebar.collapsed .btn-sidebar-item {
-    justify-content: center !important;
-    padding: 10px 0 !important;
-    gap: 0 !important;
-  }
-
-  /* ปรับปุ่มลูกศรซ่อนเมนูให้อยู่ตรงกลาง */
+  #desktopSidebar.collapsed .btn-sidebar-item,
   #desktopSidebar.collapsed .btn-toggle-sidebar {
     justify-content: center !important;
-    padding: 7px 0 !important;
+    padding: 8px 0 !important;
     gap: 0 !important;
   }
 
-  /* ฝั่งขวา (เนื้อหาตาราง) */
+  /* 📄 พื้นที่เนื้อหาฝั่งขวาล็อคความสูง 100% เท่ากับ Sidebar */
   #mainContentWrapper {
     flex: 1 1 auto;
     min-width: 0;
+    height: 100% !important;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
+
   #mainContentWrapper .container-fluid {
-    padding-left: 0 !important;
-    margin-top: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
   }
+
+  /* ทุก View (สารบรรณ, บุคลากร, ไปราชการ, ส่งออก, ฐานข้อมูล) ให้ยืดเต็มความสูง ขอบล่างเท่ากับ Sidebar เป๊ะ */
+  #sarabanView, #staffView, #dutyTripView, #exportView, #dbManageView {
+    height: 100% !important;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0 !important;
+  }
+
+  /* กระชับการ์ดตาราง และจัด Flexbox บังคับให้ Scrollbar เกิดเฉพาะข้างในตาราง */
+  #sarabanView .card.card-border-green.p-4,
+  #staffView.card, 
+  #dutyTripView.card, 
+  #exportView.card, 
+  #dbManageView.card {
+    padding: 10px 14px !important;    /* ลด Padding การ์ด */
+    margin-bottom: 0 !important;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;                   /* สำคัญมาก: ป้องกันไม่ให้ดันทะลุกรอบ */
+    border-radius: 14px !important;
+  }
+
+  /* แถบส่งหนังสือด้านบนให้กระชับขึ้น */
+  #adminView {
+    margin-bottom: 6px !important;
+    padding: 6px 10px !important;
+    border-radius: 12px !important;
+  }
+
+  /* ⚡ แถบตัวกรองด้านบน (ปี พ.ศ. / กลุ่มงาน / ค้นหา) ให้แคบและเตี้ยลง */
+  .filter-compact-row {
+    margin-bottom: 6px !important;
+  }
+  .filter-compact-row h5 {
+    font-size: 0.95rem !important;
+  }
+  .filter-compact-row .form-select,
+  .filter-compact-row .form-control,
+  .filter-compact-row .input-group-text {
+    padding-top: 3px !important;
+    padding-bottom: 3px !important;
+    font-size: 0.82rem !important;
+    height: 32px !important;
+  }
+
+  /* 🎯 ตารางด้านใน: จุดเดียวที่ Scroll ได้ และยืดเต็มความสูงจนเสมอด้านล่าง Sidebar */
+  #tableScrollContainer,
+  #staffView .table-responsive,
+  #dutyTripView .table-responsive,
+  #exportView .table-responsive,
+  #dbManageView .table-responsive {
+    flex: 1 1 auto !important;
+    max-height: none !important;
+    height: 100% !important;
+    overflow-y: auto !important;
+    overflow-x: auto !important;
+    border-radius: 10px !important;
+  }
+
   #navMainButtons {
+    display: none !important;
+  }
+  #backToSarabanBtn {
     display: none !important;
   }
 }
 
+/* 📱 บนมือถือ (<= 768px): คืนค่าเลย์เอาต์ปกติ เลื่อนหน้าจอยาวได้แบบเดิม */
 @media (max-width: 768px) {
   #desktopSidebar {
     display: none !important;
   }
-}
-
-
-
-  /* ตัดแสงเงา 3D และขอบสะท้อนแสงด้านบนออกให้แบนเรียบ 100% */
-  #desktopSidebar .btn,
-  .btn-sidebar-item,
-  .btn-toggle-sidebar {
-    background-image: none !important;
-    box-shadow: none !important;
-    text-shadow: none !important;
-  }
-  #desktopSidebar .btn::before,
-  #desktopSidebar .btn::after,
-  .btn-sidebar-item::before,
-  .btn-sidebar-item::after,
-  .btn-toggle-sidebar::before,
-  .btn-toggle-sidebar::after {
-    display: none !important;
-    content: none !important;
-  }
-
-  /* ปุ่มรายการเมนู (สถานะปกติ: ตัวหนังสือและไอคอนสีขาวล้วน แบนเรียบ) */
-  .btn-sidebar-item {
+  #navMainButtons {
     display: flex !important;
-    align-items: center !important;
-    gap: 12px !important;
-    width: 100% !important;
-    padding: 11px 14px !important;
-    border-radius: 10px !important;
-    background-color: transparent !important;
-    color: #ffffff !important;
-    border: none !important;
-    font-size: 0.92rem !important;
-    font-weight: 600 !important;
-    text-align: left !important;
-    transition: background-color 0.15s ease, color 0.15s ease !important;
-    cursor: pointer !important;
   }
-
-  .btn-sidebar-item:hover {
-    background-color: rgba(255, 255, 255, 0.08) !important;
-    color: #ffffff !important;
-  }
-
-  /* ✨ สถานะเมื่อเลือก (Active): พื้นหลังสีขาวล้วน ตัวหนังสือและไอคอนเป็นสีเขียวมินิมอล */
-  .btn-sidebar-item.active {
-    background-color: #ffffff !important;
-    color: #004d40 !important;
-  }
-  .btn-sidebar-item.active .sidebar-svg {
-    stroke: #004d40 !important;
-  }
-
-  /* สไตล์ไอคอน SVG (รับสีจากตัวหนังสืออัตโนมัติ) */
-  .sidebar-svg {
-    width: 20px;
-    height: 20px;
-    stroke: currentColor;
-    flex-shrink: 0;
-    transition: stroke 0.15s ease;
-  }
-
-  /* ปุ่มย่อเมนูหลัก */
-  .btn-toggle-sidebar {
-    background: transparent !important;
-    color: rgba(255, 255, 255, 0.75) !important;
-    border: 1px dashed rgba(255, 255, 255, 0.25) !important;
-    border-radius: 8px !important;
-    padding: 7px 10px !important;
-    font-size: 0.8rem !important;
-    width: 100%;
-    margin-bottom: 12px;
-  }
-  .btn-toggle-sidebar:hover {
-    background-color: rgba(255, 255, 255, 0.06) !important;
-    color: #ffffff !important;
-  }
-
-  .sidebar-section-title {
-    font-size: 0.72rem;
-    color: rgba(255, 255, 255, 0.45);
-    padding-left: 6px;
-    text-transform: uppercase;
-    font-weight: bold;
-    margin-top: 10px;
-    margin-bottom: 2px;
-  }
-
-  /* 💻 บน PC (>= 769px): ซ่อน 4 ปุ่มเมนูบน Navbar (เพราะมี Sidebar แล้ว) และซ่อนปุ่มย้อนกลับบนแถบบน */
-  @media (min-width: 769px) {
-    #navMainButtons {
-      display: none !important;
-    }
-    #backToSarabanBtn {
-      display: none !important; /* บน PC ซ่อนปุ่มย้อนกลับถาวร เพราะมี Sidebar นำทาง */
-    }
-  }
-
-  /* 📱 บนมือถือ (<= 768px): ซ่อน Sidebar ซ้าย และคืนค่าเมนูบน Navbar 2 แถวให้แสดงผลตามปกติ */
-  @media (max-width: 768px) {
-    #desktopSidebar {
-      display: none !important; /* บนมือถือซ่อน Sidebar */
-    }
-    #navMainButtons {
-      display: flex !important; /* เอากลุ่มปุ่มเมนูกลับคืนมาแสดงผลเต็มจอ 100% */
-    }
-  }
+}
 
   </style>
   <!-- ⚡ Firebase App & Realtime Database SDK (Compat Version) -->
@@ -1514,16 +1467,16 @@
 
 
       <div class="card card-border-green p-4 shadow-sm mb-5">
-        <div class="row g-2 mb-3 align-items-center">
-          <div class="col-12 col-md-2">
-            <h5 class="fw-bold m-0 text-dark" style="font-size: 1.1rem;">รายการหนังสือรับ</h5>
+        <div class="row g-1 mb-2 align-items-center filter-compact-row">
+          <div class="col-auto me-2">
+            <h5 class="fw-bold m-0 text-dark" style="font-size: 0.95rem;">รายการหนังสือรับ</h5>
           </div>
 
-          <div class="col-6 col-md-2">
+          <div class="col-auto" style="width: 125px;">
             <select id="yearSelect" class="form-select border-success shadow-sm" onchange="resetAndReloadLogs()"></select>
           </div>
 
-          <div class="col-6 col-md-3" id="deptFilterContainer" style="display:none;">
+          <div class="col-auto" id="deptFilterContainer" style="display:none; width: 175px;">
             <select id="deptFilter" class="form-select border-success shadow-sm" onchange="resetAndReloadLogs()">
               <option value="all">ทุกกลุ่มงาน (ทั้งหมด)</option>
               <option>ฝ่ายบริหารทั่วไป</option>
@@ -1537,9 +1490,9 @@
             </select>
           </div>
 
-          <div class="col-12 col-md">
+          <div class="col">
             <div class="input-group shadow-sm">
-              <span class="input-group-text border-end-0 d-flex align-items-center">
+              <span class="input-group-text border-end-0 d-flex align-items-center py-0">
                 <svg class="btn-svg-icon text-muted" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
               </span>
               <input type="text" id="searchInput" class="form-control border-start-0" placeholder="พิมพ์ชื่อหนังสือเพื่อค้นหาอัตโนมัติ..." oninput="handleSearchInput()">

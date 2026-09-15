@@ -1265,15 +1265,19 @@
   }
 }
 
-/* 📱 บนมือถือ (<= 768px): คืนค่าเลย์เอาต์ปกติ เลื่อนหน้าจอยาวได้แบบเดิม */
-@media (max-width: 768px) {
-  #desktopSidebar {
-    display: none !important;
+/* 📱 บนมือถือ (<= 768px): ให้สิทธิ์ปุ่มย้อนกลับแสดงผลได้ปกติ */
+  @media (max-width: 768px) {
+    #desktopSidebar {
+      display: none !important;
+    }
+    #navMainButtons {
+      display: flex !important;
+    }
+    /* อนุญาตให้ปุ่มย้อนกลับบนมือถือแสดงผลในแถวที่ 1 */
+    #backToSarabanBtn {
+      display: inline-flex;
+    }
   }
-  #navMainButtons {
-    display: flex !important;
-  }
-}
 
   </style>
   <!-- ⚡ Firebase App & Realtime Database SDK (Compat Version) -->

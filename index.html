@@ -188,9 +188,32 @@
     .thai-wrap { word-break: break-word; overflow-wrap: break-word; white-space: normal; line-height: 1.4; text-align: left; }
     
     @media (max-width: 576px) {
-      .table th, .table td { padding: 0.5rem 0.2rem !important; }
-      .action-buttons { flex-direction: column; gap: 4px; } /* บนมือถือปรับปุ่มเป็นแนวตั้งเรียงต่อกัน */
-      .action-buttons .btn { width: 100%; font-size: 0.75rem; padding: 0.25rem 0.2rem; }
+      .table th, .table td { padding: 0.45rem 0.2rem !important; }
+      
+      /* 📱 ปรับระยะห่างระหว่างปุ่มเปิดดู และปุ่มคัดลอก ให้ห่างกันมากขึ้น ไม่ติดกัน */
+      .action-buttons { 
+        flex-direction: column !important; 
+        gap: 8px !important;              /* เพิ่มระยะห่างแนวตั้งระหว่าง 2 ปุ่ม */
+        align-items: center !important;
+        justify-content: center !important;
+      }
+
+      /* 🚫 ซ่อนไอคอน SVG ในปุ่มตารางเฉพาะบนจอมือถือ เพื่อคืนพื้นที่ให้ข้อความล้วน */
+      .action-buttons .btn .btn-svg-icon {
+        display: none !important;
+      }
+
+      /* 🔘 ปรับขนาดปุ่มเปิดดู และคัดลอก ให้พอดีคำ ข้อความแสดงครบ 100% */
+      .action-buttons .btn { 
+        width: 100% !important; 
+        min-width: 54px !important;       /* ล็อกความกว้างขั้นต่ำให้พอดีกับคำ */
+        font-size: 0.76rem !important;     /* ขนาดฟอนต์พอดีกับกรอบ */
+        font-weight: 600 !important;
+        padding: 4px 3px !important;       /* ปรับ Padding ให้อ่านง่าย ไม่อึดอัด */
+        line-height: 1.2 !important;
+        white-space: nowrap !important;    /* ป้องกันคำตัดขึ้นบรรทัดใหม่ */
+        letter-spacing: 0px !important;
+      }
       
       /* 📱 บังคับให้ Footer บนมือถืออยู่บรรทัดเดียว ไม่ตัดขึ้นบรรทัดใหม่ */
       .footer-custom { 

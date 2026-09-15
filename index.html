@@ -221,16 +221,33 @@
   }
     .card { border-radius: 15px; border: none; }
     .main-app { display: none; }
-    .btn-primary { background-color: #00796b; border: none; }
-    .btn-primary:hover { background-color: #004d40; }
+    /* 🟢 ปุ่มเปิดดู (คงสีเขียวหลัก เรียบแบน สบายตา) */
+.btn-primary {
+  background-color: #00796b !important;
+  color: #ffffff !important;
+}
+.btn-primary:hover {
+  background-color: #004d40 !important;
+  color: #ffffff !important;
+}
     .table-responsive { border-radius: 10px; }
     .thai-wrap { word-break: normal; overflow-wrap: break-word; line-height: 1.5; text-align: left; }
     .file-item { transition: all 0.3s ease; border-left: 5px solid #00796b; }
     .file-item:hover { background-color: #f8f9fa; }
     .btn-remove { color: #dc3545; cursor: pointer; font-weight: bold; font-size: 0.8rem; }
     .action-buttons { display: flex; gap: 5px; }
-    .btn-copy { background-color: #ffffff; color: #00796b; border: 1px solid #00796b; }
-    .btn-copy:hover { background-color: #e8f5e9; color: #004d40; }
+    /* 🟠 ปุ่มคัดลอก (คงโทนสีเหลืองอมส้ม เรียบแบน ไร้เฉด 3D) */
+.btn-copy {
+  background-color: #fef3c7 !important;
+  color: #b45309 !important;
+  border: 1px solid #fcd34d !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+.btn-copy:hover {
+  background-color: #fde68a !important;
+  color: #78350f !important;
+}
     /* เพิ่มต่อท้ายในส่วน <style> */
     .row-missing { background-color: #ffeea8 !important; /* สีเหลืองนวลจางๆ */}
     .text-missing { color: #d93025; /* สีแดงเข้มแบบ Google เพื่อให้ดู Soft ลงแต่ยังเด่น */ font-weight: bold; }
@@ -668,38 +685,26 @@
 }
 
 /* 🎮 สไตล์ปุ่มแคปซูล 3D นุ่มนวล (แก้ปัญหา Error CSS และจัดระเบียบปุ่ม) */
+/* =========================================================
+   🔘 ปรับปุ่มทุกตัว ทุกหน้า ให้เป็น Flat Minimal (เรียบแบน ไร้เงา 3D)
+   ========================================================= */
 .btn {
   border-radius: 50px !important;
   position: relative !important;
   overflow: hidden !important;
   border: none !important;
   box-shadow: none !important;
-  background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0.1) 34%, rgba(0, 0, 0, 0.08) 35%, rgba(0, 0, 0, 0.02) 100%) !important;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25) !important;
-  font-weight: bold !important;
+  background-image: none !important;       /* ล้างการไล่เฉดสีนูน */
+  text-shadow: none !important;            /* ล้างเงาตัวหนังสือ */
+  font-weight: 600 !important;
   letter-spacing: 0.3px !important;
-  transition: all 0.15s ease !important;
+  transition: all 0.15s ease-in-out !important;
 }
 
-.btn::before {
-  display: none !important;
-}
-
-.btn::after {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 12px;
-  right: 12px;
-  height: 25%;
-  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 100%);
-  border-radius: 30px;
-  pointer-events: none;
-}
 
 .btn:hover {
   transform: translateY(-1px) !important;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
 }
 
 .btn:active {
@@ -723,58 +728,61 @@
   border-color: #00796b !important;
 }
 
-/* 🎯 กลุ่มปุ่มรอง (ปุ่มคัดลอก, ปุ่มแชร์ลิงก์, คัดลอกตาราง, ดาวน์โหลด Excel, พิมพ์): แคปซูล 3D นูนเด่น โทนสีเหลืองอมส้ม พร้อมเงาเข้มชัดเจน */
-.btn-copy, 
+/* 🔘 ปรับแต่งปุ่มควบคุมรอง (แชร์ลิงก์, Google Sheets, คัดลอกตาราง, Excel, พิมพ์) ให้มีขอบชัดเจน */
 #adminShareStaffBtn,
-.card-border-green .btn-outline-primary, 
-.card-border-green .btn-outline-success, 
-.card-border-green .btn-outline-dark, 
-.card-border-green .btn-outline-secondary {
-  border-radius: 50px !important;
-  position: relative !important;
-  overflow: hidden !important;
-  background-color: #ffffff !important;
-  background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.9) 0%, rgba(254, 243, 199, 0.7) 34%, rgba(245, 158, 11, 0.25) 35%, rgba(217, 119, 6, 0.1) 100%) !important;
-  color: #b45309 !important;
-  border: 1.5px solid #fcd34d !important;
-  /* เพิ่มเงาด้านล่างให้เข้มและมีมิติชัดเจนขึ้น */
-  box-shadow: 0 4px 6px rgba(180, 83, 9, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
-  text-shadow: none !important;
-  font-weight: bold !important;
-  letter-spacing: 0.3px !important;
-  transition: all 0.15s ease !important;
+#adminAddStaffBtn,
+#exportView .btn-outline-primary,
+#exportView .btn-outline-success,
+#exportView .btn-outline-dark,
+#exportView .btn-outline-secondary,
+#staffView .btn-outline-success,
+#dutyTripView .btn-outline-primary,
+#dutyTripView .btn-outline-warning,
+#dutyTripView .btn-outline-danger {
+  border: 1.5px solid var(--border-color) !important;
+  background-color: var(--bg-card) !important;
+  color: var(--text-main) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
 }
 
-/* เพิ่มแสงไฮไลต์ด้านบนให้ดูนูนลอย */
+/* ปิดแสงไฮไลต์สะท้อนด้านบนของปุ่มทั้งหมดเด็ดขาด */
+.btn::before,
+.btn::after,
 .btn-copy::after, 
 #adminShareStaffBtn::after,
 .card-border-green .btn-outline-primary::after, 
 .card-border-green .btn-outline-success::after, 
 .card-border-green .btn-outline-dark::after, 
 .card-border-green .btn-outline-secondary::after {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 12px;
-  right: 12px;
-  height: 30%;
-  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0) 100%);
-  border-radius: 30px;
-  pointer-events: none;
+  display: none !important;
+  content: none !important;
+}
+
+/* ไอคอน SVG สไตล์มินิมอลสำหรับปุ่มทั่วไป */
+.btn-svg-icon {
+  width: 15px;
+  height: 15px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
 }
 
 .btn-copy:hover, 
 #adminShareStaffBtn:hover,
-.card-border-green .btn-outline-primary:hover, 
-.card-border-green .btn-outline-success:hover, 
-.card-border-green .btn-outline-dark:hover, 
-.card-border-green .btn-outline-secondary:hover {
-  transform: translateY(-2px) !important;
-  background-color: #fef3c7 !important;
-  background-image: linear-gradient(to bottom, #fef3c7 0%, #fde68a 100%) !important;
-  color: #78350f !important;
-  border-color: #f59e0b !important;
-  box-shadow: 0 6px 12px rgba(245, 158, 11, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+#exportView .btn-outline-primary:hover,
+#exportView .btn-outline-success:hover,
+#exportView .btn-outline-dark:hover,
+#exportView .btn-outline-secondary:hover,
+#staffView .btn-outline-success:hover {
+  background-color: var(--table-hover) !important;
+  border-color: #00796b !important;
+  color: var(--text-main) !important;
 }
 
 .btn-copy:active, 
@@ -785,6 +793,313 @@
 .card-border-green .btn-outline-secondary:active {
   transform: translateY(1px) !important;
   box-shadow: 0 2px 3px rgba(180, 83, 9, 0.2) !important;
+}
+
+/* =========================================================
+   🎨 1. ตัวแปรสีระบบ 3 ธีม (ปรับเส้นกรอบให้หนาและชัดขึ้น)
+   ========================================================= */
+:root {
+  --bg-main: #edf4f2;
+  --bg-card: #ffffff;
+  --bg-subtle: #f8fafc;
+  --bg-input: #ffffff;
+  --bg-thead: #f1f5f9;
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+  --border-color: #00796b;          /* เขียวเข้มคมชัดสำหรับธีมสว่าง */
+  --table-border: #cbd5e1;          /* เส้นขอบตารางสว่างมองเห็นชัดเจน */
+  --table-hover: #e0f2f1;
+  --sidebar-bg: #004d40;
+  --sidebar-text: #ffffff;
+}
+
+/* 🌙 โหมดมืดสไตล์ Android (Midnight) */
+[data-theme="dark"] {
+  --bg-main: #0f1322;
+  --bg-card: #181d34;
+  --bg-subtle: #202744;
+  --bg-input: #232b4a;
+  --bg-thead: #1f253e;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --border-color: #475569;          /* เส้นกรอบสีเทาเงินสว่าง ชัดเจน ไม่กลืน */
+  --table-border: #334155;          /* เส้นแบ่งแถวตารางสว่าง มองเห็นได้ทันที */
+  --table-hover: #242c4e;
+  --sidebar-bg: #111528;
+  --sidebar-text: #f8fafc;
+}
+
+/* ⬛ โหมดมืดสนิท (Pure Black AMOLED) */
+[data-theme="amoled"] {
+  --bg-main: #000000;
+  --bg-card: #080808;
+  --bg-subtle: #121212;
+  --bg-input: #141414;
+  --bg-thead: #161616;
+  --text-main: #ffffff;
+  --text-muted: #888888;
+  --border-color: #3f3f46;          /* เส้นกรอบสีสว่างตัดกับพื้นดำสนิท ชัดเจน 100% */
+  --table-border: #27272a;
+  --table-hover: #1c1c1c;
+  --sidebar-bg: #000000;
+  --sidebar-text: #ffffff;
+}
+
+/* 🌿 โหมดสว่าง: ใช้เส้นขอบเขียวมินต์บางนวลตาแบบเดิม */
+.card, .card-border-green, #sarabanView .card, 
+#staffView, #dutyTripView, #exportView, #dbManageView {
+  border: 1.5px solid #b2dfdb !important;
+  box-shadow: 0 6px 18px rgba(0, 77, 64, 0.07), 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+}
+
+.table-responsive {
+  border: 1px solid #b2dfdb !important;
+}
+
+.table th, .table td, 
+.table-staff-custom th, .table-staff-custom td, 
+.table-scroll-custom th, .table-scroll-custom td {
+  border: 1px solid #e2e8f0 !important;
+}
+
+.form-control, .form-select, .input-group-text {
+  border: 1px solid #b2dfdb !important;
+}
+
+/* 🌙 โหมดมืด & ⬛ AMOLED: ใช้เส้นขอบหนาชัดเจนขึ้นเพื่อให้อ่านง่าย */
+[data-theme="dark"] .card, [data-theme="dark"] .card-border-green, [data-theme="dark"] .table-responsive,
+[data-theme="amoled"] .card, [data-theme="amoled"] .card-border-green, [data-theme="amoled"] .table-responsive {
+  border: 1.5px solid var(--border-color) !important;
+}
+
+[data-theme="dark"] .table th, [data-theme="dark"] .table td,
+[data-theme="amoled"] .table th, [data-theme="amoled"] .table td {
+  border: 1px solid var(--table-border) !important;
+}
+
+[data-theme="dark"] .form-control, [data-theme="dark"] .form-select, [data-theme="dark"] .input-group-text,
+[data-theme="amoled"] .form-control, [data-theme="amoled"] .form-select, [data-theme="amoled"] .input-group-text {
+  border: 1.5px solid var(--border-color) !important;
+}
+
+/* =========================================================
+   🌑 คุมสีองค์ประกอบทั้งหมดในโหมดมืด (กำจัดช่องขาวหลุดทุกจุด)
+   ========================================================= */
+[data-theme="dark"], [data-theme="amoled"] {
+  body, #mainApp, .main-app, #appLayoutWrapper, #mainContentWrapper {
+    background-color: var(--bg-main) !important;
+    color: var(--text-main) !important;
+  }
+
+  /* การ์ดและกล่องเนื้อหา */
+  .card, .card-border-green, #sarabanView .card, #staffView, #dutyTripView, #exportView, #dbManageView {
+    background-color: var(--bg-card) !important;
+    color: var(--text-main) !important;
+    border-color: var(--border-color) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+  }
+
+  /* บังคับคลาสสีขาว/สีสว่างของ Bootstrap ให้กลายเป็นสีมืดทั้งหมด */
+  .bg-white, .table-responsive.bg-white, .table-responsive {
+    background-color: var(--bg-card) !important;
+    border-color: var(--border-color) !important;
+  }
+
+  /* ตารางและเซลล์ข้อมูล */
+  .table, .table th, .table td,
+  .table-staff-custom th, .table-staff-custom td,
+  .table-scroll-custom th, .table-scroll-custom td {
+    background-color: var(--bg-card) !important;
+    color: var(--text-main) !important;
+    border-color: var(--table-border) !important;
+  }
+
+  /* แถบหัวตาราง (Thead) */
+  .table thead th, thead.table-light, thead.table-light th,
+  .table-staff-custom th, .table-scroll-custom th {
+    background-color: var(--bg-thead) !important;
+    color: var(--text-main) !important;
+    border-color: var(--table-border) !important;
+  }
+
+  .table-hover tbody tr:hover td {
+    background-color: var(--table-hover) !important;
+  }
+
+  /* ข้อความและหัวข้อ */
+  .text-dark, .text-dark * {
+    color: var(--text-main) !important;
+  }
+  .text-muted {
+    color: var(--text-muted) !important;
+  }
+  .text-success, h4.text-success, h5.text-success {
+    color: #34d399 !important; /* เขียวมินต์สว่าง คมชัดบนพื้นหลังมืด */
+  }
+
+  /* แถวหัวกลุ่มประเภทในตาราง (เช่น ข้าราชการ 29 คน) */
+  tr.table-success td, .table-success.table-opacity-50 td {
+    background-color: rgba(52, 211, 153, 0.12) !important;
+    color: #34d399 !important;
+    border-color: var(--border-color) !important;
+  }
+
+  /* ช่องค้นหา ช่องพิมพ์ และ Dropdown */
+  .form-control, .form-select, .input-group-text {
+    background-color: var(--bg-input) !important;
+    color: var(--text-main) !important;
+    border-color: var(--border-color) !important;
+  }
+  .form-control::placeholder {
+    color: var(--text-muted) !important;
+  }
+
+  /* ป้าย Badge, กล่อง Modal, รายการ List */
+  .badge.bg-light.text-dark {
+    background-color: var(--bg-subtle) !important;
+    color: var(--text-main) !important;
+    border-color: var(--border-color) !important;
+  }
+  .modal-content, .modal-header, .modal-footer, .modal-body, .bg-light, .list-group-item {
+    background-color: var(--bg-card) !important;
+    color: var(--text-main) !important;
+    border-color: var(--border-color) !important;
+  }
+}
+
+/* =========================================================
+   🖥️ 2. ปุ่ม Sidebar ฝั่งซ้าย (มินิมอล แบนเรียบ ไร้แสงเงาด้านบน)
+   ========================================================= */
+@media (min-width: 769px) {
+  #appLayoutWrapper {
+    display: flex;
+    min-height: calc(100vh - 55px);
+  }
+
+  #desktopSidebar {
+    width: 250px;
+    background-color: var(--sidebar-bg);
+    border-right: 1.5px solid var(--border-color);
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
+    transition: width 0.25s ease;
+    z-index: 1010;
+  }
+
+  #desktopSidebar.collapsed {
+    width: 72px;
+  }
+  #desktopSidebar.collapsed .sidebar-text,
+  #desktopSidebar.collapsed .sidebar-section-title {
+    display: none !important;
+  }
+  #desktopSidebar.collapsed .btn-sidebar-item {
+    justify-content: center !important;
+    padding: 12px 0 !important;
+  }
+
+  /* ตัดแสงเงา 3D และขอบสะท้อนแสงด้านบนออกให้แบนเรียบ 100% */
+  #desktopSidebar .btn,
+  .btn-sidebar-item,
+  .btn-toggle-sidebar {
+    background-image: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+  #desktopSidebar .btn::before,
+  #desktopSidebar .btn::after,
+  .btn-sidebar-item::before,
+  .btn-sidebar-item::after,
+  .btn-toggle-sidebar::before,
+  .btn-toggle-sidebar::after {
+    display: none !important;
+    content: none !important;
+  }
+
+  /* ปุ่มรายการเมนู (สถานะปกติ: ตัวหนังสือและไอคอนสีขาวล้วน แบนเรียบ) */
+  .btn-sidebar-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    width: 100% !important;
+    padding: 11px 14px !important;
+    border-radius: 10px !important;
+    background-color: transparent !important;
+    color: #ffffff !important;
+    border: none !important;
+    font-size: 0.92rem !important;
+    font-weight: 600 !important;
+    text-align: left !important;
+    transition: background-color 0.15s ease, color 0.15s ease !important;
+    cursor: pointer !important;
+  }
+
+  .btn-sidebar-item:hover {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    color: #ffffff !important;
+  }
+
+  /* ✨ สถานะเมื่อเลือก (Active): พื้นหลังสีขาวล้วน ตัวหนังสือและไอคอนเป็นสีเขียวมินิมอล */
+  .btn-sidebar-item.active {
+    background-color: #ffffff !important;
+    color: #004d40 !important;
+  }
+  .btn-sidebar-item.active .sidebar-svg {
+    stroke: #004d40 !important;
+  }
+
+  /* สไตล์ไอคอน SVG (รับสีจากตัวหนังสืออัตโนมัติ) */
+  .sidebar-svg {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    flex-shrink: 0;
+    transition: stroke 0.15s ease;
+  }
+
+  /* ปุ่มย่อเมนูหลัก */
+  .btn-toggle-sidebar {
+    background: transparent !important;
+    color: rgba(255, 255, 255, 0.75) !important;
+    border: 1px dashed rgba(255, 255, 255, 0.25) !important;
+    border-radius: 8px !important;
+    padding: 7px 10px !important;
+    font-size: 0.8rem !important;
+    width: 100%;
+    margin-bottom: 12px;
+  }
+  .btn-toggle-sidebar:hover {
+    background-color: rgba(255, 255, 255, 0.06) !important;
+    color: #ffffff !important;
+  }
+
+  .sidebar-section-title {
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.45);
+    padding-left: 6px;
+    text-transform: uppercase;
+    font-weight: bold;
+    margin-top: 10px;
+    margin-bottom: 2px;
+  }
+
+  #navMainButtons {
+    display: none !important;
+  }
+  #mainContentWrapper {
+    flex-grow: 1;
+    min-width: 0;
+    padding-bottom: 50px;
+  }
+}
+
+@media (max-width: 768px) {
+  #desktopSidebar {
+    display: none !important;
+  }
 }
 
   </style>
@@ -877,27 +1192,100 @@
         </button>
       </div>
 
-      <!-- 📌 โซน 3: ปุ่มระบบ (มือถือ: แถวบนขวาตลอดกาล | PC: ขวาสุด) -->
+      <!-- 📌 โซน 3: ปุ่มระบบ (มินิมอลไอคอน) -->
       <div class="nav-system-section">
-        <!-- ปุ่มย้อนกลับจะแสดงอยู่หน้าปุ่มรีเฟรชเสมอเมื่อเข้าเมนูย่อย -->
-        <!-- ✅ เปลี่ยนเป็น -->
-<button id="backToSarabanBtn" class="btn btn-sm btn-nav-back shadow-sm fw-bold px-2 py-1" style="display:none;" onclick="switchToSarabanView()">
-  ⬅️ ย้อนกลับ
-</button>
-        <button id="refreshBtn" class="btn btn-sm btn-nav-refresh shadow-sm fw-bold px-2 py-1" onclick="refreshApp()" title="รีเฟรชข้อมูลหน้านี้">
-          🔄 <span class="d-none d-md-inline" style="font-size: 0.8rem;">รีเฟรช</span>
+        <button id="backToSarabanBtn" class="btn btn-sm btn-nav-back shadow-sm fw-bold px-2 py-1 d-inline-flex align-items-center gap-1" style="display:none;" onclick="switchToSarabanView()">
+          <svg class="btn-svg-icon" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          ย้อนกลับ
         </button>
-        <button id="logoutBtn" class="btn btn-sm btn-nav-logout shadow-sm fw-bold px-2 py-1" style="display:none;" title="ปิดแอป / ออกจากระบบ">
-          ออกจากระบบ
+        <!-- 🌓 ปุ่มสลับ 3 ธีม -->
+        <button id="themeToggleBtn" class="btn btn-sm btn-light border shadow-sm fw-bold px-2 py-1 d-inline-flex align-items-center justify-content-center" onclick="cycleTheme()" title="สลับธีม: สว่าง / มืด / ดำสนิท">
+          <svg id="themeIconSvg" class="btn-svg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+        </button>
+        <button id="refreshBtn" class="btn btn-sm btn-nav-refresh shadow-sm fw-bold px-2 py-1 d-inline-flex align-items-center gap-1" onclick="refreshApp()" title="รีเฟรชข้อมูลหน้านี้">
+          <svg class="btn-svg-icon" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+          <span class="d-none d-md-inline" style="font-size: 0.8rem;">รีเฟรช</span>
+        </button>
+        <button id="logoutBtn" class="btn btn-sm btn-nav-logout shadow-sm fw-bold px-2 py-1 d-inline-flex align-items-center gap-1" style="display:none;" title="ปิดแอป / ออกจากระบบ">
+          <svg class="btn-svg-icon" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          <span class="d-none d-md-inline">ออกจากระบบ</span>
         </button>
       </div>
 
     </div>
   </nav>
 
-  <div class="container mt-4">
-    <!-- 📄 ส่วนที่ 1: หน้าระบบสารบรรณ (เปิดเริ่มต้น) -->
-    <div id="sarabanView" class="view-transition">
+  <!-- 🖥️ Layout Wrapper รวม Sidebar ซ้าย และเนื้อหาหลัก -->
+  <div id="appLayoutWrapper">
+
+    <!-- 🌲 Sidebar เมนูฝั่งซ้าย (แสดงเฉพาะบน PC) -->
+    <aside id="desktopSidebar">
+      <button class="btn btn-toggle-sidebar" onclick="toggleSidebarCollapse()">
+        <span id="collapseIcon">◀</span> <span class="sidebar-text ms-1">ซ่อนเมนูหลัก</span>
+      </button>
+
+      <div class="sidebar-section-title">เมนูระบบ</div>
+      
+      <!-- 1. ระบบส่งหนังสือ -->
+      <button class="btn btn-sidebar-item active" id="sideSarabanBtn" onclick="switchToSarabanView()">
+        <svg class="sidebar-svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+        </svg>
+        <span class="sidebar-text">ระบบส่งหนังสือ</span>
+      </button>
+
+      <!-- 2. จัดการบุคลากร -->
+      <button class="btn btn-sidebar-item" id="sideStaffBtn" onclick="switchToStaffView()">
+        <svg class="sidebar-svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+        </svg>
+        <span class="sidebar-text" id="sideStaffLabel">จัดการบุคลากร</span>
+      </button>
+
+      <!-- 3. ไปราชการ -->
+      <button class="btn btn-sidebar-item" id="sideDutyBtn" onclick="switchToDutyTripView()">
+        <svg class="sidebar-svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="1" y="3" width="15" height="13"></rect>
+          <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
+          <circle cx="5.5" cy="18.5" r="2.5"></circle>
+          <circle cx="18.5" cy="18.5" r="2.5"></circle>
+        </svg>
+        <span class="sidebar-text">ประวัติไปราชการ</span>
+      </button>
+
+      <div class="sidebar-section-title admin-only-feature" id="sideAdminTitle">ผู้ดูแลระบบ</div>
+
+      <!-- 4. ส่งออกรายการ (Admin) -->
+      <button class="btn btn-sidebar-item admin-only-feature" id="sideExportBtn" onclick="switchToExportView()">
+        <svg class="sidebar-svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+          <polyline points="16 6 12 2 8 6"></polyline>
+          <line x1="12" y1="2" x2="12" y2="15"></line>
+        </svg>
+        <span class="sidebar-text">ส่งออกรายการ</span>
+      </button>
+
+      <!-- 5. แก้ไขฐานข้อมูล (Admin) -->
+      <button class="btn btn-sidebar-item admin-only-feature" id="sideDbBtn" onclick="handleEditDbBtnClick()">
+        <svg class="sidebar-svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+        <span class="sidebar-text">แก้ไขฐานข้อมูล</span>
+      </button>
+    </aside>
+
+    <!-- 📄 พื้นที่แสดงเนื้อหาหลัก -->
+    <main id="mainContentWrapper">
+      <div class="container-fluid px-md-4 mt-3">
+        <!-- 📄 ส่วนที่ 1: หน้าระบบสารบรรณ (เปิดเริ่มต้น) -->
+        <div id="sarabanView" class="view-transition">
       <!-- 🚀 แถบส่งหนังสือแบบ Compact Action Bar กรอบเขียวธีมระบบ -->
       <div id="adminView" style="display:none;" class="card card-border-green p-3 mb-3 shadow-sm">
         <div class="row g-2 align-items-start">
@@ -940,7 +1328,7 @@
 
           <div class="col-6 col-md-3" id="deptFilterContainer" style="display:none;">
             <select id="deptFilter" class="form-select border-success shadow-sm" onchange="resetAndReloadLogs()">
-              <option value="all">🏢 ทุกกลุ่มงาน</option>
+              <option value="all">ทุกกลุ่มงาน (ทั้งหมด)</option>
               <option>ฝ่ายบริหารทั่วไป</option>
               <option>ฝ่ายบริหารงานบุคคล</option>
               <option>ฝ่ายบริหารวิชาการ</option>
@@ -954,7 +1342,9 @@
 
           <div class="col-12 col-md">
             <div class="input-group shadow-sm">
-              <span class="input-group-text bg-white border-end-0">🔍</span>
+              <span class="input-group-text border-end-0 d-flex align-items-center">
+                <svg class="btn-svg-icon text-muted" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              </span>
               <input type="text" id="searchInput" class="form-control border-start-0" placeholder="พิมพ์ชื่อหนังสือเพื่อค้นหาอัตโนมัติ..." oninput="handleSearchInput()">
             </div>
           </div>
@@ -1356,29 +1746,18 @@
                 ↗️ เปิดใน Drive
               </a>
               <!-- ✅ เพิ่มปุ่มนี้: ผู้ใช้เลือกกดสแกนเองเมื่อจำเป็น -->
-<button
-  id="scanQrBtn"
-  type="button"
-  class="btn btn-sm btn-outline-info text-white text-nowrap fw-bold"
-  style="font-size: 0.75rem;"
-  onclick="scanCurrentPdfQr()"
-  title="ค้นหา QR Code ในหนังสือ">
-  🔍 สแกน QR
+<button id="scanQrBtn" type="button" class="btn btn-sm btn-outline-info text-white text-nowrap fw-bold d-inline-flex align-items-center gap-1" style="font-size: 0.75rem;" onclick="scanCurrentPdfQr()" title="ค้นหา QR Code ในหนังสือ">
+  <svg class="btn-svg-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+  สแกน QR
 </button>
-<!-- ปุ่มสแกนข้อความ (วางต่อจากปุ่ม scanQrBtn) -->
-<button
-  id="scanTextBtn"
-  type="button"
-  class="btn btn-sm btn-outline-warning text-white text-nowrap fw-bold"
-  style="font-size: 0.75rem;"
-  onclick="scanCurrentPdfText()"
-  title="คัดลอกข้อความหนังสือ">
-  📝 สแกนข้อความ
+<button id="scanTextBtn" type="button" class="btn btn-sm btn-outline-warning text-white text-nowrap fw-bold d-inline-flex align-items-center gap-1" style="font-size: 0.75rem;" onclick="scanCurrentPdfText()" title="คัดลอกข้อความหนังสือ">
+  <svg class="btn-svg-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+  สแกนข้อความ
 </button>
-              <!-- 🔴 ปุ่มปิดสีแดงเด่นชัด มองเห็นและกดง่าย -->
-              <button type="button" class="btn btn-danger btn-sm px-2 py-1 fw-bold shadow-sm d-flex align-items-center gap-1" data-bs-dismiss="modal" title="ปิดหน้าต่าง" style="font-size: 0.8rem; border-radius: 6px;">
-                <span>✕</span> <span>ปิด</span>
-              </button>
+<button type="button" class="btn btn-danger btn-sm px-2 py-1 fw-bold shadow-sm d-inline-flex align-items-center gap-1" data-bs-dismiss="modal" title="ปิดหน้าต่าง" style="font-size: 0.8rem; border-radius: 6px;">
+  <svg class="btn-svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+  ปิด
+</button>
             </div>
           </div>
           <div class="modal-body p-0 bg-secondary bg-opacity-10 h-100 position-relative">
@@ -1860,7 +2239,7 @@
       </div>
     </div>
   </div> <!-- ปิด container -->
-  
+  </main></div>
 </div> <!-- ปิด mainApp -->
 
 <script>
@@ -2322,8 +2701,12 @@ function loadLogsFromFirebase(year) {
           actionHTML = `
             <td class="text-center" style="width: 55px; white-space: nowrap;">
               <div class="d-flex flex-column align-items-center justify-content-center gap-1">
-                <button class="btn btn-sm btn-outline-warning text-dark py-0 px-2 fw-bold shadow-sm" style="font-size: 0.75rem; width: 32px;" onclick="openEditDutyTripForm('${d.id}')" title="แก้ไข">✏️</button>
-                <button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold shadow-sm" style="font-size: 0.75rem; width: 32px;" onclick="deleteDutyTripItem('${d.id}')" title="ลบ">🗑️</button>
+                <button class="btn btn-sm btn-outline-warning text-dark py-1 px-2 fw-bold shadow-sm d-inline-flex align-items-center justify-content-center" onclick="openEditStaffForm('${encodeURIComponent(s.name)}')" title="แก้ไข">
+  <svg class="btn-svg-icon" style="width:13px; height:13px;" viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+</button>
+<button class="btn btn-sm btn-outline-danger py-1 px-2 fw-bold shadow-sm d-inline-flex align-items-center justify-content-center" onclick="openDeleteStaffModal('${encodeURIComponent(s.name)}')" title="ลบ">
+  <svg class="btn-svg-icon" style="width:13px; height:13px;" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+</button>
               </div>
             </td>
           `;
@@ -6185,6 +6568,80 @@ if (uploadedFiles.length > 0 && dept !== "อื่นๆ") {
     // เรียกเริ่มระบบตรวจสอบและแสดงแบนเนอร์ติดตั้งแอป
     initPwaInstallPrompt();
   });
+
+// =========================================================
+  // 🌓 ระบบสลับ 3 ธีม (Light -> Android Dark -> AMOLED)
+  // =========================================================
+  const themes = ['light', 'dark', 'amoled'];
+  const themeIcons = {
+    light: `<svg class="btn-svg-icon text-warning" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>`,
+    dark: `<svg class="btn-svg-icon text-info" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>`,
+    amoled: `<svg class="btn-svg-icon text-light" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" fill="currentColor"></rect></svg>`
+  };
+
+  function applyTheme(themeName) {
+    if (themeName === 'light') {
+      document.documentElement.removeAttribute('data-theme');
+    } else {
+      document.documentElement.setAttribute('data-theme', themeName);
+    }
+    localStorage.setItem('saraban_theme', themeName);
+    const btn = document.getElementById('themeToggleBtn');
+    if (btn) btn.innerHTML = themeIcons[themeName];
+  }
+
+  function cycleTheme() {
+    const current = localStorage.getItem('saraban_theme') || 'light';
+    const nextIdx = (themes.indexOf(current) + 1) % themes.length;
+    applyTheme(themes[nextIdx]);
+  }
+
+  // โหลดธีมที่เคยจำไว้ตอนเปิดเว็บ
+  (function initTheme() {
+    const saved = localStorage.getItem('saraban_theme') || 'light';
+    applyTheme(saved);
+  })();
+
+  // =========================================================
+  // 🖥️ ฟังก์ชันควบคุม Sidebar ฝั่งซ้าย
+  // =========================================================
+  function toggleSidebarCollapse() {
+    const sidebar = document.getElementById('desktopSidebar');
+    const icon = document.getElementById('collapseIcon');
+    if (!sidebar) return;
+
+    sidebar.classList.toggle('collapsed');
+    const isCollapsed = sidebar.classList.contains('collapsed');
+    if (icon) icon.innerText = isCollapsed ? '▶' : '◀';
+  }
+
+  // ปรับฟังก์ชัน updateNavForView ให้ซิงก์ทั้งปุ่มบนมือถือ และ Sidebar บน PC
+  const originalUpdateNavForView = updateNavForView;
+  updateNavForView = function(viewName) {
+    if (typeof originalUpdateNavForView === 'function') {
+      originalUpdateNavForView(viewName);
+    }
+
+    const isAdmin = (currentUser.role === 'Admin');
+
+    // จัดการสิทธิ์การแสดงปุ่มบน Sidebar ฝั่งซ้าย
+    const sideAdminElems = document.querySelectorAll('.admin-only-feature');
+    sideAdminElems.forEach(el => el.style.setProperty('display', isAdmin ? 'flex' : 'none', 'important'));
+
+    const sideStaffLabel = document.getElementById('sideStaffLabel');
+    if (sideStaffLabel) sideStaffLabel.innerText = isAdmin ? "จัดการบุคลากร" : "รายชื่อบุคลากร";
+
+    // เคลียร์คลาส active ของเมนู Sidebar ทั้งหมด
+    document.querySelectorAll('.btn-sidebar-item').forEach(btn => btn.classList.remove('active'));
+
+    // ไฮไลต์ปุ่ม Active ที่เลือกบน Sidebar (กล่องขาว ตัวอักษรเขียว)
+    if (viewName === 'saraban') document.getElementById('sideSarabanBtn')?.classList.add('active');
+    else if (viewName === 'staff') document.getElementById('sideStaffBtn')?.classList.add('active');
+    else if (viewName === 'dutyTrip') document.getElementById('sideDutyBtn')?.classList.add('active');
+    else if (viewName === 'export') document.getElementById('sideExportBtn')?.classList.add('active');
+    else if (viewName === 'dbManage') document.getElementById('sideDbBtn')?.classList.add('active');
+  };
+
 </script>
 <!-- 📝 Modal All-in-One: แสดง QR Code ที่พบด้านบน + ข้อความเอกสารด้านล่าง -->
 <div class="modal fade" id="pdfTextExtractorModal" tabindex="-1" aria-hidden="true" style="z-index: 1065 !important;">

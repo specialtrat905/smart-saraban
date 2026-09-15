@@ -993,57 +993,206 @@
 }
 
 /* =========================================================
-   🖥️ 2. ปุ่ม Sidebar ฝั่งซ้าย (มินิมอล แบนเรียบ ไร้แสงเงาด้านบน)
+   🖥️ Sidebar: ลื่นสนิท 100% ไร้การทับคำ (Clean Mini-Sidebar)
    ========================================================= */
 @media (min-width: 769px) {
   #appLayoutWrapper {
     display: flex;
-    min-height: calc(100vh - 55px);
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 14px;
+    min-height: calc(100vh - 60px);
   }
 
+  /* 🌲 แถบ Sidebar แบบการ์ดลอย ขอบมน มีเงารอบด้าน */
   #desktopSidebar {
-    width: 250px;
+    width: 240px;
     background-color: var(--sidebar-bg);
-    border-right: 1.5px solid var(--border-color);
-    padding: 16px 12px;
+    border: 1.5px solid var(--border-color);
+    border-radius: 16px !important;
+    padding: 10px 8px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 4px;
     flex-shrink: 0;
-    /* 🔒 ล็อค Sidebar ให้อยู่กับที่ ไม่เลื่อนตามการไถหน้าจอ */
+    
+    /* 🔒 ล็อคให้อยู่กับที่ ไม่เลื่อนตามการไถหน้าจอ */
     position: sticky;
-    top: 55px; /* ล็อคใต้ขอบล่างของ Navbar พอดี */
-    height: calc(100vh - 55px);
+    top: 60px;
+    height: calc(100vh - 95px);
+    
+    /* ✨ เงารอบด้าน 4 ทิศ */
+    box-shadow: 0 4px 20px rgba(0, 77, 64, 0.15), 0 0 1px rgba(0,0,0,0.1) !important;
     overflow-y: auto;
     overflow-x: hidden;
-    /* ⚡ ทำ Transition นุ่มนวลโดยใช้ cubic-bezier ไม่ให้กระตุก */
-    transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-    will-change: width;
+    
+    /* ⚡ ใช้ความเร็ว 0.18s เพื่อให้พับได้กระชับ ไม่หน่วงตารางฝั่งขวา */
+    transition: width 0.18s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 1010;
   }
 
-  /* ข้อความในเมนูจะค่อยๆ จางและหดขนาด แทนการตัดทิ้งทันที เพื่อความลื่นไหล */
-  .sidebar-text, .sidebar-section-title {
+  [data-theme="dark"] #desktopSidebar {
+    box-shadow: 0 0 22px rgba(0, 0, 0, 0.6), 0 0 1px rgba(255, 255, 255, 0.15) !important;
+  }
+  [data-theme="amoled"] #desktopSidebar {
+    box-shadow: 0 0 24px rgba(255, 255, 255, 0.08), 0 0 1px rgba(255, 255, 255, 0.2) !important;
+  }
+
+  /* ล้างเงา 3D ของปุ่มใน Sidebar ทั้งหมด */
+  #desktopSidebar .btn,
+  .btn-sidebar-item,
+  .btn-toggle-sidebar {
+    background-image: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+  #desktopSidebar .btn::before,
+  #desktopSidebar .btn::after,
+  .btn-sidebar-item::before,
+  .btn-sidebar-item::after,
+  .btn-toggle-sidebar::before,
+  .btn-toggle-sidebar::after {
+    display: none !important;
+    content: none !important;
+  }
+
+  /* ปุ่มเมนูปกติ (ตอนเปิดเต็ม) */
+  .btn-sidebar-item {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 12px !important;
+    width: 100% !important;
+    min-width: 0 !important;            /* 🛑 ปลดล็อคความกว้าง ป้องกันคำล้นทับ */
+    padding: 10px 12px !important;
+    border-radius: 10px !important;
+    background-color: transparent !important;
+    color: #ffffff !important;
+    border: none !important;
+    font-size: 0.90rem !important;
+    font-weight: 600 !important;
+    text-align: left !important;
+    white-space: nowrap !important;
+    cursor: pointer !important;
+    transition: background-color 0.12s ease !important;
+  }
+
+  .btn-sidebar-item:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
+  }
+
+  .btn-sidebar-item.active {
+    background-color: #ffffff !important;
+    color: #004d40 !important;
+  }
+  .btn-sidebar-item.active .sidebar-svg {
+    stroke: #004d40 !important;
+  }
+
+  /* ไอคอน SVG ล็อคขนาดให้อยู่กับที่ */
+  .sidebar-svg {
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    stroke: currentColor;
+    flex-shrink: 0;
+  }
+
+  .sidebar-text {
     white-space: nowrap;
-    opacity: 1;
-    transition: opacity 0.2s ease, max-width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-    max-width: 200px;
     overflow: hidden;
   }
 
-  #desktopSidebar.collapsed {
-    width: 72px;
+  .sidebar-section-title {
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.45);
+    padding-left: 8px;
+    text-transform: uppercase;
+    font-weight: bold;
+    margin-top: 8px;
+    margin-bottom: 2px;
+    white-space: nowrap;
   }
+
+  /* ปุ่มกดซ่อน/เปิดเมนูหลัก */
+  .btn-toggle-sidebar {
+    display: flex !important;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 8px !important;
+    padding: 7px 10px !important;
+    font-size: 0.78rem !important;
+    width: 100%;
+    margin-bottom: 6px;
+    white-space: nowrap;
+    cursor: pointer !important;
+  }
+  .btn-toggle-sidebar:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+  }
+
+  #collapseIcon {
+    font-size: 0.75rem;
+    width: 14px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  /* =========================================================
+     🛑 สถานะเมื่อกด "ซ่อนเมนูหลัก" (.collapsed): 
+     ตัดคำทิ้งทันที + จัดไอคอนให้อยู่กึ่งกลางพอดีเป๊ะ (แก้คำทับ 100%)
+     ========================================================= */
+  #desktopSidebar.collapsed {
+    width: 60px !important;            /* ขนาดแถบมินิบาร์พอดีไอคอน */
+    padding: 10px 6px !important;
+  }
+
+  /* ซ่อนข้อความและหัวข้อย่อยออกทันทีเด็ดขาด ไม่ให้โผล่มาทับ */
   #desktopSidebar.collapsed .sidebar-text,
   #desktopSidebar.collapsed .sidebar-section-title {
-    opacity: 0;
-    max-width: 0;
-    pointer-events: none;
+    display: none !important;
   }
+
+  /* ปรับปุ่มให้จัดไอคอนไว้ตรงกลางแถบ */
   #desktopSidebar.collapsed .btn-sidebar-item {
     justify-content: center !important;
-    padding: 12px 0 !important;
+    padding: 10px 0 !important;
+    gap: 0 !important;
   }
+
+  /* ปรับปุ่มลูกศรซ่อนเมนูให้อยู่ตรงกลาง */
+  #desktopSidebar.collapsed .btn-toggle-sidebar {
+    justify-content: center !important;
+    padding: 7px 0 !important;
+    gap: 0 !important;
+  }
+
+  /* ฝั่งขวา (เนื้อหาตาราง) */
+  #mainContentWrapper {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  #mainContentWrapper .container-fluid {
+    padding-left: 0 !important;
+    margin-top: 0 !important;
+  }
+  #navMainButtons {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  #desktopSidebar {
+    display: none !important;
+  }
+}
+
+
 
   /* ตัดแสงเงา 3D และขอบสะท้อนแสงด้านบนออกให้แบนเรียบ 100% */
   #desktopSidebar .btn,
@@ -1138,7 +1287,7 @@
     min-width: 0;
     padding-bottom: 50px;
   }
-}
+
 
 @media (max-width: 768px) {
   #desktopSidebar {
@@ -1394,9 +1543,9 @@
           </div>
         </div>
 
-        <div class="table-responsive">
-          <table class="table table-hover align-middle" style="font-size: 0.9rem;">
-            <thead class="table-light">
+        <div class="table-responsive" id="tableScrollContainer" style="max-height: 65vh; overflow-y: auto; position: relative;" onscroll="handleVirtualScroll(this)">
+          <table class="table table-hover align-middle mb-0" style="font-size: 0.9rem;">
+            <thead class="table-light sticky-top" style="z-index: 5;">
               <tr class="text-center align-middle">
                 <th style="width: 18%;">วันที่</th>
                 <th style="width: 64%;">ชื่อหนังสือ / ฝ่าย</th>
@@ -2374,21 +2523,62 @@ function loadLogsFromFirebase(year) {
   let dataCache = {};
 
 
-  // --- 2. ระบบสแกนบุคลากรผ่านเซิร์ฟเวอร์คลาวด์ ---
-  async function loadStaffList() {
-    try {
-        const response = await fetch(`${SCRIPT_URL}?type=staff&t=${new Date().getTime()}`);
-        fullStaffData = await response.json(); 
-        staffNames = fullStaffData.map(s => s.name);
+  // --- 2. ระบบสแกนบุคลากรผ่าน Firebase Realtime Database (เร็ว 0ms) ---
+  let isStaffFirebaseListening = false;
 
-        const list = document.getElementById('staffList');
-        if (list) {
-            list.innerHTML = fullStaffData.map(s => `
-              <option value="${s.name}">${s.nickname ? `[${s.nickname}] ` : ''}${s.position} (${s.serviceUnit})</option>
-            `).join('');
-        }
+  function loadStaffList() {
+    // ⚡ สเต็ป 1: ดึงจาก Firebase ตรงๆ ทันที
+    rtdb.ref('staff').once('value', (snapshot) => {
+      const rawData = snapshot.val();
+      if (rawData) {
+        fullStaffData = Array.isArray(rawData) ? rawData : Object.values(rawData);
+        staffNames = fullStaffData.map(s => s.name);
+        updateStaffDatalist();
         filterStaffDirectory();
-    } catch (e) { console.error("โหลดรายชื่อไม่สำเร็จ", e); }
+      } else {
+        // Fallback: หากใน Firebase ยังไม่มี ให้ดึงจาก Apps Script
+        fallbackLoadStaffFromScript();
+      }
+    });
+
+    // ⚡ สเต็ป 2: เปิด Realtime ดักจับเวลามีการแก้ไข
+    if (!isStaffFirebaseListening) {
+      isStaffFirebaseListening = true;
+      rtdb.ref('staff').on('value', (snapshot) => {
+        const rawData = snapshot.val();
+        if (rawData) {
+          fullStaffData = Array.isArray(rawData) ? rawData : Object.values(rawData);
+          staffNames = fullStaffData.map(s => s.name);
+          updateStaffDatalist();
+          filterStaffDirectory();
+        }
+      });
+    }
+  }
+
+  function updateStaffDatalist() {
+    const list = document.getElementById('staffList');
+    if (list && fullStaffData.length > 0) {
+      list.innerHTML = fullStaffData.map(s => `
+        <option value="${s.name}">${s.nickname ? `[${s.nickname}] ` : ''}${s.position} (${s.serviceUnit})</option>
+      `).join('');
+    }
+  }
+
+  async function fallbackLoadStaffFromScript() {
+    try {
+      const response = await fetch(`${SCRIPT_URL}?type=staff&t=${new Date().getTime()}`);
+      const data = await response.json();
+      if (Array.isArray(data) && data.length > 0) {
+        fullStaffData = data;
+        staffNames = fullStaffData.map(s => s.name);
+        updateStaffDatalist();
+        filterStaffDirectory();
+        try { rtdb.ref('staff').set(data); } catch(e){}
+      }
+    } catch (e) {
+      console.error("โหลดรายชื่อไม่สำเร็จ", e);
+    }
   }
 // ==========================================
   // 🚗 ระบบจัดการข้อมูลการไปราชการ (Duty Trip Module)
@@ -2553,7 +2743,7 @@ function loadLogsFromFirebase(year) {
       tbody.innerHTML = `<tr><td colspan="${cols}" class="text-center p-4"><div class="spinner-border spinner-border-sm text-success me-2"></div> กำลังโหลดข้อมูลไปราชการ...</td></tr>`;
     }
 
-    // 🔥 สเต็ปที่ 1: ดึงจาก Firebase ทันที 0ms ข้อมูลจะขึ้นทันทีไม่ค้าง
+    // ⚡ ดึงจาก Firebase ตรงๆ ทันที 0ms (37 รายการที่ซิงก์ไว้จะขึ้นทันที)
     rtdb.ref('duty_trip').once('value', (snapshot) => {
       const rawData = snapshot.val();
       if (rawData) {
@@ -2561,12 +2751,11 @@ function loadLogsFromFirebase(year) {
         populateDutyTripYearDropdown();
         filterDutyTripList();
       } else {
-        // หากใน Firebase ยังไม่มีข้อมูล ให้สลับไปดึงจาก Apps Script
         fallbackLoadDutyTripFromScript();
       }
     });
 
-    // 🔥 สเต็ปที่ 2: เปิด Realtime ดักจับเมื่อมีการเพิ่ม/แก้ไข/ลบ
+    // เปิด Realtime ดักจับเวลามีการอัปเดต
     if (!isDutyTripFirebaseListening) {
       isDutyTripFirebaseListening = true;
       rtdb.ref('duty_trip').on('value', (snapshot) => {
@@ -2755,12 +2944,12 @@ function loadLogsFromFirebase(year) {
           actionHTML = `
             <td class="text-center" style="width: 55px; white-space: nowrap;">
               <div class="d-flex flex-column align-items-center justify-content-center gap-1">
-                <button class="btn btn-sm btn-outline-warning text-dark py-1 px-2 fw-bold shadow-sm d-inline-flex align-items-center justify-content-center" onclick="openEditStaffForm('${encodeURIComponent(s.name)}')" title="แก้ไข">
-  <svg class="btn-svg-icon" style="width:13px; height:13px;" viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
-</button>
-<button class="btn btn-sm btn-outline-danger py-1 px-2 fw-bold shadow-sm d-inline-flex align-items-center justify-content-center" onclick="openDeleteStaffModal('${encodeURIComponent(s.name)}')" title="ลบ">
-  <svg class="btn-svg-icon" style="width:13px; height:13px;" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-</button>
+                <button class="btn btn-sm btn-outline-warning text-dark py-1 px-2 fw-bold shadow-sm d-inline-flex align-items-center justify-content-center" onclick="openEditDutyTripForm('${d.id}')" title="แก้ไข">
+                  <svg class="btn-svg-icon" style="width:13px; height:13px;" viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                </button>
+                <button class="btn btn-sm btn-outline-danger py-1 px-2 fw-bold shadow-sm d-inline-flex align-items-center justify-content-center" onclick="deleteDutyTripItem('${d.id}')" title="ลบ">
+                  <svg class="btn-svg-icon" style="width:13px; height:13px;" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
               </div>
             </td>
           `;
@@ -3108,22 +3297,28 @@ function loadLogsFromFirebase(year) {
   }
   // --- 12. ระบบควบคุมหน้าตารางทะเบียนบุคลากรเต็มจอ ---
   // 👥 สลับไปหน้าบุคลากร
-  // 👥 สลับไปหน้าบุคลากร
-  // 👥 สลับไปหน้าบุคลากร
-  // 👥 สลับไปหน้าบุคลากร
   function switchToStaffView() {
-  switchViewWithTransition('staffView');
-  updateNavForView('staff');
+    switchViewWithTransition('staffView');
+    updateNavForView('staff');
 
-  const isAdmin = (currentUser.role === 'Admin');
-  const addBtn = document.getElementById('adminAddStaffBtn');
-  const shareBtn = document.getElementById('adminShareStaffBtn');
-  if (addBtn) addBtn.style.display = isAdmin ? 'inline-block' : 'none';
-  if (shareBtn) shareBtn.style.display = isAdmin ? 'inline-block' : 'none';
+    const isAdmin = (currentUser.role === 'Admin');
+    const addBtn = document.getElementById('adminAddStaffBtn');
+    const shareBtn = document.getElementById('adminShareStaffBtn');
+    if (addBtn) addBtn.style.display = isAdmin ? 'inline-block' : 'none';
+    if (shareBtn) shareBtn.style.display = isAdmin ? 'inline-block' : 'none';
 
-  filterStaffDirectory();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
+    // ถ้ายังไม่มีข้อมูลในตัวแปร ให้แสดงข้อความกำลังโหลด และสั่งโหลดทันที
+    if (!fullStaffData || fullStaffData.length === 0) {
+      const tbody = document.getElementById('staffTableBody');
+      if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="${isAdmin ? 11 : 6}" class="text-center p-4"><div class="spinner-border spinner-border-sm text-success me-2"></div> กำลังโหลดรายชื่อบุคลากร...</td></tr>`;
+      }
+      loadStaffList();
+    } else {
+      filterStaffDirectory();
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
   /// 📤 สลับไปหน้าส่งออกรายการหนังสือ
   function switchToExportView() {
   switchViewWithTransition('exportView');
@@ -4348,83 +4543,108 @@ async function refreshApp() {
     yearSelect.value = currentYearBE.toString(); 
   }
 
-  // 6. ฟังก์ชันเรนเดอร์เนื้อหาตาราง (รองรับโหมดแก้ไขฐานข้อมูล & Checkbox)
+  // =========================================================
+  // 🚀 ระบบ Virtual Scrolling (เรนเดอร์เฉพาะแถวที่มองเห็น ลื่นไหล 60fps)
+  // =========================================================
+  let currentVirtualRows = [];
+  const ESTIMATED_ROW_HEIGHT = 68; // ความสูงโดยประมาณของแต่ละแถว (พิกเซล)
+  const VISIBLE_BUFFER = 8;        // จำนวนแถวสำรองด้านบนและล่าง
+
   function displayTable(dataRows) {
+    currentVirtualRows = dataRows || [];
+    const container = document.getElementById('tableScrollContainer');
+    if (container) container.scrollTop = 0; // รีเซ็ตตำแหน่งเลื่อนขึ้นบนสุดเมื่อเปลี่ยนหน้าหรือค้นหา
+    renderVirtualSlice();
+  }
+
+  function renderVirtualSlice() {
+    const container = document.getElementById('tableScrollContainer');
     const tableBody = document.getElementById('bookData');
-    const deptColors = {
-    "ฝ่ายบริหารวิชาการ": "#ffde59", "บริหารงานวิชาการ": "#ffde59",
-    "ฝ่ายบริหารงบประมาณ": "#ff5757", "บริหารแผนงานและงบประมาณ": "#ff5757",
-    "ฝ่ายบริหารงานบุคคล": "#0cc0df", "บริหารงานบุคคล": "#0cc0df",
-    "ฝ่ายบริหารทั่วไป": "#8c52ff", "บริหารงานทั่วไป": "#8c52ff",
-    "ผู้อำนวยการ": "#add8e6", "รองผู้อำนวยการ": "#d2b48c", "อื่นๆ": "#adb5bd"
-  };
+    if (!container || !tableBody) return;
 
-    let filtered = JSON.parse(JSON.stringify(dataRows));
-
-    if(filtered.length === 0) {
+    if (currentVirtualRows.length === 0) {
       tableBody.innerHTML = '<tr><td colspan="3" class="text-center p-4 text-muted">ไม่พบข้อมูล</td></tr>';
       return;
     }
 
-    let tableHTML = filtered.map((col, index) => {
+    const scrollTop = container.scrollTop;
+    const containerHeight = container.clientHeight || 500;
+    const totalRows = currentVirtualRows.length;
+
+    // คำนวณช่วงดัชนี (Index) ของแถวที่จะแสดงผลบนหน้าจอ
+    const startIndex = Math.max(0, Math.floor(scrollTop / ESTIMATED_ROW_HEIGHT) - 4);
+    const visibleCount = Math.ceil(containerHeight / ESTIMATED_ROW_HEIGHT) + VISIBLE_BUFFER;
+    const endIndex = Math.min(totalRows, startIndex + visibleCount);
+
+    // คำนวณความสูงของพื้นที่ว่างด้านบนและด้านล่าง (Spacer) เพื่อรักษาระยะแถบเลื่อน (Scrollbar)
+    const topSpacerHeight = startIndex * ESTIMATED_ROW_HEIGHT;
+    const bottomSpacerHeight = Math.max(0, (totalRows - endIndex) * ESTIMATED_ROW_HEIGHT);
+
+    const slice = currentVirtualRows.slice(startIndex, endIndex);
+
+    const deptColors = {
+      "ฝ่ายบริหารวิชาการ": "#ffde59", "บริหารงานวิชาการ": "#ffde59",
+      "ฝ่ายบริหารงบประมาณ": "#ff5757", "บริหารแผนงานและงบประมาณ": "#ff5757",
+      "ฝ่ายบริหารงานบุคคล": "#0cc0df", "บริหารงานบุคคล": "#0cc0df",
+      "ฝ่ายบริหารทั่วไป": "#8c52ff", "บริหารงานทั่วไป": "#8c52ff",
+      "ผู้อำนวยการ": "#add8e6", "รองผู้อำนวยการ": "#d2b48c", "อื่นๆ": "#adb5bd"
+    };
+
+    let sliceHTML = slice.map((col) => {
       const isMissing = col[0] === "❌";
       let rawDate = isMissing ? "❌" : col[0].split(/[T\s,]+/)[0];
       let dateDisplay = rawDate;
 
       if (!isMissing) {
-          if (rawDate.includes("-")) {
-              const d = rawDate.split("-"); 
-              if (d.length === 3) {
-                  let year = parseInt(d[0]);
-                  if (year < 2500) year += 543;
-                  dateDisplay = `${parseInt(d[2])}/${parseInt(d[1])}/${year}`;
-              }
-          } else if (rawDate.includes("/")) {
-              const d = rawDate.split("/");
-              if (d.length === 3) {
-                  let year = parseInt(d[2]);
-                  if (year < 2500) year += 543;
-                  dateDisplay = `${parseInt(d[0])}/${parseInt(d[1])}/${year}`;
-              }
+        if (rawDate.includes("-")) {
+          const d = rawDate.split("-"); 
+          if (d.length === 3) {
+            let year = parseInt(d[0]);
+            if (year < 2500) year += 543;
+            dateDisplay = `${parseInt(d[2])}/${parseInt(d[1])}/${year}`;
           }
+        } else if (rawDate.includes("/")) {
+          const d = rawDate.split("/");
+          if (d.length === 3) {
+            let year = parseInt(d[2]);
+            if (year < 2500) year += 543;
+            dateDisplay = `${parseInt(d[0])}/${parseInt(d[1])}/${year}`;
+          }
+        }
       }
-
 
       let fullFileName = col[2];
       let cleanFileName = fullFileName;
-      
       const thaiNums = {'๐':'0','๑':'1','๒':'2','๓':'3','๔':'4','๕':'5','๖':'6','๗':'7','๘':'8','๙':'9'};
       cleanFileName = cleanFileName.replace(/[๐-๙]/g, m => thaiNums[m]);
 
       const deptBadges = (isMissing || currentUser.role !== 'Admin') ? "" : col[3].split(', ').map(d => {
         const color = deptColors[d.trim()] || "#adb5bd"; 
-        return `<div class="mb-1"><small class="badge border" style="font-size: 0.7rem; font-weight: 400; background-color: ${color}; color: #fff; border-color: rgba(0,0,0,0.1) !important; white-space: normal; text-align: left;">${d.trim()}</small></div>`;
+        return `<div class="mb-1"><small class="badge border" style="font-size: 0.7rem; font-weight: 400; background-color: ${color}; color: #fff; border-color: rgba(0,0,0,0.1) !important;">${d.trim()}</small></div>`;
       }).join('');
 
       let staffBadge = "";
-
-      let plainFileName = cleanFileName; // 📄 ตัวแปรเก็บชื่อหนังสือข้อความล้วนสำหรับเปิดพรีวิวและคัดลอก
+      let plainFileName = cleanFileName;
 
       if (!isMissing) {
-          const nameMatch = fullFileName.match(/\[(.*?)\]/);
-          if (nameMatch) {
-              const names = nameMatch[1];
-              cleanFileName = fullFileName.replace(/\[.*?\]/, "").trim();
-              plainFileName = cleanFileName;
-              staffBadge = `<div class="mb-1"><small class="badge border" style="font-size: 0.7rem; font-weight: 400; background-color: #adb5bd; color: #fff; border-color: rgba(0,0,0,0.1) !important; white-space: normal; text-align: left;">${names}</small></div>`;
-          }
+        const nameMatch = fullFileName.match(/\[(.*?)\]/);
+        if (nameMatch) {
+          const names = nameMatch[1];
+          cleanFileName = fullFileName.replace(/\[.*?\]/, "").trim();
+          plainFileName = cleanFileName;
+          staffBadge = `<div class="mb-1"><small class="badge border" style="font-size: 0.7rem; font-weight: 400; background-color: #adb5bd; color: #fff;">${names}</small></div>`;
+        }
 
-          const searchTerm = document.getElementById('searchInput').value.trim();
-          if (searchTerm) {
-              const escapedSearch = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-              const regex = new RegExp(`(${escapedSearch})`, 'gi');
-              cleanFileName = cleanFileName.replace(regex, `<span style="background-color: #fff59d; padding: 2px 2px; border-radius: 3px; font-weight: bold; color: #000;">$1</span>`);
-          }
+        const searchTerm = document.getElementById('searchInput').value.trim();
+        if (searchTerm) {
+          const escapedSearch = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const regex = new RegExp(`(${escapedSearch})`, 'gi');
+          cleanFileName = cleanFileName.replace(regex, `<span style="background-color: #fff59d; padding: 2px 2px; border-radius: 3px; font-weight: bold; color: #000;">$1</span>`);
+        }
       }
 
       const deptBadgesContainer = (deptBadges || staffBadge) ? `<div class="d-flex flex-column align-items-start mt-1">${deptBadges}${staffBadge}</div>` : "";
       
-      // 🎯 ส่วนจัดการปุ่ม รองรับโหมดปกติ / โหมดลบ / โหมดแก้ไขกลุ่มงาน
       let actionColumnHTML = "";
       if (isMissing) {
         actionColumnHTML = "";
@@ -4437,21 +4657,22 @@ async function refreshApp() {
           </div>
         `;
       } else if (currentDbMode === 'editDept' && currentUser.role === 'Admin') {
-  actionColumnHTML = `
-    <div class="d-flex justify-content-center">
-      <button onclick="openEditBookDeptModal('${encodeURIComponent(col[2])}')" class="btn btn-sm btn-warning text-dark fw-bold shadow-sm w-100">
-        ✏️ แก้ไข
-      </button>
-    </div>
-  `;
-} 
-      else {
+        actionColumnHTML = `
+          <div class="d-flex justify-content-center">
+            <button onclick="openEditBookDeptModal('${encodeURIComponent(col[2])}')" class="btn btn-sm btn-warning text-dark fw-bold shadow-sm w-100">
+              ✏️ แก้ไข
+            </button>
+          </div>
+        `;
+      } else {
         actionColumnHTML = `
           <div class="action-buttons justify-content-center">
-            <button onclick="openPdfViewer('${col[4]}', '${encodeURIComponent(plainFileName)}')" class="btn btn-sm btn-primary shadow-sm w-50 px-1 text-nowrap" style="font-size: 0.78rem;">
+            <button onclick="openPdfViewer('${col[4]}', '${encodeURIComponent(plainFileName)}')" class="btn btn-sm btn-primary shadow-sm w-50 px-1 text-nowrap d-inline-flex align-items-center justify-content-center gap-1" style="font-size: 0.78rem;">
+              <svg class="btn-svg-icon" style="width:13px; height:13px;" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
               เปิดดู
             </button>
-            <button onclick="copyDeepLink('${col[4]}', '${encodeURIComponent(plainFileName)}')" class="btn btn-sm btn-copy shadow-sm w-50 px-1 text-nowrap" style="font-size: 0.78rem;" title="คัดลอกลิงก์เปิดอ่านในแอป">
+            <button onclick="copyDeepLink('${col[4]}', '${encodeURIComponent(plainFileName)}')" class="btn btn-sm btn-copy shadow-sm w-50 px-1 text-nowrap d-inline-flex align-items-center justify-content-center gap-1" style="font-size: 0.78rem;" title="คัดลอกลิงก์เปิดอ่านในแอป">
+              <svg class="btn-svg-icon" style="width:13px; height:13px;" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
               คัดลอก
             </button>
           </div>
@@ -4473,11 +4694,23 @@ async function refreshApp() {
       </tr>`;
     }).join('');
 
-    if (isExhausted && filtered.length > 0) {
-      tableHTML += `<tr><td colspan="3" class="text-center p-3 text-muted fw-bold" style="font-size: 0.8rem; background-color: #f8f9fa; border-top: 1px solid #dee2e6;">-- สิ้นสุดฐานข้อมูล --</td></tr>`;
-    }
+    // ประกอบร่างตารางโดยมี Spacers บนและล่างจำลองความสูงรวม
+    tableBody.innerHTML = `
+      <tr style="height: ${topSpacerHeight}px; border: none !important;"><td colspan="3" style="padding: 0; border: none !important;"></td></tr>
+      ${sliceHTML}
+      <tr style="height: ${bottomSpacerHeight}px; border: none !important;"><td colspan="3" style="padding: 0; border: none !important;"></td></tr>
+    `;
+  }
 
-    tableBody.innerHTML = tableHTML;
+  // ฟังก์ชันรองรับการเลื่อนตารางแบบ Throttle (60fps smooth)
+  function handleVirtualScroll(el) {
+    if (!window._isVirtualScrolling) {
+      window._isVirtualScrolling = true;
+      window.requestAnimationFrame(() => {
+        renderVirtualSlice();
+        window._isVirtualScrolling = false;
+      });
+    }
   }
 
 // ==========================================

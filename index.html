@@ -875,9 +875,9 @@
   --bg-input: #141414;
   --bg-thead: #161616;
   --text-main: #ffffff;
-  --text-muted: #888888;
-  --border-color: #3f3f46;          /* เส้นกรอบสีสว่างตัดกับพื้นดำสนิท ชัดเจน 100% */
-  --table-border: #27272a;
+  --text-muted: #94a3b8;
+  --border-color: #cbd5e1;          /* สีเส้นกรอบสว่างเกือบขาว (Slate 300) คมชัดเด่นชัด */
+  --table-border: #94a3b8;          /* สีเส้นแบ่งช่องตารางเกือบขาว มองเห็นทุกช่องง่ายขึ้น */
   --table-hover: #1c1c1c;
   --sidebar-bg: #000000;
   --sidebar-text: #ffffff;
@@ -914,20 +914,38 @@
   border: 1px solid #b2dfdb !important;
 }
 
-/* 🌙 โหมดมืด & ⬛ AMOLED: ใช้เส้นขอบหนาชัดเจนขึ้นเพื่อให้อ่านง่าย */
-[data-theme="dark"] .card, [data-theme="dark"] .card-border-green, [data-theme="dark"] .table-responsive,
-[data-theme="amoled"] .card, [data-theme="amoled"] .card-border-green, [data-theme="amoled"] .table-responsive {
+/* 🌙 โหมดมืด Midnight ปกติ */
+[data-theme="dark"] .card, [data-theme="dark"] .card-border-green, [data-theme="dark"] .table-responsive {
   border: 1.5px solid var(--border-color) !important;
 }
-
-[data-theme="dark"] .table th, [data-theme="dark"] .table td,
-[data-theme="amoled"] .table th, [data-theme="amoled"] .table td {
+[data-theme="dark"] .table th, [data-theme="dark"] .table td {
   border: 1px solid var(--table-border) !important;
 }
-
-[data-theme="dark"] .form-control, [data-theme="dark"] .form-select, [data-theme="dark"] .input-group-text,
-[data-theme="amoled"] .form-control, [data-theme="amoled"] .form-select, [data-theme="amoled"] .input-group-text {
+[data-theme="dark"] .form-control, [data-theme="dark"] .form-select, [data-theme="dark"] .input-group-text {
   border: 1.5px solid var(--border-color) !important;
+}
+
+/* ⬛ เฉพาะโหมดมืดสนิท AMOLED: ปรับเส้นเกือบขาว และหนากว่าปกติเล็กน้อย */
+[data-theme="amoled"] .card, 
+[data-theme="amoled"] .card-border-green, 
+[data-theme="amoled"] .table-responsive,
+[data-theme="amoled"] #desktopSidebar {
+  border: 1.8px solid var(--border-color) !important; /* เส้นกรอบกล่องหนา 1.8px คมกริบ */
+}
+
+[data-theme="amoled"] .table th, 
+[data-theme="amoled"] .table td,
+[data-theme="amoled"] .table-staff-custom th, 
+[data-theme="amoled"] .table-staff-custom td,
+[data-theme="amoled"] .table-scroll-custom th, 
+[data-theme="amoled"] .table-scroll-custom td {
+  border: 1.4px solid var(--table-border) !important; /* เส้นแบ่งช่องรายการในตารางหนา 1.4px ชัดเจน ไม่กลืนกับพื้นดำ */
+}
+
+[data-theme="amoled"] .form-control, 
+[data-theme="amoled"] .form-select, 
+[data-theme="amoled"] .input-group-text {
+  border: 1.8px solid var(--border-color) !important; /* กรอบช่องค้นหาและ Dropdown หนาขึ้น */
 }
 
 /* =========================================================
@@ -6867,9 +6885,9 @@ if (uploadedFiles.length > 0 && dept !== "อื่นๆ") {
       <path d="M12 18a6 6 0 0 0 6-6c0-.8-.16-1.56-.44-2.26A6.5 6.5 0 0 1 11.26 18.44c.24.04.49.06.74.06z"></path>
     </svg>`,
 
-    // 🌙 3. ธีมมืดสนิท AMOLED: พระจันทร์เสี้ยวเพรียวบางคมชัด
-    amoled: `<svg class="btn-svg-icon" style="color: #e2e8f0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+    // 🌙 3. ธีมมืดสนิท AMOLED: พระจันทร์เสี้ยว (เส้นขอบม่วงเข้ม + เนื้อในพระจันทร์สีม่วงสว่าง)
+    amoled: `<svg class="btn-svg-icon" viewBox="0 0 24 24" style="overflow: visible;">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" style="fill: #c084fc !important; stroke: #581c87 !important; stroke-width: 2px !important; stroke-linecap: round !important; stroke-linejoin: round !important;"></path>
     </svg>`
   };
 
@@ -6909,7 +6927,7 @@ if (uploadedFiles.length > 0 && dept !== "อื่นๆ") {
     if (icon) icon.innerText = isCollapsed ? '▶' : '◀';
   }
 
-  // ปรับฟังก์ชัน updateNavForView ให้ซิงก์ทั้งปุ่มบนมือถือ และ Sidebar บน PC พร้อมแยกสิทธิ์ Admin/User
+  // ปรับฟังก์ชัน updateNavForView ให้ควบคุมปุ่มย้อนกลับแยกขาดระหว่างมือถือและ PC
   const originalUpdateNavForView = updateNavForView;
   updateNavForView = function(viewName) {
     if (typeof originalUpdateNavForView === 'function') {
@@ -6919,22 +6937,26 @@ if (uploadedFiles.length > 0 && dept !== "อื่นๆ") {
     const isAdmin = (currentUser.role === 'Admin');
     const isMobile = window.innerWidth <= 768;
 
-    // -------------------------------------------------------------
-    // 📱 จัดการปุ่มเมนูบน Navbar (สำหรับหน้าจอมือถือ)
-    // -------------------------------------------------------------
     const staffBtn = document.getElementById('manageStaffBtn');
     const dutyBtn = document.getElementById('dutyTripBtn');
     const exportBtn = document.getElementById('toggleExportModeBtn');
     const dbBtn = document.getElementById('editDbBtn');
     const backBtn = document.getElementById('backToSarabanBtn');
 
+    // -------------------------------------------------------------
+    // 📱 จัดการปุ่มสำหรับหน้าจอมือถือ (<= 768px)
+    // -------------------------------------------------------------
     if (isMobile) {
-      // ปุ่มย้อนกลับบนมือถือ: แสดงเฉพาะเมื่ออยู่ในหน้าเมนูย่อย
+      // ⬅️ ปุ่มย้อนกลับ: ถ้าอยู่หน้าแรก (saraban) ให้ซ่อน | ถ้าเข้าเมนูอื่น ให้แสดงทันที
       if (backBtn) {
-        backBtn.style.display = (viewName === 'saraban') ? 'none' : 'inline-flex';
+        if (viewName === 'saraban') {
+          backBtn.style.setProperty('display', 'none', 'important');
+        } else {
+          backBtn.style.setProperty('display', 'inline-flex', 'important');
+        }
       }
 
-      // 👥 ทั้ง User และ Admin เห็น 2 ปุ่มนี้
+      // 👥 ปุ่มเมนูแถวล่างบนมือถือ
       if (staffBtn) {
         staffBtn.style.display = 'inline-flex';
         staffBtn.querySelector('.nav-btn-text').innerText = isAdmin ? "จัดการบุคลากร" : "รายชื่อบุคลากร";
@@ -6943,7 +6965,6 @@ if (uploadedFiles.length > 0 && dept !== "อื่นๆ") {
         dutyBtn.style.display = 'inline-flex';
       }
 
-      // 🛡️ ปุ่มเฉพาะ Admin (ส่งออกรายการ, แก้ไขฐานข้อมูล)
       if (exportBtn) {
         exportBtn.style.setProperty('display', isAdmin ? 'inline-flex' : 'none', 'important');
       }
@@ -6951,12 +6972,16 @@ if (uploadedFiles.length > 0 && dept !== "อื่นๆ") {
         dbBtn.style.setProperty('display', isAdmin ? 'inline-flex' : 'none', 'important');
       }
     } else {
-      // บน PC: ซ่อนปุ่มย้อนกลับบน Navbar ทิ้ง 100%
-      if (backBtn) backBtn.style.setProperty('display', 'none', 'important');
+      // -------------------------------------------------------------
+      // 💻 บน PC: ซ่อนปุ่มย้อนกลับบน Navbar ทิ้งถาวร 100%
+      // -------------------------------------------------------------
+      if (backBtn) {
+        backBtn.style.setProperty('display', 'none', 'important');
+      }
     }
 
     // -------------------------------------------------------------
-    // 💻 จัดการ Sidebar เมนูฝั่งซ้าย (สำหรับหน้าจอ PC)
+    // 🌲 ควบคุม Sidebar ซ้าย (สำหรับ PC)
     // -------------------------------------------------------------
     const sideAdminElems = document.querySelectorAll('.admin-only-feature');
     sideAdminElems.forEach(el => el.style.setProperty('display', isAdmin ? 'flex' : 'none', 'important'));
@@ -6964,10 +6989,8 @@ if (uploadedFiles.length > 0 && dept !== "อื่นๆ") {
     const sideStaffLabel = document.getElementById('sideStaffLabel');
     if (sideStaffLabel) sideStaffLabel.innerText = isAdmin ? "จัดการบุคลากร" : "รายชื่อบุคลากร";
 
-    // เคลียร์คลาส active ของเมนู Sidebar ทั้งหมด
     document.querySelectorAll('.btn-sidebar-item').forEach(btn => btn.classList.remove('active'));
 
-    // ไฮไลต์ปุ่ม Active ที่เลือกบน Sidebar
     if (viewName === 'saraban') document.getElementById('sideSarabanBtn')?.classList.add('active');
     else if (viewName === 'staff') document.getElementById('sideStaffBtn')?.classList.add('active');
     else if (viewName === 'dutyTrip') document.getElementById('sideDutyBtn')?.classList.add('active');

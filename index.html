@@ -1279,21 +1279,25 @@
     margin-bottom: 2px;
   }
 
-  #navMainButtons {
-    display: none !important;
-  }
-  #mainContentWrapper {
-    flex-grow: 1;
-    min-width: 0;
-    padding-bottom: 50px;
+  /* 💻 บน PC (>= 769px): ซ่อน 4 ปุ่มเมนูบน Navbar (เพราะมี Sidebar แล้ว) และซ่อนปุ่มย้อนกลับบนแถบบน */
+  @media (min-width: 769px) {
+    #navMainButtons {
+      display: none !important;
+    }
+    #backToSarabanBtn {
+      display: none !important; /* บน PC ซ่อนปุ่มย้อนกลับถาวร เพราะมี Sidebar นำทาง */
+    }
   }
 
-
-@media (max-width: 768px) {
-  #desktopSidebar {
-    display: none !important;
+  /* 📱 บนมือถือ (<= 768px): ซ่อน Sidebar ซ้าย และคืนค่าเมนูบน Navbar 2 แถวให้แสดงผลตามปกติ */
+  @media (max-width: 768px) {
+    #desktopSidebar {
+      display: none !important; /* บนมือถือซ่อน Sidebar */
+    }
+    #navMainButtons {
+      display: flex !important; /* เอากลุ่มปุ่มเมนูกลับคืนมาแสดงผลเต็มจอ 100% */
+    }
   }
-}
 
   </style>
   <!-- ⚡ Firebase App & Realtime Database SDK (Compat Version) -->
@@ -6925,7 +6929,7 @@ if (uploadedFiles.length > 0 && dept !== "อื่นๆ") {
     if (icon) icon.innerText = isCollapsed ? '▶' : '◀';
   }
 
-  // ปรับฟังก์ชัน updateNavForView ให้ซิงก์ทั้งปุ่มบนมือถือ และ Sidebar บน PC
+  // ปรับฟังก์ชัน updateNavForView ให้ซิงก์ทั้งปุ่มบนมือถือ และ Sidebar บน PC พร้อมแยกสิทธิ์ Admin/User
   const originalUpdateNavForView = updateNavForView;
   updateNavForView = function(viewName) {
     if (typeof originalUpdateNavForView === 'function') {
@@ -6933,8 +6937,47 @@ if (uploadedFiles.length > 0 && dept !== "อื่นๆ") {
     }
 
     const isAdmin = (currentUser.role === 'Admin');
+    const isMobile = window.innerWidth <= 768;
 
-    // จัดการสิทธิ์การแสดงปุ่มบน Sidebar ฝั่งซ้าย
+    // -------------------------------------------------------------
+    // 📱 จัดการปุ่มเมนูบน Navbar (สำหรับหน้าจอมือถือ)
+    // -------------------------------------------------------------
+    const staffBtn = document.getElementById('manageStaffBtn');
+    const dutyBtn = document.getElementById('dutyTripBtn');
+    const exportBtn = document.getElementById('toggleExportModeBtn');
+    const dbBtn = document.getElementById('editDbBtn');
+    const backBtn = document.getElementById('backToSarabanBtn');
+
+    if (isMobile) {
+      // ปุ่มย้อนกลับบนมือถือ: แสดงเฉพาะเมื่ออยู่ในหน้าเมนูย่อย
+      if (backBtn) {
+        backBtn.style.display = (viewName === 'saraban') ? 'none' : 'inline-flex';
+      }
+
+      // 👥 ทั้ง User และ Admin เห็น 2 ปุ่มนี้
+      if (staffBtn) {
+        staffBtn.style.display = 'inline-flex';
+        staffBtn.querySelector('.nav-btn-text').innerText = isAdmin ? "จัดการบุคลากร" : "รายชื่อบุคลากร";
+      }
+      if (dutyBtn) {
+        dutyBtn.style.display = 'inline-flex';
+      }
+
+      // 🛡️ ปุ่มเฉพาะ Admin (ส่งออกรายการ, แก้ไขฐานข้อมูล)
+      if (exportBtn) {
+        exportBtn.style.setProperty('display', isAdmin ? 'inline-flex' : 'none', 'important');
+      }
+      if (dbBtn) {
+        dbBtn.style.setProperty('display', isAdmin ? 'inline-flex' : 'none', 'important');
+      }
+    } else {
+      // บน PC: ซ่อนปุ่มย้อนกลับบน Navbar ทิ้ง 100%
+      if (backBtn) backBtn.style.setProperty('display', 'none', 'important');
+    }
+
+    // -------------------------------------------------------------
+    // 💻 จัดการ Sidebar เมนูฝั่งซ้าย (สำหรับหน้าจอ PC)
+    // -------------------------------------------------------------
     const sideAdminElems = document.querySelectorAll('.admin-only-feature');
     sideAdminElems.forEach(el => el.style.setProperty('display', isAdmin ? 'flex' : 'none', 'important'));
 
@@ -6944,7 +6987,7 @@ if (uploadedFiles.length > 0 && dept !== "อื่นๆ") {
     // เคลียร์คลาส active ของเมนู Sidebar ทั้งหมด
     document.querySelectorAll('.btn-sidebar-item').forEach(btn => btn.classList.remove('active'));
 
-    // ไฮไลต์ปุ่ม Active ที่เลือกบน Sidebar (กล่องขาว ตัวอักษรเขียว)
+    // ไฮไลต์ปุ่ม Active ที่เลือกบน Sidebar
     if (viewName === 'saraban') document.getElementById('sideSarabanBtn')?.classList.add('active');
     else if (viewName === 'staff') document.getElementById('sideStaffBtn')?.classList.add('active');
     else if (viewName === 'dutyTrip') document.getElementById('sideDutyBtn')?.classList.add('active');

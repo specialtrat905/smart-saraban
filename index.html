@@ -749,9 +749,14 @@
   text-shadow: none !important;
 }
 
-.btn-nav-action:hover, .btn-light:hover, .btn-filter-chip:hover {
+.btn-nav-action:hover, .btn-nav-action:active {
+  background-color: #bae6fd !important; /* สีฟ้าอ่อนเรียบแบน */
+  background-image: none !important;
+  color: #0369a1 !important;
+  border-color: #0284c7 !important;
+}
+.btn-light:hover, .btn-filter-chip:hover {
   background-color: #e0f2f1 !important;
-  background-image: linear-gradient(to bottom, #e0f2f1 0%, #b2dfdb 100%) !important;
   color: #00251a !important;
   border-color: #00796b !important;
 }
@@ -1297,6 +1302,32 @@
     }
   }
 
+/* 📱 จัดการตารางเฉพาะบนมือถือ (พอดีจอ 100% ไม่เลื่อนแนวนอน และตัดคำบรรทัดเดียว) */
+@media (max-width: 768px) {
+  /* หน้ารายการหนังสือรับ: ล็อกตารางพอดีจอ ไม่เลื่อนซ้าย-ขวา */
+  #sarabanView .table-responsive {
+    overflow-x: hidden !important;
+  }
+  #sarabanView .table {
+    table-layout: fixed !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  /* หน้าส่งออกรายการ และหน้าแก้ไขฐานข้อมูล: พอดีความกว้างหน้าจอ ไม่เลื่อนซ้าย-ขวา */
+  #exportResultTable,
+  #dbManageView table {
+    table-layout: fixed !important;
+    width: 100% !important;
+    min-width: 100% !important;
+  }
+  #exportResultTable th, #exportResultTable td,
+  #dbManageView table th, #dbManageView table td {
+    padding: 0.45rem 0.2rem !important;
+  }
+}
+
+
   </style>
   <!-- ⚡ Firebase App & Realtime Database SDK (Compat Version) -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -1516,6 +1547,7 @@
 
 
       <div class="card card-border-green p-4 shadow-sm mb-5">
+        <div class="d-none d-md-block">
         <div class="row g-1 mb-2 align-items-center filter-compact-row">
           <div class="col-auto me-2">
             <h5 class="fw-bold m-0 text-dark" style="font-size: 0.95rem;">รายการหนังสือรับ</h5>
@@ -1548,6 +1580,43 @@
             </div>
           </div>
         </div>
+      </div>
+
+<!-- แสดงผลเฉพาะบนมือถือ (<= 768px): ปี พ.ศ. + กลุ่มงาน แถวเดียวกัน / ช่องค้นหาเต็มแถว -->
+        <div class="d-block d-md-none mb-2">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <h5 class="fw-bold m-0 text-dark" style="font-size: 1rem;">รายการหนังสือรับ</h5>
+          </div>
+          <div class="row g-1 mb-2">
+            <div class="col-6">
+              <select id="yearSelectMobile" class="form-select form-select-sm border-success shadow-sm w-100" onchange="syncMobileYear(this.value)"></select>
+            </div>
+            <div class="col-6" id="deptFilterContainerMobile" style="display:none;">
+              <select id="deptFilterMobile" class="form-select form-select-sm border-success shadow-sm w-100" onchange="syncMobileDept(this.value)">
+                <option value="all">ทุกกลุ่มงาน (ทั้งหมด)</option>
+                <option>ฝ่ายบริหารทั่วไป</option>
+                <option>ฝ่ายบริหารงานบุคคล</option>
+                <option>ฝ่ายบริหารวิชาการ</option>
+                <option>ฝ่ายบริหารงบประมาณ</option>
+                <option>รองผู้อำนวยการ</option>
+                <option>ผู้อำนวยการ</option>
+                <option>อื่นๆ</option>
+                <option>ยังไม่ได้ลงระบบ</option>
+              </select>
+            </div>
+          </div>
+          <div class="row g-0">
+            <div class="col-12">
+              <div class="input-group input-group-sm shadow-sm w-100">
+                <span class="input-group-text border-end-0 d-flex align-items-center bg-white py-0">
+                  <svg class="btn-svg-icon text-muted" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                </span>
+                <input type="text" id="searchInputMobile" class="form-control border-start-0" placeholder="พิมพ์ชื่อหนังสือเพื่อค้นหาอัตโนมัติ..." oninput="syncMobileSearch(this.value)">
+              </div>
+            </div>
+          </div>
+        </div>
+
 
         <div class="table-responsive" id="tableScrollContainer" style="max-height: 65vh; overflow-y: auto; position: relative;" onscroll="handleVirtualScroll(this)">
           <table class="table table-hover align-middle mb-0" style="font-size: 0.9rem;">
@@ -1773,14 +1842,12 @@
         <table class="table table-hover table-bordered align-middle table-scroll-custom mb-0" id="exportResultTable" style="font-size: 0.88rem;">
           <thead class="table-light text-center sticky-top shadow-sm" style="z-index: 5;">
             <tr>
-              <th style="width: 50px;">
+              <th style="width: 38px;">
                 <input class="form-check-input" type="checkbox" id="masterExportCheck" onchange="toggleMasterExportCheck(this.checked)" title="เลือกทั้งหมด">
               </th>
-              <!-- เอาลำดับออกแล้ว -->
-              <th style="width: 110px;">วันที่</th>
-              <th style="width: 130px;">เลขหนังสือ</th>
-              <th style="min-width: 250px;">ชื่อเรื่อง / หนังสือ</th>
-              <th style="min-width: 200px;">ผู้รับผิดชอบ (กลุ่มงาน / รายชื่อ)</th>
+              <th style="width: 78px;">เลขหนังสือ</th>
+              <th>ชื่อเรื่อง / หนังสือ</th>
+              <th style="width: 110px;">ผู้รับผิดชอบ</th>
             </tr>
           </thead>
           <tbody id="exportViewTableBody"></tbody>
@@ -1815,11 +1882,10 @@
         <table class="table table-hover table-bordered align-middle table-scroll-custom mb-0" style="font-size: 0.88rem;">
           <thead class="table-light text-center sticky-top shadow-sm" style="z-index: 5;">
             <tr>
-              <th style="width: 100px;">วันที่</th>
-              <th style="width: 120px;">เลขหนังสือ</th>
-              <th style="min-width: 250px;">ชื่อเรื่อง / หนังสือ</th>
-              <th style="min-width: 180px;">กลุ่มงานปลายทาง</th>
-              <th style="width: 55px; white-space: nowrap;">จัดการ</th>
+              <th style="width: 75px;">วันที่</th>
+              <th>ชื่อหนังสือ / ฝ่าย</th>
+              <th style="width: 105px;">ผู้รับผิดชอบ</th>
+              <th style="width: 45px;">จัดการ</th>
             </tr>
           </thead>
           <tbody id="dbManageTableBody"></tbody>
@@ -3481,11 +3547,14 @@ function updateDbManageButtonUI() {
 
       html += `
         <tr class="align-middle fw-bold">
-          <td class="text-center text-muted fw-bold" style="font-size: 0.82rem; white-space: nowrap;">${dateDisplay}</td>
-          <td class="text-center fw-bold text-success" style="white-space: nowrap;">${bookNumber}</td>
-          <td class="text-start text-dark fw-bold" style="word-break: break-word;">${bookTitle}</td>
-          <td class="text-start" style="font-size: 0.85rem;">${row[3] || "-"}</td>
-          <td class="text-center" style="width: 1%; white-space: nowrap;">${actionHTML}</td>
+          <td class="text-center text-muted fw-bold" style="width: 75px; font-size: 0.75rem;">${dateDisplay}</td>
+          <td class="text-start text-dark fw-bold thai-wrap" style="font-size: 0.84rem; line-height: 1.4;">
+            <span class="text-success me-1">${bookNumber}</span>${bookTitle}
+          </td>
+          <td class="text-start" style="width: 105px; font-size: 0.75rem;">
+            <div class="text-truncate" style="max-width: 100px;" title="${row[3] || '-'}">${row[3] || "-"}</div>
+          </td>
+          <td class="text-center" style="width: 45px;">${actionHTML}</td>
         </tr>
       `;
     });
@@ -3541,27 +3610,6 @@ function updateDbManageButtonUI() {
     updateNavForView('saraban');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   });
-    // 👉 ตรวจจับการปัดนิ้วจากซ้ายไปขวาเพื่อย้อนกลับหน้าแรก
-  let touchStartX = 0;
-  let touchStartY = 0;
-
-  window.addEventListener('touchstart', (e) => {
-    touchStartX = e.changedTouches[0].screenX;
-    touchStartY = e.changedTouches[0].screenY;
-  }, { passive: true });
-
-  window.addEventListener('touchend', (e) => {
-    const diffX = e.changedTouches[0].screenX - touchStartX;
-    const diffY = Math.abs(e.changedTouches[0].screenY - touchStartY);
-
-    // ปัดจากซ้ายไปขวามากกว่า 90px และไม่เป็นการปัดขึ้น-ลง
-    if (diffX > 90 && diffY < 50) {
-      const saraban = document.getElementById('sarabanView');
-      if (saraban && saraban.style.display === 'none') {
-        switchToSarabanView();
-      }
-    }
-  }, { passive: true });
   
   }
 
@@ -4271,6 +4319,18 @@ function updateDbManageButtonUI() {
 
     updateNavForView('saraban');
     updateYearOptions();
+    function syncMobileYear(val) {
+    document.getElementById('yearSelect').value = val;
+    resetAndReloadLogs();
+  }
+  function syncMobileDept(val) {
+    document.getElementById('deptFilter').value = val;
+    resetAndReloadLogs();
+  }
+  function syncMobileSearch(val) {
+    document.getElementById('searchInput').value = val;
+    handleSearchInput();
+  }
     resetAndReloadLogs();
   }
 
@@ -4979,14 +5039,13 @@ async function refreshApp() {
 
       html += `
         <tr class="align-middle">
-          <td class="text-center">
-            <input class="form-check-input border-success export-row-check" type="checkbox" style="width: 1.25rem; height: 1.25rem; cursor: pointer;"
+          <td class="text-center" style="width: 38px;">
+            <input class="form-check-input border-success export-row-check" type="checkbox" style="width: 1.2rem; height: 1.2rem; cursor: pointer;"
               ${isChecked ? 'checked' : ''} onchange="toggleExportItem('${encodeURIComponent(row[2])}', this.checked)">
           </td>
-          <td class="text-center text-muted" style="font-size: 0.8rem;">${dateDisplay}</td>
-          <td class="text-center fw-bold text-success">${details.bookNumber}</td>
-          <td class="text-start text-dark fw-bold">${details.title}</td>
-          <td class="text-start">${details.responsible}</td>
+          <td class="text-center fw-bold text-success" style="width: 78px; font-size: 0.8rem; word-break: break-word;">${details.bookNumber}</td>
+          <td class="text-start text-dark fw-bold thai-wrap" style="font-size: 0.84rem; line-height: 1.4;">${details.title}</td>
+          <td class="text-start thai-wrap" style="width: 110px; font-size: 0.75rem; line-height: 1.3;">${details.responsible}</td>
         </tr>
       `;
     });
@@ -7078,7 +7137,6 @@ if (uploadedFiles.length > 0 && dept !== "อื่นๆ") {
     if (icon) icon.innerText = isCollapsed ? '▶' : '◀';
   }
 
-  // ปรับฟังก์ชัน updateNavForView ให้ซิงก์ปุ่มบนมือถือ และ Sidebar บน PC พร้อมแยกสิทธิ์ Admin/User
   const originalUpdateNavForView = updateNavForView;
   updateNavForView = function(viewName) {
     if (typeof originalUpdateNavForView === 'function') {
@@ -7095,67 +7153,72 @@ if (uploadedFiles.length > 0 && dept !== "อื่นๆ") {
     const dbBtn = document.getElementById('editDbBtn');
     const backBtn = document.getElementById('backToSarabanBtn');
 
-    // 🚫 ซ่อนปุ่มย้อนกลับถาวรทั้งบนมือถือและ PC ไม่ให้แสดงผลอีกต่อไป
-    if (backBtn) {
-      backBtn.style.setProperty('display', 'none', 'important');
-    }
+    // 🚫 ปิดปุ่มย้อนกลับถาวรสำหรับทุกหน้า
+    if (backBtn) backBtn.style.setProperty('display', 'none', 'important');
 
+    // 🎨 ฟังก์ชันเคลียร์สีปุ่มเป็นสีขาวเรียบแบน
     const setBtnNormal = (btn) => {
       if (!btn) return;
-      btn.style.backgroundColor = '#ffffff';
-      btn.style.color = '#004d40';
+      btn.style.setProperty('background-color', '#ffffff', 'important');
+      btn.style.setProperty('background-image', 'none', 'important');
+      btn.style.setProperty('color', '#004d40', 'important');
+      btn.style.setProperty('border-color', '#b2dfdb', 'important');
     };
+
+    // 🎨 ฟังก์ชันไฮไลต์ปุ่มเป็นสีฟ้าเรียบแบน (Flat Light Blue ไม่ไล่เฉด)
     const setBtnActive = (btn) => {
       if (!btn) return;
-      btn.style.backgroundColor = '#d8b4fe'; // สีม่วงอ่อนสถานะ Active
-      btn.style.color = '#3b0764';
+      btn.style.setProperty('background-color', '#bae6fd', 'important'); // สีฟ้าอ่อนสว่าง
+      btn.style.setProperty('background-image', 'none', 'important');    // ตัดไล่เฉดทิ้งเด็ดขาด
+      btn.style.setProperty('color', '#0369a1', 'important');           // ตัวอักษรสีน้ำเงินเข้ม
+      btn.style.setProperty('border-color', '#0284c7', 'important');
     };
 
-    // รีเซ็ตสถานะปุ่มเมนูมือถือ
     [sarabanNavBtn, staffBtn, dutyBtn, exportBtn, dbBtn].forEach(setBtnNormal);
 
-    // -------------------------------------------------------------
-    // 📱 จัดการปุ่มสำหรับหน้าจอมือถือ (<= 768px)
-    // -------------------------------------------------------------
     if (isMobile) {
-      // 📋 1. ปุ่มระบบส่งหนังสือ (แสดงทุกสิทธิ์)
+      const navMain = document.getElementById('navMainButtons');
+      if (navMain) navMain.style.setProperty('display', 'flex', 'important');
+
+      // 1. ระบบส่งหนังสือ
       if (sarabanNavBtn) sarabanNavBtn.style.display = 'inline-flex';
 
-      // 👥 2. ปุ่มบุคลากร (Admin: "จัดการบุคลากร" | User: "รายชื่อบุคลากร")
+      // 2. จัดการบุคลากร / รายชื่อบุคลากร
       if (staffBtn) {
         staffBtn.style.display = 'inline-flex';
-        const labelElem = staffBtn.querySelector('.nav-btn-text');
-        if (labelElem) labelElem.innerText = isAdmin ? "จัดการบุคลากร" : "รายชื่อบุคลากร";
+        const lbl = staffBtn.querySelector('.nav-btn-text');
+        if (lbl) lbl.innerText = isAdmin ? "จัดการบุคลากร" : "รายชื่อบุคลากร";
       }
 
-      // 🚗 3. ปุ่มไปราชการ (แสดงทุกสิทธิ์)
+      // 3. ไปราชการ
       if (dutyBtn) dutyBtn.style.display = 'inline-flex';
 
-      // 📤 4. ปุ่มส่งออกรายการ (เฉพาะ Admin)
+      // 4 & 5. สิทธิ์ Admin แสดง 5 ปุ่ม | User แสดง 3 ปุ่ม
       if (exportBtn) exportBtn.style.setProperty('display', isAdmin ? 'inline-flex' : 'none', 'important');
-
-      // ⚙️ 5. ปุ่มแก้ไขฐานข้อมูล (เฉพาะ Admin)
       if (dbBtn) dbBtn.style.setProperty('display', isAdmin ? 'inline-flex' : 'none', 'important');
 
-      // ไฮไลต์ปุ่ม Active บนมือถือ
+      // 🎯 ไฮไลต์ปุ่มสีฟ้าเรียบแบนตามหน้าปัจจุบัน
       if (viewName === 'saraban') setBtnActive(sarabanNavBtn);
       else if (viewName === 'staff') setBtnActive(staffBtn);
       else if (viewName === 'dutyTrip') setBtnActive(dutyBtn);
       else if (viewName === 'export') setBtnActive(exportBtn);
       else if (viewName === 'dbManage') setBtnActive(dbBtn);
+
+      // ซิงก์ Dropdown ตัวกรองของ Mobile
+      const yMobile = document.getElementById('yearSelectMobile');
+      const yPC = document.getElementById('yearSelect');
+      if (yMobile && yPC) yMobile.innerHTML = yPC.innerHTML;
+      const dMobileCont = document.getElementById('deptFilterContainerMobile');
+      if (dMobileCont) dMobileCont.style.display = isAdmin ? 'block' : 'none';
     }
 
-    // -------------------------------------------------------------
-    // 🌲 ควบคุม Sidebar ซ้าย (สำหรับ PC)
-    // -------------------------------------------------------------
+    // แถบ Sidebar ของ PC
     const sideAdminElems = document.querySelectorAll('.admin-only-feature');
     sideAdminElems.forEach(el => el.style.setProperty('display', isAdmin ? 'flex' : 'none', 'important'));
-
     const sideStaffLabel = document.getElementById('sideStaffLabel');
     if (sideStaffLabel) sideStaffLabel.innerText = isAdmin ? "จัดการบุคลากร" : "รายชื่อบุคลากร";
 
     document.querySelectorAll('.btn-sidebar-item').forEach(btn => btn.classList.remove('active'));
-
     if (viewName === 'saraban') document.getElementById('sideSarabanBtn')?.classList.add('active');
     else if (viewName === 'staff') document.getElementById('sideStaffBtn')?.classList.add('active');
     else if (viewName === 'dutyTrip') document.getElementById('sideDutyBtn')?.classList.add('active');

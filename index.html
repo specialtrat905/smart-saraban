@@ -5554,19 +5554,42 @@ async function refreshApp() {
       </li>
     `).join('');
 
+    const deptAliasMap = {
+      "ฝ่ายบริหารวิชาการ": "บริหารงานวิชาการ", "บริหารงานวิชาการ": "ฝ่ายบริหารวิชาการ",
+      "ฝ่ายบริหารงานบุคคล": "บริหารงานบุคคล", "บริหารงานบุคคล": "ฝ่ายบริหารงานบุคคล",
+      "ฝ่ายบริหารงบประมาณ": "บริหารแผนงานและงบประมาณ", "บริหารแผนงานและงบประมาณ": "ฝ่ายบริหารงบประมาณ",
+      "ฝ่ายบริหารทั่วไป": "บริหารงานทั่วไป", "บริหารงานทั่วไป": "ฝ่ายบริหารทั่วไป"
+    };
+
     const duplicateList = [];
     selectedFilesArray.forEach(file => {
       const cleanUploadName = file.name.replace(/\s*\[.*?\]/, "").replace(/\.pdf$/i, "").trim();
       const numMatch = cleanUploadName.match(/^(\d+[-/]\d+)/);
 
-      const isDup = allLogs.some(row => {
+      // ค้นหาแถวในฐานข้อมูลที่มีเลขหรือชื่อหนังสือเดียวกัน
+      const matchedRows = allLogs.filter(row => {
         if (!row || row[0] === "❌") return false;
         const existingName = row[2].toString().replace(/\s*\[.*?\]/, "").replace(/\.pdf$/i, "").trim();
         if (numMatch && existingName.startsWith(numMatch[1])) return true;
         return existingName.toLowerCase() === cleanUploadName.toLowerCase();
       });
 
-      if (isDup) duplicateList.push(file.name);
+      // ตรวจสอบว่าในบรรดาแถวที่ชื่อหนังสือตรงกัน มีกลุ่มงานที่ตรงกับที่เรากำลังจะส่งหรือไม่
+      let duplicateDepts = [];
+      matchedRows.forEach(row => {
+        const existingDepts = (row[3] || "").split(',').map(d => d.trim());
+        selectedDepartments.forEach(dept => {
+          const alias = deptAliasMap[dept];
+          if (existingDepts.includes(dept) || (alias && existingDepts.includes(alias))) {
+            if (!duplicateDepts.includes(dept)) duplicateDepts.push(dept);
+          }
+        });
+      });
+
+      // แจ้งเตือนเฉพาะกรณีที่ "หนังสือซ้ำ และเป็นกลุ่มงานเดียวกัน" เท่านั้น
+      if (duplicateDepts.length > 0) {
+        duplicateList.push(`${file.name} (ซ้ำในกลุ่มงาน: ${duplicateDepts.join(', ')})`);
+      }
     });
 
     const dupSection = document.getElementById('duplicateWarningSection');

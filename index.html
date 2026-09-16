@@ -605,6 +605,29 @@
 
     /* 📱 เลย์เอาต์บนมือถือ (<= 768px): แบ่ง 2 แถวสมบูรณ์แบบ */
 @media (max-width: 768px) {
+  /* 1. ปุ่มเปิดดู และ คัดลอก ในหน้ารายการหนังสือรับ */
+  .action-buttons {
+    flex-direction: column !important;
+    gap: 20x !important;            /* เพิ่มระยะห่างแนวตั้งเป็น 20px */
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  .action-buttons .btn {
+    width: 100% !important;
+    padding: 4px 2px !important;
+  }
+
+  /* 2. ปุ่มแก้ไข และ ลบ ในหน้าไปราชการ และหน้าแก้ไขฐานข้อมูล */
+  #dutyTripTable td .d-flex.flex-column,
+  #dbManageView table td .d-flex.flex-column {
+    gap: 12px !important;            /* แยกปุ่มแก้ไขและปุ่มลบให้ห่างกัน 12px */
+  }
+  #dutyTripTable td .btn,
+  #dbManageView table td .btn {
+    padding-top: 5px !important;
+    padding-bottom: 5px !important;
+  }
+
   /* ซ่อนปุ่มปิดแอป / ออกจากระบบ บนจอมือถืออย่างเด็ดขาด */
   #logoutBtn {
     display: none !important;
@@ -750,9 +773,9 @@
 }
 
 .btn-nav-action:hover, .btn-nav-action:active {
-  background-color: #bae6fd !important; /* ฟ้าอ่อนเรียบแบน */
+  background-color: #fef3c7 !important; /* สีทองอ่อนนวลตา เรียบแบน */
   background-image: none !important;
-  border-color: #0284c7 !important;
+  border-color: #f59e0b !important;    /* เส้นขอบสีทองอำพันคมชัด */
 }
 .mobile-nav-svg {
     width: 22px !important;             /* ขนาดปานกลาง ไม่ใหญ่เทอะทะ */
@@ -4426,10 +4449,10 @@ const setBtnActive = (btn) => {
 
   // 4. แสดงปุ่มตามสิทธิ์ (User แสดงแค่ 2 ปุ่ม | Admin แสดงครบ 4 ปุ่ม)
   const staffLabel = isAdmin ? "จัดการบุคลากร" : "รายชื่อบุคลากร";
-  if (staffBtn) {
-    staffBtn.style.display = 'inline-flex';
-    staffBtn.innerHTML = `<span class="nav-btn-icon"><svg class="btn-svg-icon me-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span><span class="nav-btn-text">${staffLabel}</span>`;
-  }
+if (staffBtn) {
+  staffBtn.style.display = 'inline-flex';
+  staffBtn.title = staffLabel; // เก็บข้อความไว้เป็น Tooltip ไม่แสดงในปุ่ม
+}
   if (dutyBtn) dutyBtn.style.display = 'inline-flex';
 
   // ✅ เปลี่ยนเป็น
@@ -4638,17 +4661,23 @@ async function refreshApp() {
 
   // --- 5. ระบบคำนวณและสร้าง Dropdown ปี พ.ศ. อัตโนมัติ ---
   function updateYearOptions() {
-    const yearSelect = document.getElementById('yearSelect');
-    let options = `<option value="all"><svg class="btn-svg-icon me-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg> ดูทั้งหมด (ทุกปี)</option>`;
-    
-    for (let y = currentYearBE + 1; y >= 2568; y--) {
-      options += `<option value="${y}">ปี พ.ศ. ${y}</option>`;
-    }
-    yearSelect.innerHTML = options;
+  const yearSelect = document.getElementById('yearSelect');
+  const yearSelectMobile = document.getElementById('yearSelectMobile');
+  let options = `<option value="all">ดูทั้งหมด (ทุกปี)</option>`;
 
-    // ✨ แก้ไขจุดนี้: บังคับให้ทั้ง Admin และ User ทั่วไป มีค่าเริ่มต้นชี้ไปที่ปีปัจจุบัน (2569) ทั้งหมด
-    yearSelect.value = currentYearBE.toString(); 
+  for (let y = currentYearBE + 1; y >= 2568; y--) {
+    options += `<option value="${y}">ปี พ.ศ. ${y}</option>`;
   }
+  if (yearSelect) {
+    yearSelect.innerHTML = options;
+    yearSelect.value = currentYearBE.toString();
+  }
+  // ✅ เพิ่มบรรทัดนี้เพื่ออัปเดตช่องมือถือด้วย
+  if (yearSelectMobile) {
+    yearSelectMobile.innerHTML = options;
+    yearSelectMobile.value = currentYearBE.toString();
+  }
+}
 
 // =========================================================
   // <svg class="btn-svg-icon me-1" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg> ระบบแสดงตาราง: มือถือ (โหลดปกติเต็มจอ) | PC (Virtual Scrolling)
@@ -7237,13 +7266,12 @@ async function refreshApp() {
       btn.style.setProperty('border-color', '#b2dfdb', 'important');
     };
 
-    // 🎨 ฟังก์ชันไฮไลต์ปุ่มเป็นสีฟ้าเรียบแบน (Flat Light Blue ไม่ไล่เฉด)
+    // 🎨 ฟังก์ชันไฮไลต์ปุ่มเป็นสีทองอ่อนเรียบแบน (Soft Warm Gold ไม่ไล่เฉด)
     const setBtnActive = (btn) => {
       if (!btn) return;
-      btn.style.setProperty('background-color', '#bae6fd', 'important'); // สีฟ้าอ่อนสว่าง
-      btn.style.setProperty('background-image', 'none', 'important');    // ตัดไล่เฉดทิ้งเด็ดขาด
-      btn.style.setProperty('color', '#0369a1', 'important');           // ตัวอักษรสีน้ำเงินเข้ม
-      btn.style.setProperty('border-color', '#0284c7', 'important');
+      btn.style.setProperty('background-color', '#fef3c7', 'important'); // สีทองอ่อนนวลตา
+      btn.style.setProperty('background-image', 'none', 'important');    // ปิดการไล่เฉดสี
+      btn.style.setProperty('border-color', '#f59e0b', 'important');    // ขอบสีทองอำพัน
     };
 
     [sarabanNavBtn, staffBtn, dutyBtn, exportBtn, dbBtn].forEach(setBtnNormal);
@@ -7257,10 +7285,9 @@ async function refreshApp() {
 
       // 2. จัดการบุคลากร / รายชื่อบุคลากร
       if (staffBtn) {
-        staffBtn.style.display = 'inline-flex';
-        const lbl = staffBtn.querySelector('.nav-btn-text');
-        if (lbl) lbl.innerText = isAdmin ? "จัดการบุคลากร" : "รายชื่อบุคลากร";
-      }
+  staffBtn.style.display = 'inline-flex';
+  staffBtn.title = isAdmin ? "จัดการบุคลากร" : "รายชื่อบุคลากร";
+}
 
       // 3. ไปราชการ
       if (dutyBtn) dutyBtn.style.display = 'inline-flex';
@@ -7297,7 +7324,30 @@ async function refreshApp() {
     else if (viewName === 'export') document.getElementById('sideExportBtn')?.classList.add('active');
     else if (viewName === 'dbManage') document.getElementById('sideDbBtn')?.classList.add('active');
   };
+// 📱 ซิงก์ตัวกรองบนมือถือกลับมายังระบบหลัก
+function syncMobileYear(val) {
+  const pcYear = document.getElementById('yearSelect');
+  if (pcYear) {
+    pcYear.value = val;
+    resetAndReloadLogs();
+  }
+}
 
+function syncMobileDept(val) {
+  const pcDept = document.getElementById('deptFilter');
+  if (pcDept) {
+    pcDept.value = val;
+    resetAndReloadLogs();
+  }
+}
+
+function syncMobileSearch(val) {
+  const pcSearch = document.getElementById('searchInput');
+  if (pcSearch) {
+    pcSearch.value = val;
+    applyClientSideFilter();
+  }
+}
 </script>
 <!-- 📝 Modal All-in-One: แสดง QR Code ที่พบด้านบน + ข้อความเอกสารด้านล่าง -->
 <div class="modal fade" id="pdfTextExtractorModal" tabindex="-1" aria-hidden="true" style="z-index: 1065 !important;">

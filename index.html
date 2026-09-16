@@ -1367,17 +1367,13 @@
         <div id="userNavContainer" class="d-flex align-items-center gap-2"></div>
       </div>
 
-      <!-- 📌 โซน 2: ปุ่มเมนูหลักบนมือถือ (Admin: 5 ปุ่ม | User: 3 ปุ่ม) -->
-      <div id="navMainButtons" class="nav-menu-section" style="display:none;">
-        <button id="sideSarabanNavBtn" class="btn btn-sm btn-nav-action shadow-sm fw-bold" onclick="switchToSarabanView()">
-          <span class="nav-btn-icon">📋</span>
-          <span class="nav-btn-text">ระบบส่งหนังสือ</span>
-        </button>
-        <button id="manageStaffBtn" class="btn btn-sm btn-nav-action shadow-sm fw-bold" onclick="switchToStaffView()">
+      <!-- 📌 โซน 2: 4 ปุ่มเมนูหลัก (มือถือ: แถวล่างกว้างเต็มจอ 100% | PC: ต่อจาก Admin ทันที) -->
+      <div id="navMainButtons" class="nav-menu-section">
+        <button id="manageStaffBtn" class="btn btn-sm btn-nav-action shadow-sm fw-bold" style="display:none;" onclick="switchToStaffView()">
           <span class="nav-btn-icon">👥</span>
-          <span class="nav-btn-text" id="mobileStaffLabel">รายชื่อบุคลากร</span>
+          <span class="nav-btn-text">จัดการบุคลากร</span>
         </button>
-        <button id="dutyTripBtn" class="btn btn-sm btn-nav-action shadow-sm fw-bold" onclick="switchToDutyTripView()">
+        <button id="dutyTripBtn" class="btn btn-sm btn-nav-action shadow-sm fw-bold" style="display:none;" onclick="switchToDutyTripView()">
           <span class="nav-btn-icon">🚗</span>
           <span class="nav-btn-text">ไปราชการ</span>
         </button>
@@ -4550,148 +4546,24 @@ async function refreshApp() {
   }
 
   // =========================================================
-  // 🚀 ระบบแสดงตาราง: มือถือ (โหลดปกติเต็มจอ) | PC (Virtual Scrolling)
+  // 🚀 ระบบ Virtual Scrolling (เรนเดอร์เฉพาะแถวที่มองเห็น ลื่นไหล 60fps)
   // =========================================================
   let currentVirtualRows = [];
-  const ESTIMATED_ROW_HEIGHT = 64; // ความสูงโดยประมาณของแต่ละแถว (พิกเซล)
-  const VISIBLE_BUFFER = 6;        // จำนวนแถวสำรองด้านบนและล่าง
+  const ESTIMATED_ROW_HEIGHT = 68; // ความสูงโดยประมาณของแต่ละแถว (พิกเซล)
+  const VISIBLE_BUFFER = 8;        // จำนวนแถวสำรองด้านบนและล่าง
 
   function displayTable(dataRows) {
+    currentVirtualRows = dataRows || []; // กำหนดให้ทั้งระบบเพื่อป้องกันข้อมูลหลุด
     const isMobile = window.innerWidth <= 768;
     if (isMobile) {
-      renderNormalTable(dataRows); // มือถือโหลดปกติ เลื่อนสมูทลื่นไหล
+      renderNormalTable(currentVirtualRows); // มือถือโหลดปกติ เลื่อนสมูทลื่นไหลจากชุดข้อมูลเต็ม
     } else {
-      currentVirtualRows = dataRows || [];
       const container = document.getElementById('tableScrollContainer');
-      if (container) container.scrollTop = 0; // รีเซ็ตตำแหน่งเลื่อนขึ้นบนสุดเมื่อเปลี่ยนหน้าหรือค้นหา
+      if (container) container.scrollTop = 0;
       renderVirtualSlice();        // PC ใช้ Virtual Scrolling
     }
   }
 
-  // 📱 1. ฟังก์ชันเรนเดอร์ปกติสำหรับมือถือ (แสดงครบทุกรายการ เลื่อนยาวลื่นๆ)
-  function renderNormalTable(dataRows) {
-    const tableBody = document.getElementById('bookData');
-    const deptColors = {
-      "ฝ่ายบริหารวิชาการ": "#ffde59", "บริหารงานวิชาการ": "#ffde59",
-      "ฝ่ายบริหารงบประมาณ": "#ff5757", "บริหารแผนงานและงบประมาณ": "#ff5757",
-      "ฝ่ายบริหารงานบุคคล": "#0cc0df", "บริหารงานบุคคล": "#0cc0df",
-      "ฝ่ายบริหารทั่วไป": "#8c52ff", "บริหารงานทั่วไป": "#8c52ff",
-      "ผู้อำนวยการ": "#add8e6", "รองผู้อำนวยการ": "#d2b48c", "อื่นๆ": "#adb5bd"
-    };
-
-    let filtered = JSON.parse(JSON.stringify(dataRows || []));
-
-    if (filtered.length === 0) {
-      tableBody.innerHTML = '<tr><td colspan="3" class="text-center p-4 text-muted">ไม่พบข้อมูล</td></tr>';
-      return;
-    }
-
-    let tableHTML = filtered.map((col) => {
-      const isMissing = col[0] === "❌";
-      let rawDate = isMissing ? "❌" : col[0].split(/[T\s,]+/)[0];
-      let dateDisplay = rawDate;
-
-      if (!isMissing) {
-        if (rawDate.includes("-")) {
-          const d = rawDate.split("-"); 
-          if (d.length === 3) {
-            let year = parseInt(d[0]);
-            if (year < 2500) year += 543;
-            dateDisplay = `${parseInt(d[2])}/${parseInt(d[1])}/${year}`;
-          }
-        } else if (rawDate.includes("/")) {
-          const d = rawDate.split("/");
-          if (d.length === 3) {
-            let year = parseInt(d[2]);
-            if (year < 2500) year += 543;
-            dateDisplay = `${parseInt(d[0])}/${parseInt(d[1])}/${year}`;
-          }
-        }
-      }
-
-      let fullFileName = col[2];
-      let cleanFileName = fullFileName;
-      const thaiNums = {'๐':'0','๑':'1','๒':'2','๓':'3','๔':'4','๕':'5','๖':'6','๗':'7','๘':'8','๙':'9'};
-      cleanFileName = cleanFileName.replace(/[๐-๙]/g, m => thaiNums[m]);
-
-      const deptBadges = (isMissing || currentUser.role !== 'Admin') ? "" : col[3].split(', ').map(d => {
-        const color = deptColors[d.trim()] || "#adb5bd"; 
-        return `<div class="mb-1"><small class="badge border" style="font-size: 0.7rem; font-weight: 400; background-color: ${color}; color: #fff; border-color: rgba(0,0,0,0.1) !important;">${d.trim()}</small></div>`;
-      }).join('');
-
-      let staffBadge = "";
-      let plainFileName = cleanFileName;
-
-      if (!isMissing) {
-        const nameMatch = fullFileName.match(/\[(.*?)\]/);
-        if (nameMatch) {
-          const names = nameMatch[1];
-          cleanFileName = fullFileName.replace(/\[.*?\]/, "").trim();
-          plainFileName = cleanFileName;
-          staffBadge = `<div class="mb-1"><small class="badge border" style="font-size: 0.7rem; font-weight: 400; background-color: #adb5bd; color: #fff;">${names}</small></div>`;
-        }
-
-        const searchTerm = document.getElementById('searchInput').value.trim();
-        if (searchTerm) {
-          const escapedSearch = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-          const regex = new RegExp(`(${escapedSearch})`, 'gi');
-          cleanFileName = cleanFileName.replace(regex, `<span style="background-color: #fff59d; padding: 2px 2px; border-radius: 3px; font-weight: bold; color: #000;">$1</span>`);
-        }
-      }
-
-      const deptBadgesContainer = (deptBadges || staffBadge) ? `<div class="d-flex flex-column align-items-start mt-1">${deptBadges}${staffBadge}</div>` : "";
-      
-      let actionColumnHTML = "";
-      if (isMissing) {
-        actionColumnHTML = "";
-      } else if (currentDbMode === 'delete' && currentUser.role === 'Admin') {
-        const isChecked = selectedBooksToDelete.some(b => b.fileName === col[2]);
-        actionColumnHTML = `
-          <div class="form-check d-flex justify-content-center align-items-center">
-            <input class="form-check-input border-danger" type="checkbox" style="width: 1.4rem; height: 1.4rem; cursor: pointer;" 
-              ${isChecked ? 'checked' : ''} onchange="toggleSelectBookForDelete('${encodeURIComponent(col[2])}', this.checked)">
-          </div>
-        `;
-      } else if (currentDbMode === 'editDept' && currentUser.role === 'Admin') {
-        actionColumnHTML = `
-          <div class="d-flex justify-content-center">
-            <button onclick="openEditBookDeptModal('${encodeURIComponent(col[2])}')" class="btn btn-sm btn-warning text-dark fw-bold shadow-sm w-100">
-              ✏️ แก้ไข
-            </button>
-          </div>
-        `;
-      } else {
-        actionColumnHTML = `
-          <div class="action-buttons justify-content-center">
-            <button onclick="openPdfViewer('${col[4]}', '${encodeURIComponent(plainFileName)}')" class="btn btn-sm btn-primary shadow-sm w-50 px-1 text-nowrap d-inline-flex align-items-center justify-content-center gap-1" style="font-size: 0.78rem;">
-              เปิดดู
-            </button>
-            <button onclick="copyDeepLink('${col[4]}', '${encodeURIComponent(plainFileName)}')" class="btn btn-sm btn-copy shadow-sm w-50 px-1 text-nowrap d-inline-flex align-items-center justify-content-center gap-1" style="font-size: 0.78rem;" title="คัดลอกลิงก์เปิดอ่านในแอป">
-              คัดลอก
-            </button>
-          </div>
-        `;
-      }
-
-      return `
-      <tr class="${isMissing ? 'row-missing' : ''} align-middle">
-        <td class="text-center" style="font-size: ${isMissing ? '1.1rem' : '0.75rem'}; color: ${isMissing ? '#ff4d4d' : 'gray'};">
-          ${dateDisplay}
-        </td>
-        <td class="thai-wrap text-start">
-           <span class="${isMissing ? '' : 'text-dark'} fw-bold d-block mb-1" style="font-size: 0.85rem;">${cleanFileName}</span>
-           ${deptBadgesContainer}
-        </td>
-        <td class="text-center">
-          ${actionColumnHTML}
-        </td>
-      </tr>`;
-    }).join('');
-
-    tableBody.innerHTML = tableHTML;
-  }
-
-  // 💻 2. ฟังก์ชัน Virtual Scrolling สำหรับ PC
   function renderVirtualSlice() {
     const container = document.getElementById('tableScrollContainer');
     const tableBody = document.getElementById('bookData');
@@ -4706,10 +4578,12 @@ async function refreshApp() {
     const containerHeight = container.clientHeight || 500;
     const totalRows = currentVirtualRows.length;
 
+    // คำนวณช่วงดัชนี (Index) ของแถวที่จะแสดงผลบนหน้าจอ
     const startIndex = Math.max(0, Math.floor(scrollTop / ESTIMATED_ROW_HEIGHT) - 4);
     const visibleCount = Math.ceil(containerHeight / ESTIMATED_ROW_HEIGHT) + VISIBLE_BUFFER;
     const endIndex = Math.min(totalRows, startIndex + visibleCount);
 
+    // คำนวณความสูงของพื้นที่ว่างด้านบนและด้านล่าง (Spacer) เพื่อรักษาระยะแถบเลื่อน (Scrollbar)
     const topSpacerHeight = startIndex * ESTIMATED_ROW_HEIGHT;
     const bottomSpacerHeight = Math.max(0, (totalRows - endIndex) * ESTIMATED_ROW_HEIGHT);
 
@@ -4827,6 +4701,7 @@ async function refreshApp() {
       </tr>`;
     }).join('');
 
+    // ประกอบร่างตารางโดยมี Spacers บนและล่างจำลองความสูงรวม
     tableBody.innerHTML = `
       <tr style="height: ${topSpacerHeight}px; border: none !important;"><td colspan="3" style="padding: 0; border: none !important;"></td></tr>
       ${sliceHTML}
@@ -4835,17 +4710,9 @@ async function refreshApp() {
   }
 
   function handleVirtualScroll(el) {
-    if (!window._isVirtualScrolling) {
-      window._isVirtualScrolling = true;
-      window.requestAnimationFrame(() => {
-        renderVirtualSlice();
-        window._isVirtualScrolling = false;
-      });
-    }
-  }
+    // บนมือถือปิดการทำงานของ Virtual Scroll ทันที ไม่ให้เขียนทับข้อมูลจริง
+    if (window.innerWidth <= 768) return; 
 
-  // ฟังก์ชันรองรับการเลื่อนตารางแบบ Throttle (60fps smooth)
-  function handleVirtualScroll(el) {
     if (!window._isVirtualScrolling) {
       window._isVirtualScrolling = true;
       window.requestAnimationFrame(() => {
@@ -5576,31 +5443,46 @@ async function refreshApp() {
 
         for (let file of selectedFilesArray) {
           updateProgress(`กำลังส่งฝ่าย [${dept}]: ${file.name.substring(0, 15)}...`);
-          try {
-            const fileData = await new Promise((resolve, reject) => { 
-              const r = new FileReader(); 
-              r.onload = e => resolve(e.target.result); 
-              r.onerror = err => reject(err);
-              r.readAsDataURL(file); 
-            });
+          let isSuccess = false;
+          let retryCount = 0;
 
-            let originalName = file.name;
-            let newFileName = originalName.toLowerCase().endsWith(".pdf") 
-                ? originalName.slice(0, -4) + currentSuffix + ".pdf" 
-                : originalName + currentSuffix;
+          while (!isSuccess && retryCount < 2) {
+            try {
+              const fileData = await new Promise((resolve, reject) => { 
+                const r = new FileReader(); 
+                r.onload = e => resolve(e.target.result); 
+                r.onerror = err => reject(err);
+                r.readAsDataURL(file); 
+              });
 
-            const res = await fetch(SCRIPT_URL, { 
-                method: 'POST', 
-                body: JSON.stringify({ 
-                    department: dept, 
-                    sender: currentUser.name, 
-                    fileName: newFileName, 
-                    fileData: fileData 
-                }) 
-            });
-            const result = await res.json();
-            if (result.success) uploadedFiles.push({ name: result.fileName, url: result.url });
-          } catch (err) { console.error(err); }
+              let originalName = file.name;
+              let newFileName = originalName.toLowerCase().endsWith(".pdf") 
+                  ? originalName.slice(0, -4) + currentSuffix + ".pdf" 
+                  : originalName + currentSuffix;
+
+              const res = await fetch(SCRIPT_URL, { 
+                  method: 'POST', 
+                  body: JSON.stringify({ 
+                      department: dept, 
+                      sender: currentUser.name, 
+                      fileName: newFileName, 
+                      fileData: fileData 
+                  }) 
+              });
+              const result = await res.json();
+              if (result.success) {
+                uploadedFiles.push({ name: result.fileName, url: result.url });
+                isSuccess = true;
+              } else {
+                retryCount++;
+                if (retryCount < 2) await new Promise(res => setTimeout(res, 1000));
+              }
+            } catch (err) { 
+              console.error(err);
+              retryCount++;
+              if (retryCount < 2) await new Promise(res => setTimeout(res, 1000));
+            }
+          }
         }
 
         if (uploadedFiles.length > 0) {
@@ -7088,10 +6970,13 @@ if (uploadedFiles.length > 0 && dept !== "อื่นๆ") {
     // -------------------------------------------------------------
     if (isMobile) {
       // ⬅️ ปุ่มย้อนกลับ: ถ้าอยู่หน้าแรก (saraban) ให้ซ่อน | ถ้าเข้าเมนูอื่น ให้แสดงทันที
-      // 🚫 สั่งซ่อนปุ่มย้อนกลับถาวรทั้งบนมือถือและ PC ไม่ให้แสดงผลอีกต่อไป
-    if (backBtn) {
-      backBtn.style.setProperty('display', 'none', 'important');
-    }
+      if (backBtn) {
+        if (viewName === 'saraban') {
+          backBtn.style.setProperty('display', 'none', 'important');
+        } else {
+          backBtn.style.setProperty('display', 'inline-flex', 'important');
+        }
+      }
 
       // 👥 ปุ่มเมนูแถวล่างบนมือถือ
       if (staffBtn) {

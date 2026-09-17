@@ -6343,7 +6343,7 @@ let currentPdfFileName = ''; // เพิ่มตัวแปรเก็บช
   let isTextExtracting = false;
 
 // ==========================================
-  // 📝 ระบบสแกนข้อความและ QR Code ตรงผ่าน AI (Direct Gemini Engine)
+  // 📝 ระบบสแกนข้อความและตารางตรงผ่าน AI (Direct Gemini Engine)
   // ==========================================
   async function scanCurrentPdfText() {
     if (!currentPdfFileId) {
@@ -6353,18 +6353,14 @@ let currentPdfFileName = ''; // เพิ่มตัวแปรเก็บช
     if (isTextExtracting) return;
 
     const scanTextBtn = document.getElementById('scanTextBtn');
-    // แก้ไขจาก textArea.value เป็น contentArea.innerHTML
-      const contentArea = document.getElementById('pdfExtractedContentArea');
-      
-      // ตอนกำลังโหลด
-      contentArea.innerHTML = '<div class="text-center py-4"><span class="spinner-border spinner-border-sm text-success me-2"></span> กำลังประมวลผลผ่าน AI อัจฉริยะ กรุณารอสักครู่...</div>';
+    const contentArea = document.getElementById('pdfExtractedContentArea');
     const statusLabel = document.getElementById('pdfTextStatus');
     const qrBar = document.getElementById('modalQrResultBar');
     const qrCountSpan = document.getElementById('modalQrCount');
     const qrBtnContainer = document.getElementById('modalQrButtonsContainer');
     const modalEl = document.getElementById('pdfTextExtractorModal');
 
-    if (!modalEl) return;
+    if (!modalEl || !contentArea) return;
 
     if (!pdfTextModalInstance) {
       pdfTextModalInstance = new bootstrap.Modal(modalEl);
@@ -6381,8 +6377,10 @@ let currentPdfFileName = ''; // เพิ่มตัวแปรเก็บช
     if (qrBar) qrBar.style.display = 'none';
     if (qrBtnContainer) qrBtnContainer.innerHTML = '';
     if (qrCountSpan) qrCountSpan.innerText = '0';
-    textArea.value = "⚡ กำลังตรวจสอบฐานข้อมูลแคช...";
-    statusLabel.innerText = "กำลังประมวลผล...";
+    
+    // แสดงสถานะกำลังตรวจสอบแคช
+    contentArea.innerHTML = '<div class="text-center py-4 text-muted"><span class="spinner-border spinner-border-sm text-success me-2"></span> กำลังตรวจสอบฐานข้อมูลแคช...</div>';
+    if (statusLabel) statusLabel.innerText = "⚡ กำลังตรวจสอบแคช...";
     pdfTextModalInstance.show();
 
     // ฟังก์ชันช่วยแสดงผลปุ่มลิงก์ QR Code / เว็บไซต์ / อีเมล
@@ -6393,69 +6391,48 @@ let currentPdfFileName = ''; // เพิ่มตัวแปรเก็บช
         if (qrCountSpan) qrCountSpan.innerText = totalCount;
         let sectionsHTML = "";
 
-        // 🟢 1. ลิงก์จากภาพ QR Code
         if (qrList.length > 0) {
           sectionsHTML += `
             <div class="w-100 mb-2 pb-1 border-bottom border-light">
-              <div class="fw-bold small text-success mb-1" style="font-size: 0.8rem;">
-                🟢 ลิงก์จากภาพ QR Code (${qrList.length} รายการ):
-              </div>
+              <div class="fw-bold small text-success mb-1" style="font-size: 0.8rem;">🟢 ลิงก์จากภาพ QR Code (${qrList.length} รายการ):</div>
               <div class="d-flex flex-wrap gap-1">
                 ${qrList.map((item, idx) => `
-                  <a href="${item.val}" target="_blank" rel="noopener noreferrer" 
-                     class="btn btn-sm btn-success fw-bold d-inline-flex align-items-center gap-1 shadow-sm px-2 py-1" 
-                     style="font-size: 0.76rem; border-radius: 6px;">
-                    <span>🌐 ลิงก์ QR ${idx + 1}</span>
-                    <span style="font-size: 0.65rem;">↗</span>
+                  <a href="${item.val}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-success fw-bold d-inline-flex align-items-center gap-1 shadow-sm px-2 py-1" style="font-size: 0.76rem; border-radius: 6px;">
+                    <span>🌐 ลิงก์ QR ${idx + 1}</span><span style="font-size: 0.65rem;">↗</span>
                   </a>
                 `).join('')}
               </div>
             </div>
           `;
         }
-
-        // 🔵 2. ลิงก์เว็บไซต์ / URL
         if (urlList.length > 0) {
           sectionsHTML += `
             <div class="w-100 mb-2 pb-1 border-bottom border-light">
-              <div class="fw-bold small text-info mb-1" style="font-size: 0.8rem;">
-                🔵 ลิงก์เว็บไซต์ / URL (${urlList.length} รายการ):
-              </div>
+              <div class="fw-bold small text-info mb-1" style="font-size: 0.8rem;">🔵 ลิงก์เว็บไซต์ / URL (${urlList.length} รายการ):</div>
               <div class="d-flex flex-wrap gap-1">
                 ${urlList.map((item, idx) => `
-                  <a href="${item.val}" target="_blank" rel="noopener noreferrer" 
-                     class="btn btn-sm btn-info text-white fw-bold d-inline-flex align-items-center gap-1 shadow-sm px-2 py-1" 
-                     style="font-size: 0.76rem; border-radius: 6px; background-color: #0284c7; border-color: #0369a1;">
-                    <span>🔗 เว็บไซต์ ${idx + 1}: ${item.val.length > 35 ? item.val.substring(0, 32) + '...' : item.val}</span>
-                    <span style="font-size: 0.65rem;">↗</span>
+                  <a href="${item.val}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-info text-white fw-bold d-inline-flex align-items-center gap-1 shadow-sm px-2 py-1" style="font-size: 0.76rem; border-radius: 6px; background-color: #0284c7;">
+                    <span>🔗 เว็บไซต์ ${idx + 1}: ${item.val.length > 35 ? item.val.substring(0, 32) + '...' : item.val}</span><span style="font-size: 0.65rem;">↗</span>
                   </a>
                 `).join('')}
               </div>
             </div>
           `;
         }
-
-        // 🔴 3. อีเมล
         if (emailList.length > 0) {
           sectionsHTML += `
             <div class="w-100">
-              <div class="fw-bold small text-danger mb-1" style="font-size: 0.8rem;">
-                🔴 อีเมลติดต่อ (${emailList.length} รายการ):
-              </div>
+              <div class="fw-bold small text-danger mb-1" style="font-size: 0.8rem;">🔴 อีเมลติดต่อ (${emailList.length} รายการ):</div>
               <div class="d-flex flex-wrap gap-1">
                 ${emailList.map((item, idx) => `
-                  <a href="mailto:${item.val}" 
-                     class="btn btn-sm btn-danger fw-bold d-inline-flex align-items-center gap-1 shadow-sm px-2 py-1" 
-                     style="font-size: 0.76rem; border-radius: 6px;">
+                  <a href="mailto:${item.val}" class="btn btn-sm btn-danger fw-bold d-inline-flex align-items-center gap-1 shadow-sm px-2 py-1" style="font-size: 0.76rem; border-radius: 6px;">
                     <span>✉️ อีเมล ${idx + 1}: ${item.val}</span>
-                    <span style="font-size: 0.65rem;">✉</span>
                   </a>
                 `).join('')}
               </div>
             </div>
           `;
         }
-
         qrBtnContainer.innerHTML = sectionsHTML;
       } else if (qrBar) {
         qrBar.style.display = 'none';
@@ -6469,21 +6446,24 @@ let currentPdfFileName = ''; // เพิ่มตัวแปรเก็บช
         scanTextBtn.innerHTML = '⏳ กำลังสแกน...';
       }
 
-      // ⚡ สเต็ป 1: ตรวจสอบฐานข้อมูลเดิมในชีต ocr_cache ก่อนเสมอ (เร็ว 0.05 วิ)
+      // ⚡ สเต็ป 1: ตรวจสอบแคชเดิม (ocr_cache)
       try {
         const cacheRes = await fetch(`${SCRIPT_URL}?action=getOcrCache&fileId=${encodeURIComponent(currentPdfFileId)}`);
         const cacheData = await cacheRes.json();
-        if (cacheData && cacheData.found && cacheData.text) {
-          textArea.value = cacheData.text.trim();
-          statusLabel.innerText = "⚡ โหลดผลลัพธ์จากฐานข้อมูลเดิมทันที (ไม่ต้องรอสแกนซ้ำ):";
+        if (cacheData && cacheData.found) {
+          const cachedHtml = cacheData.html || (cacheData.text ? `<p>${cacheData.text.replace(/\n/g, '<br>')}</p>` : "");
+          window._currentExtractedRawText = cacheData.text || "";
+          window._currentExtractedHtml = cachedHtml;
+          contentArea.innerHTML = cachedHtml || "⚠️ ไม่มีเนื้อหาบันทึกไว้";
+          if (statusLabel) statusLabel.innerText = "⚡ โหลดผลลัพธ์จากฐานข้อมูลเดิมทันที:";
           renderCategorizedLinks(cacheData.qrLinks || [], cacheData.urls || [], cacheData.emails || []);
           return;
         }
       } catch (cacheErr) {}
 
-      // 🤖 สเต็ป 2: ถ้ายังไม่มีแคช ให้ส่งตรงหา Gemini ให้ประมวลผลทันที
-      statusLabel.innerText = "🤖 กำลังให้ AI (Gemini) ถอดข้อความภาษาไทยและสแกน QR Code...";
-      textArea.value = "⏳ กำลังประมวลผลผ่าน AI อัจฉริยะ กรุณารอสักครู่ (ประมาณ 3–5 วินาที)...";
+      // 🤖 สเต็ป 2: ถ้าไม่มีแคช ให้ส่งให้ Gemini ประมวลผล
+      if (statusLabel) statusLabel.innerText = "🤖 กำลังประมวลผลผ่าน AI (Gemini)...";
+      contentArea.innerHTML = '<div class="text-center py-4"><span class="spinner-border spinner-border-sm text-success me-2"></span> กำลังให้ AI ถอดข้อความภาษาไทยและสร้างตาราง กรุณารอสักครู่ (3–5 วินาที)...</div>';
 
       const ocrRes = await fetch(`${SCRIPT_URL}?action=ocrPdfWithGemini&fileId=${encodeURIComponent(currentPdfFileId)}`);
       const ocrTextRaw = await ocrRes.text();
@@ -6491,40 +6471,41 @@ let currentPdfFileName = ''; // เพิ่มตัวแปรเก็บช
       try {
         ocrData = JSON.parse(ocrTextRaw);
       } catch(eJson) {
-        throw new Error("การตอบกลับจากเซิร์ฟเวอร์ผิดพลาด: " + ocrTextRaw.substring(0, 80));
+        throw new Error("เซิร์ฟเวอร์ตอบกลับไม่เป็น JSON (ตรวจสอบการ Deploy Apps Script): " + ocrTextRaw.substring(0, 60));
       }
 
       if (!ocrData.success) {
         throw new Error(ocrData.message || "AI ไม่สามารถประมวลผลไฟล์นี้ได้");
       }
 
-      const finalHtml = ocrData.html || (ocrData.text ? `<p>${ocrData.text.replace(/\n/g, '<br>')}</p>` : "⚠️ ไม่พบข้อความในเอกสาร");
+      const finalHtml = ocrData.html || (ocrData.text ? `<p>${ocrData.text.replace(/\n/g, '<br>')}</p>` : "⚠️ ไม่พบข้อความ");
       window._currentExtractedRawText = ocrData.text || "";
       window._currentExtractedHtml = finalHtml;
 
-      // แสดงผล HTML ลงในกล่อง (ตารางจะขึ้นเป็นตารางจริงทันที)
+      // แสดงผลตารางและข้อความจริง
       contentArea.innerHTML = finalHtml;
-      statusLabel.innerText = "✨ ถอดข้อความและตารางสำเร็จ:";
-      renderCategorizedLinks(qrList, urlList, emailList);
+      if (statusLabel) statusLabel.innerText = "✨ ถอดข้อความและตารางสำเร็จ:";
+      renderCategorizedLinks(ocrData.qrLinks || [], ocrData.urls || [], ocrData.emails || []);
 
-      // 💾 สเต็ป 3: สั่งบันทึกลงแคชชีต ocr_cache อัตโนมัติ สำหรับการเปิดครั้งถัดไป
+      // 💾 สเต็ป 3: บันทึกลงแคชอัตโนมัติ
       fetch(SCRIPT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
           action: "saveOcrCache",
           fileId: currentPdfFileId,
-          text: finalText,
-          qrLinks: qrList,
-          urls: urlList,
-          emails: emailList
+          text: ocrData.text || "",
+          html: finalHtml,
+          qrLinks: ocrData.qrLinks || [],
+          urls: ocrData.urls || [],
+          emails: ocrData.emails || []
         })
       }).catch(err => console.warn("Auto save cache error:", err));
 
     } catch (err) {
       console.error("Scanner Error:", err);
-      textArea.value = `❌ เกิดข้อผิดพลาด: ${err.message || 'ไม่ทราบสาเหตุ'}`;
-      statusLabel.innerText = "การประมวลผลล้มเหลว";
+      contentArea.innerHTML = `<div class="text-danger p-3 text-center fw-bold">❌ เกิดข้อผิดพลาด: ${err.message || 'ไม่ทราบสาเหตุ'}</div>`;
+      if (statusLabel) statusLabel.innerText = "การประมวลผลล้มเหลว";
     } finally {
       isTextExtracting = false;
       if (scanTextBtn) {
@@ -7409,9 +7390,9 @@ function toggleAdminUploadBox() {
         </h6>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
-      <div class="modal-body p-3 bg-light">
+      <<div class="modal-body p-3 bg-light">
         
-        <!-- <svg class="btn-svg-icon me-1" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg> แถบแสดง QR Code ที่ตรวจพบ (อยู่แถวแรกสุด) -->
+        <!-- 🔗 แถบแสดง QR Code ที่ตรวจพบ (อยู่แถวแรกสุด) -->
         <div id="modalQrResultBar" class="p-2 mb-2 bg-white rounded border border-success shadow-sm" style="display: none;">
           <div class="d-flex align-items-center justify-content-between mb-1">
             <div class="fw-bold small text-success d-flex align-items-center gap-1">
@@ -7423,15 +7404,8 @@ function toggleAdminUploadBox() {
           <div id="modalQrButtonsContainer" class="d-flex flex-wrap gap-1 mt-1" style="max-height: 120px; overflow-y: auto;"></div>
         </div>
 
-        <!-- 📄 ส่วนแสดงเนื้อหาข้อความ -->
-        <div class="d-flex justify-content-between align-items-center mb-1">
-          <small id="pdfTextStatus" class="text-muted fw-bold">สถานะการประมวลผล:</small>
-          <button type="button" class="btn btn-sm btn-success fw-bold shadow-sm px-3" onclick="copyExtractedText()">
-            <svg class="btn-svg-icon me-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg> คัดลอกข้อความทั้งหมด
-          </button>
-        </div>
         <!-- 📄 ส่วนแสดงเนื้อหาข้อความและตาราง -->
-        <div class="d-flex justify-content-between align-items-center mb-1">
+        <div class="d-flex justify-content-between align-items-center mb-2">
           <small id="pdfTextStatus" class="text-muted fw-bold">สถานะการประมวลผล:</small>
           <div class="d-flex gap-1">
             <button type="button" class="btn btn-sm btn-outline-success fw-bold shadow-sm px-2 py-1" style="font-size: 0.75rem;" onclick="copyExtractedHtml()">
@@ -7442,6 +7416,12 @@ function toggleAdminUploadBox() {
             </button>
           </div>
         </div>
+
+        <!-- 📦 กล่องแสดงผล HTML/ข้อความ/ตาราง -->
+        <div id="pdfExtractedContentArea" class="ocr-content-box p-3 bg-white rounded border shadow-sm" style="max-height: 55vh; overflow-y: auto; overflow-x: auto; font-size: 0.88rem; line-height: 1.6; min-height: 220px;">
+          <div class="text-muted text-center py-4">กำลังรอการประมวลผล...</div>
+        </div>
+      </div>
 
         <!-- 📦 เปลี่ยนจาก textarea เป็น div ที่เรนเดอร์ HTML ได้สมบูรณ์ -->
         <div id="pdfExtractedContentArea" class="ocr-content-box p-3 bg-white rounded border shadow-sm" style="max-height: 55vh; overflow-y: auto; overflow-x: auto; font-size: 0.88rem; line-height: 1.6; min-height: 200px;">

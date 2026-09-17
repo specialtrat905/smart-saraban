@@ -8,7 +8,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
   <title>ระบบสารบรรณ Hybrid - ศกศ.ตราด</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;700&display=swap" rel="stylesheet">
@@ -190,29 +190,31 @@
     @media (max-width: 576px) {
       .table th, .table td { padding: 0.45rem 0.2rem !important; }
       
-      /* 📱 ปรับระยะห่างระหว่างปุ่มเปิดดู และปุ่มคัดลอก ให้ห่างกันมากขึ้น ไม่ติดกัน */
+      /* 📱 ปุ่มเปิดดู และ คัดลอก บนมือถือ: แยกห่าง 14px และแสดงเฉพาะไอคอนมินิมอล */
       .action-buttons { 
         flex-direction: column !important; 
-        gap: 8px !important;              /* เพิ่มระยะห่างแนวตั้งระหว่าง 2 ปุ่ม */
+        gap: 14px !important;              /* เพิ่มระยะห่างระหว่าง 2 ปุ่มให้กดง่าย ไม่พลาด */
         align-items: center !important;
         justify-content: center !important;
       }
 
-      /* 🚫 ซ่อนไอคอน SVG ในปุ่มตารางเฉพาะบนจอมือถือ เพื่อคืนพื้นที่ให้ข้อความล้วน */
+      /* ✅ เปิดให้ไอคอน SVG แสดงผลบนมือถือขนาดพอดี */
       .action-buttons .btn .btn-svg-icon {
-        display: none !important;
+        display: inline-block !important;
+        width: 16px !important;
+        height: 16px !important;
       }
 
-      /* 🔘 ปรับขนาดปุ่มเปิดดู และคัดลอก ให้พอดีคำ ข้อความแสดงครบ 100% */
+      /* 🔘 ปรับขนาดปุ่มเป็นทรงกลมมนกะทัดรัด */
       .action-buttons .btn { 
-        width: 100% !important; 
-        min-width: 54px !important;       /* ล็อกความกว้างขั้นต่ำให้พอดีกับคำ */
-        font-size: 0.76rem !important;     /* ขนาดฟอนต์พอดีกับกรอบ */
-        font-weight: 600 !important;
-        padding: 4px 3px !important;       /* ปรับ Padding ให้อ่านง่าย ไม่อึดอัด */
-        line-height: 1.2 !important;
-        white-space: nowrap !important;    /* ป้องกันคำตัดขึ้นบรรทัดใหม่ */
-        letter-spacing: 0px !important;
+        width: 36px !important; 
+        height: 32px !important;
+        min-width: 36px !important;
+        padding: 0 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-radius: 8px !important;
       }
       
       /* 📱 บังคับให้ Footer บนมือถืออยู่บรรทัดเดียว ไม่ตัดขึ้นบรรทัดใหม่ */
@@ -1374,6 +1376,17 @@
   }
 }
 
+/* 📱 อนุญาตให้หน้าต่าง PDF Viewer รองรับการซูมและสัมผัสแบบอิสระบนมือถือ */
+#pdfViewerModal .modal-body {
+  overflow: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pinch-zoom !important;
+}
+#pdfModalIframe {
+  touch-action: auto !important;
+}
+
+
   </style>
   <!-- ⚡ Firebase App & Realtime Database SDK (Compat Version) -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -2107,9 +2120,11 @@
               <span id="pdfModalTitle" class="fw-bold text-truncate" style="font-size: 0.9rem;"></span>
             </div>
             <div class="d-flex align-items-center gap-2">
-              <a id="pdfModalExternalBtn" href="#" target="_blank" class="btn btn-sm btn-outline-light text-nowrap" style="font-size: 0.75rem;">
-                ↗️ เปิดใน Drive
-              </a>
+              <!-- 📥 ปุ่มดาวน์โหลดเอกสาร PDF ลงเครื่อง -->
+              <button id="downloadPdfModalBtn" type="button" class="btn btn-sm btn-outline-light text-nowrap fw-bold d-inline-flex align-items-center gap-1" style="font-size: 0.75rem;" onclick="downloadCurrentPdfFile()" title="ดาวน์โหลดไฟล์ PDF">
+                <svg class="btn-svg-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                ดาวน์โหลด
+              </button>
               <!-- ✅ เพิ่มปุ่มนี้: ผู้ใช้เลือกกดสแกนเองเมื่อจำเป็น -->
 <button id="scanQrBtn" type="button" class="btn btn-sm btn-outline-info text-white text-nowrap fw-bold d-inline-flex align-items-center gap-1" style="font-size: 0.75rem;" onclick="scanCurrentPdfQr()" title="ค้นหา QR Code ในหนังสือ">
   <svg class="btn-svg-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
@@ -4829,13 +4844,11 @@ async function refreshApp() {
       } else {
         actionColumnHTML = `
           <div class="action-buttons justify-content-center">
-            <button onclick="openPdfViewer('${col[4]}', '${encodeURIComponent(plainFileName)}')" class="btn btn-sm btn-primary shadow-sm w-50 px-1 text-nowrap d-inline-flex align-items-center justify-content-center gap-1" style="font-size: 0.78rem;">
-              <svg class="btn-svg-icon" style="width:13px; height:13px;" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-              เปิดดู
+            <button onclick="openPdfViewer('${col[4]}', '${encodeURIComponent(plainFileName)}')" class="btn btn-sm btn-primary shadow-sm" title="เปิดดูเอกสาร">
+              <svg class="btn-svg-icon" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
             </button>
-            <button onclick="copyDeepLink('${col[4]}', '${encodeURIComponent(plainFileName)}')" class="btn btn-sm btn-copy shadow-sm w-50 px-1 text-nowrap d-inline-flex align-items-center justify-content-center gap-1" style="font-size: 0.78rem;" title="คัดลอกลิงก์เปิดอ่านในแอป">
-              <svg class="btn-svg-icon" style="width:13px; height:13px;" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-              คัดลอก
+            <button onclick="copyDeepLink('${col[4]}', '${encodeURIComponent(plainFileName)}')" class="btn btn-sm btn-copy shadow-sm" title="คัดลอกลิงก์เปิดอ่านในแอป">
+              <svg class="btn-svg-icon" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
             </button>
           </div>
         `;
@@ -5939,6 +5952,7 @@ async function refreshApp() {
 
   // --- 11. ระบบ In-App PDF Viewer (เปิดดูเอกสารในหน้าเว็บ) ---
   let pdfModalInstance = null;
+let currentPdfFileName = ''; // เพิ่มตัวแปรเก็บชื่อไฟล์
 
   async function openPdfViewer(fileUrl, encodedTitle) {
     const qrBar = document.getElementById('qrResultBar');
@@ -5950,8 +5964,10 @@ async function refreshApp() {
     const fileId = idMatch ? idMatch[0] : null;
     const previewUrl = `https://drive.google.com/file/d/${fileId}/preview`;
 
+    currentPdfFileId = fileId || '';
+    currentPdfFileName = title.toLowerCase().endsWith('.pdf') ? title : `${title}.pdf`; // บันทึกชื่อไฟล์จริงไว้ดาวน์โหลด
+
     document.getElementById('pdfModalTitle').innerText = title;
-    document.getElementById('pdfModalExternalBtn').href = fileUrl;
     document.getElementById('pdfModalIframe').src = previewUrl;
 
     if (qrBar) qrBar.style.setProperty('display', 'none', 'important');
@@ -7412,7 +7428,19 @@ function toggleAdminUploadBox() {
       }
     }
   }
-
+// 📥 ฟังก์ชันดาวน์โหลดไฟล์ PDF ตรงเข้าเครื่อง
+  function downloadCurrentPdfFile() {
+    if (!currentPdfFileId) return alert("⚠️ ไม่พบรหัสไฟล์สำหรับดาวน์โหลด");
+    // ลิงก์ดาวน์โหลดตรงจาก Google Drive แบบ Direct Export
+    const downloadUrl = `https://drive.google.com/uc?export=download&id=${currentPdfFileId}`;
+    
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = currentPdfFileName || 'เอกสาร.pdf';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
 
 </script>
 <!-- 📝 Modal All-in-One: แสดง QR Code ที่พบด้านบน + ข้อความเอกสารด้านล่าง -->

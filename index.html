@@ -1589,29 +1589,42 @@
         <!-- 📄 ส่วนที่ 1: หน้าระบบสารบรรณ (เปิดเริ่มต้น) -->
         <div id="sarabanView" class="view-transition">
       <!-- <svg class="btn-svg-icon me-1" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg> แถบส่งหนังสือแบบ Compact Action Bar กรอบเขียวธีมระบบ -->
-      <div id="adminView" style="display:none;" class="card card-border-green p-3 mb-3 shadow-sm">
-        <div class="row g-2 align-items-start">
-          <div class="col-12 col-md-3">
-            <button type="button" class="btn btn-action-dept w-100 py-2 fw-bold text-start d-flex justify-content-between align-items-center shadow-sm" onclick="openDeptModal()">
-              <span class="text-truncate" style="font-size: 0.88rem;"><svg class="btn-svg-icon me-1" viewBox="0 0 24 24"><path d="M3 21h18M3 7v14M21 7v14M6 11h4M6 15h4M14 11h4M14 15h4M9 21v-4h6v4M7 3h10v4H7z"></path></svg> เลือกกลุ่มงาน</span>
-              <span id="deptCountBadge" class="badge bg-light text-dark">ยังไม่เลือก</span>
-            </button>
-            <div id="selectedDeptsDisplay" class="mt-2 overflow-y-auto overflow-x-hidden" style="max-height: 120px;"></div>
-          </div>
+      <!-- 🚀 แถบส่งหนังสือแบบพับได้ ประหยัดพื้นที่บนมือถือ -->
+      <div id="adminView" style="display:none;" class="card card-border-green p-2 p-md-3 mb-2 mb-md-3 shadow-sm">
+        <!-- แถบหัวข้อสำหรับกดพับ/ขยาย (แสดงเด่นชัดบนมือถือ) -->
+        <div class="d-flex justify-content-between align-items-center cursor-pointer p-1" onclick="toggleAdminUploadBox()">
+          <span class="fw-bold text-success d-flex align-items-center gap-1" style="font-size: 0.92rem;">
+            <svg class="btn-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            ระบบส่งหนังสือ
+          </span>
+          <span id="adminUploadToggleIcon" class="badge bg-light text-success border d-md-none fw-bold" style="font-size: 0.72rem;">แตะเพื่อเปิด ▾</span>
+        </div>
 
-          <div class="col-12 col-md-7" id="dropZone">
-            <label for="fileInput" class="btn btn-action-file w-100 py-2 fw-bold text-start d-flex justify-content-between align-items-center shadow-sm mb-0 cursor-pointer">
-              <span class="text-truncate" style="font-size: 0.88rem;"><svg class="btn-svg-icon me-1" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg> เลือกไฟล์หนังสือ</span>
-              <span id="fileCountBadge" class="badge bg-light text-dark">0 ไฟล์</span>
-            </label>
-            <input type="file" id="fileInput" class="d-none" multiple accept=".pdf">
-            <div id="fileChipsContainer" class="mt-2 d-flex flex-column gap-1 overflow-auto" style="max-height: 120px;"></div>
-          </div>
+        <!-- กล่องปุ่ม 3 ตัว (ยุบซ่อนเริ่มต้นบนมือถือ) -->
+        <div id="adminUploadContent" class="mt-2" style="display: none;">
+          <div class="row g-2 align-items-start">
+            <div class="col-12 col-md-3">
+              <button type="button" class="btn btn-action-dept w-100 py-2 fw-bold text-start d-flex justify-content-between align-items-center shadow-sm" onclick="openDeptModal()">
+                <span class="text-truncate" style="font-size: 0.88rem;"><svg class="btn-svg-icon me-1" viewBox="0 0 24 24"><path d="M3 21h18M3 7v14M21 7v14M6 11h4M6 15h4M14 11h4M14 15h4M9 21v-4h6v4M7 3h10v4H7z"></path></svg> เลือกกลุ่มงาน</span>
+                <span id="deptCountBadge" class="badge bg-light text-dark">ยังไม่เลือก</span>
+              </button>
+              <div id="selectedDeptsDisplay" class="mt-2 overflow-y-auto overflow-x-hidden" style="max-height: 120px;"></div>
+            </div>
 
-          <div class="col-12 col-md-2">
-            <button onclick="handleUpload()" id="uploadBtn" class="btn btn-primary w-100 py-2 fw-bold shadow-sm text-truncate px-1" style="font-size: 0.85rem;">
-              <svg class="btn-svg-icon me-1" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg> ส่งหนังสือ
-            </button>
+            <div class="col-12 col-md-7" id="dropZone">
+              <label for="fileInput" class="btn btn-action-file w-100 py-2 fw-bold text-start d-flex justify-content-between align-items-center shadow-sm mb-0 cursor-pointer">
+                <span class="text-truncate" style="font-size: 0.88rem;"><svg class="btn-svg-icon me-1" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg> เลือกไฟล์หนังสือ</span>
+                <span id="fileCountBadge" class="badge bg-light text-dark">0 ไฟล์</span>
+              </label>
+              <input type="file" id="fileInput" class="d-none" multiple accept=".pdf">
+              <div id="fileChipsContainer" class="mt-2 d-flex flex-column gap-1 overflow-auto" style="max-height: 120px;"></div>
+            </div>
+
+            <div class="col-12 col-md-2">
+              <button onclick="handleUpload()" id="uploadBtn" class="btn btn-primary w-100 py-2 fw-bold shadow-sm text-truncate px-1 d-inline-flex align-items-center justify-content-center" style="font-size: 0.85rem;">
+                <svg class="btn-svg-icon me-1" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg> ส่งหนังสือ
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -1707,46 +1720,60 @@
 
     <!-- 👥 ส่วนที่ 2: หน้าสมุดรายนามและทะเบียนบุคลากรเต็มจอ (Full Table View) -->
     <div id="staffView" style="display:none;" class="card card-border-green p-3 p-md-4 shadow-sm mb-5">
-      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 pb-2 border-bottom">
-        <div>
-          <h4 class="fw-bold text-success mb-0"><svg class="btn-svg-icon me-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg> ทะเบียนบุคลากร ศกศ.ตราด</h4>
-          <small class="text-muted">บุคลากรทั้งหมด <span id="staffTotalCount" class="fw-bold text-dark">0</span> คน</small>
+      <!-- 📌 แถบหัวข้อ + รวม 3 ปุ่มไว้ในแถวเดียว ไม่แตกเป็น 2 บรรทัด -->
+      <div class="d-flex flex-nowrap justify-content-between align-items-center gap-2 mb-2 pb-2 border-bottom">
+        <div class="text-truncate">
+          <h5 class="fw-bold text-success mb-0 text-truncate" style="font-size: 0.95rem;">👥 ทะเบียนบุคลากร</h5>
+          <small class="text-muted" style="font-size: 0.72rem;">ทั้งหมด <span id="staffTotalCount" class="fw-bold text-dark">0</span> คน</small>
         </div>
-        <div class="d-flex flex-wrap gap-2">
-          <!-- <svg class="btn-svg-icon me-1" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg> ปุ่มเปิดดูบน Google Sheets -->
-          <button class="btn btn-sm btn-outline-success fw-bold shadow-sm" onclick="openGoogleSheetStaff()">
-            <svg class="btn-svg-icon me-1" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg> Google Sheets
+        <div class="d-flex flex-nowrap gap-1 flex-shrink-0">
+          <button class="btn btn-sm btn-outline-success fw-bold shadow-sm px-2 py-1" style="font-size: 0.72rem;" onclick="openGoogleSheetStaff()" title="Google Sheets">
+            📊 ชีต
           </button>
-          <!-- <svg class="btn-svg-icon me-1" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg> ปุ่มแชร์ลิงก์ (เฉพาะ Admin) -->
-          <button id="adminShareStaffBtn" class="btn btn-sm btn-outline-info text-dark fw-bold shadow-sm" style="display:none;" onclick="shareStaffLink()">
-            <svg class="btn-svg-icon me-1" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg> แชร์ลิงก์
+          <button id="adminShareStaffBtn" class="btn btn-sm btn-outline-info text-dark fw-bold shadow-sm px-2 py-1" style="display:none; font-size: 0.72rem;" onclick="shareStaffLink()" title="แชร์ลิงก์">
+            🔗 แชร์
           </button>
-          <!-- ➕ ปุ่มเพิ่มบุคลากรใหม่ (เฉพาะ Admin) -->
-          <button id="adminAddStaffBtn" class="btn btn-sm btn-success fw-bold shadow-sm" style="display:none;" onclick="openAddStaffForm()">
-            <svg class="btn-svg-icon me-1" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg> เพิ่มบุคลากรใหม่
+          <button id="adminAddStaffBtn" class="btn btn-sm btn-success fw-bold shadow-sm px-2 py-1" style="display:none; font-size: 0.72rem;" onclick="openAddStaffForm()" title="เพิ่มบุคลากร">
+            ➕ เพิ่ม
           </button>
         </div>
       </div>
 
-      <!-- <svg class="btn-svg-icon me-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> แถบตัวกรองและค้นหาบุคลากร -->
-      <div class="row g-2 mb-3">
-        <div class="col-12 col-md-6">
-          <div class="input-group shadow-sm">
-            <span class="input-group-text bg-white"><svg class="btn-svg-icon me-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span>
-            <input type="text" id="staffSearchInput" class="form-control" placeholder="พิมพ์ค้นหา ชื่อ, ตำแหน่ง, เบอร์โทร, ที่อยู่..." oninput="filterStaffDirectory()">
+      <!-- 🔍 แถบตัวกรอง: ค้นหา + ตัวเลือกประเภท + ตัวเลือกหน่วยบริการ -->
+      <div class="row g-1 mb-2">
+        <div class="col-12 col-md-5">
+          <div class="input-group input-group-sm shadow-sm">
+            <span class="input-group-text bg-white py-0">🔍</span>
+            <input type="text" id="staffSearchInput" class="form-control" placeholder="พิมพ์ค้นหา ชื่อ, ตำแหน่ง, เบอร์โทร..." oninput="filterStaffDirectory()">
           </div>
         </div>
-        <div class="col-12 col-md-6">
-          <select id="staffCategoryFilter" class="form-select shadow-sm" onchange="filterStaffDirectory()">
-            <option value="all"><svg class="btn-svg-icon me-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg> แสดงทุกประเภทบุคลากร</option>
+        <!-- ตัวเลือกประเภทบุคลากร -->
+        <div class="col-6 col-md-4">
+          <select id="staffCategoryFilter" class="form-select form-select-sm shadow-sm" onchange="filterStaffDirectory()">
+            <option value="all">📂 ทุกประเภทบุคลากร</option>
             <option value="ข้าราชการ">ข้าราชการ</option>
             <option value="พนักงานราชการ">พนักงานราชการ</option>
-            <option value="ลูกจ้างชั่วคราวรายเดือน (ครูผู้ช่วย) ห้องเรียนคู่ขนาน">ลูกจ้างชั่วคราว (ครูคู่ขนาน)</option>
-            <option value="ลูกจ้างชั่วคราวรายเดือน (ครูผู้ช่วย) ศูนย์การเรียนเด็กเจ็บป่วยในโรงพยาบาล">ลูกจ้างชั่วคราว (ครู รพ.)</option>
+            <option value="ลูกจ้างชั่วคราวรายเดือน (ครูผู้ช่วย) ห้องเรียนคู่ขนาน">ลูกจ้าง (ครูคู่ขนาน)</option>
+            <option value="ลูกจ้างชั่วคราวรายเดือน (ครูผู้ช่วย) ศูนย์การเรียนเด็กเจ็บป่วยในโรงพยาบาล">ลูกจ้าง (ครู รพ.)</option>
             <option value="พนักงานธุรการ">พนักงานธุรการ</option>
             <option value="พี่เลี้ยงเด็กพิการ">พี่เลี้ยงเด็กพิการ</option>
             <option value="จ้างเหมาบริการ">จ้างเหมาบริการ</option>
             <option value="อื่นๆ">อื่นๆ</option>
+          </select>
+        </div>
+        <!-- 🏢 ตัวเลือกหน่วยบริการที่เพิ่มใหม่ -->
+        <div class="col-6 col-md-3">
+          <select id="staffUnitFilter" class="form-select form-select-sm shadow-sm border-info" onchange="filterStaffDirectory()">
+            <option value="all">🏢 ทุกหน่วยบริการ</option>
+            <option value="เมือง">เมือง</option>
+            <option value="คลองใหญ่">คลองใหญ่</option>
+            <option value="เขาสมิง">เขาสมิง</option>
+            <option value="บ่อไร่">บ่อไร่</option>
+            <option value="แหลมงอบ">แหลมงอบ</option>
+            <option value="เกาะช้าง">เกาะช้าง</option>
+            <option value="เกาะกูด">เกาะกูด</option>
+            <option value="คู่ขนาน">คู่ขนาน</option>
+            <option value="โรงพยาบาล">โรงพยาบาล</option>
           </select>
         </div>
       </div>
@@ -1852,20 +1879,21 @@
 
     <!-- 📤 ส่วนที่ 3: หน้าส่งออกรายการหนังสือแบบเต็มจอ (Export View) -->
     <div id="exportView" style="display:none;" class="card card-border-green p-3 p-md-4 shadow-sm mb-5">
-      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 pb-2 border-bottom">
-        <div>
-          <h4 class="fw-bold text-success mb-0"><svg class="btn-svg-icon me-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg> ส่งออกรายการหนังสือรับ ศกศ.ตราด</h4>
-          <small class="text-muted">เลือกแล้ว <span id="exportViewSelectedCount" class="fw-bold text-success fs-6">0</span> เล่ม (จากรายการที่แสดงทั้งหมด <span id="exportViewTotalCount" class="fw-bold text-dark">0</span> เล่ม)</small>
+      <!-- 📌 จัดหัวข้อและ 3 ปุ่มให้อยู่แถวเดียว ไม่ตัดขึ้นบรรทัดใหม่ -->
+      <div class="d-flex flex-nowrap justify-content-between align-items-center gap-1 mb-2 pb-2 border-bottom">
+        <div class="text-truncate">
+          <h5 class="fw-bold text-success mb-0 text-truncate" style="font-size: 0.95rem;">📤 ส่งออกหนังสือ</h5>
+          <small class="text-muted" style="font-size: 0.70rem;">เลือก <span id="exportViewSelectedCount" class="fw-bold text-success">0</span> เล่ม</small>
         </div>
-        <div class="d-flex flex-wrap gap-2">
-          <button class="btn btn-sm btn-outline-primary fw-bold shadow-sm bg-white" onclick="copyExportTableToClipboard()">
-            <svg class="btn-svg-icon me-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg> คัดลอกตาราง
+        <div class="d-flex flex-nowrap gap-1 flex-shrink-0">
+          <button class="btn btn-sm btn-outline-primary fw-bold shadow-sm bg-white px-2 py-1" style="font-size: 0.72rem;" onclick="copyExportTableToClipboard()" title="คัดลอกตาราง">
+            📋 คัดลอก
           </button>
-          <button class="btn btn-sm btn-outline-success fw-bold shadow-sm bg-white" onclick="exportSelectedToCSV()">
-            <svg class="btn-svg-icon me-1" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="3" y1="15" x2="21" y2="15"></line><line x1="9" y1="3" x2="9" y2="21"></line><line x1="15" y1="3" x2="15" y2="21"></line></svg> ดาวน์โหลด Excel
+          <button class="btn btn-sm btn-outline-success fw-bold shadow-sm bg-white px-2 py-1" style="font-size: 0.72rem;" onclick="exportSelectedToCSV()" title="ดาวน์โหลด Excel">
+            📊 Excel
           </button>
-          <button class="btn btn-sm btn-outline-dark fw-bold shadow-sm bg-white" onclick="printExportTable()">
-            <svg class="btn-svg-icon me-1" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg> พิมพ์ / PDF
+          <button class="btn btn-sm btn-outline-dark fw-bold shadow-sm bg-white px-2 py-1" style="font-size: 0.72rem;" onclick="printExportTable()" title="พิมพ์ / PDF">
+            🖨️ พิมพ์
           </button>
         </div>
       </div>
@@ -3693,9 +3721,11 @@ function updateDbManageButtonUI() {
   function filterStaffDirectory() {
     const search = document.getElementById('staffSearchInput') ? document.getElementById('staffSearchInput').value.toLowerCase().trim() : "";
     const category = document.getElementById('staffCategoryFilter') ? document.getElementById('staffCategoryFilter').value : "all";
+    const selectedUnit = document.getElementById('staffUnitFilter') ? document.getElementById('staffUnitFilter').value : "all";
 
     const filtered = fullStaffData.filter(s => {
       const matchCategory = (category === 'all') ? true : (s.category === category);
+      const matchUnit = (selectedUnit === 'all') ? true : (s.serviceUnit === selectedUnit);
       const matchSearch = search === "" ? true : (
         (s.name && s.name.toLowerCase().includes(search)) ||
         (s.nickname && s.nickname.toLowerCase().includes(search)) ||
@@ -3705,10 +3735,10 @@ function updateDbManageButtonUI() {
         (s.serviceUnit && s.serviceUnit.toLowerCase().includes(search)) ||
         (s.email && s.email.toLowerCase().includes(search))
       );
-      return matchCategory && matchSearch;
+      return matchCategory && matchUnit && matchSearch;
     });
 
-    renderStaffTable(filtered);
+    renderStaffTable(filtered, selectedUnit);
   }
 
   // 🗓️ ฟังก์ชันแปลงวันเดือนปีเกิดเป็นภาษาไทยเต็ม "16 กันยายน 2527"
@@ -7106,6 +7136,7 @@ async function refreshApp() {
   }
 
   window.addEventListener('load', () => {
+    setupAdminUploadVisibility(); // ตรวจสอบสถานะการยุบ/ขยายกล่องส่งหนังสืออัตโนมัติ
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js').catch(err => console.warn('PWA SW Fail:', err));
     }
@@ -7352,6 +7383,37 @@ function syncMobileSearch(val) {
     applyClientSideFilter();
   }
 }
+
+function toggleAdminUploadBox() {
+    const content = document.getElementById('adminUploadContent');
+    const icon = document.getElementById('adminUploadToggleIcon');
+    if (!content) return;
+    
+    if (content.style.display === 'none' || content.style.display === '') {
+      content.style.display = 'block';
+      if (icon) icon.innerText = 'แตะเพื่อซ่อน ▴';
+    } else {
+      content.style.display = 'none';
+      if (icon) icon.innerText = 'แตะเพื่อเปิด ▾';
+    }
+  }
+
+  // ปรับการเปิด-ปิดเริ่มต้นตามหน้าจอ (PC ให้เปิดกางไว้เสมอ)
+  function setupAdminUploadVisibility() {
+    const content = document.getElementById('adminUploadContent');
+    const icon = document.getElementById('adminUploadToggleIcon');
+    if (content) {
+      if (window.innerWidth >= 769) {
+        content.style.display = 'block';
+        if (icon) icon.style.display = 'none';
+      } else {
+        content.style.display = 'none';
+        if (icon) icon.style.display = 'inline-block';
+      }
+    }
+  }
+
+
 </script>
 <!-- 📝 Modal All-in-One: แสดง QR Code ที่พบด้านบน + ข้อความเอกสารด้านล่าง -->
 <div class="modal fade" id="pdfTextExtractorModal" tabindex="-1" aria-hidden="true" style="z-index: 1065 !important;">

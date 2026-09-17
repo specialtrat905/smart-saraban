@@ -8,7 +8,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>ระบบสารบรรณ Hybrid - ศกศ.ตราด</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;700&display=swap" rel="stylesheet">
@@ -2140,24 +2140,41 @@
 </button>
             </div>
           </div>
-          <div class="modal-body p-0 bg-secondary bg-opacity-10 h-100 position-relative">
-  <!-- 📌 แถบแสดงผลเมื่อตรวจพบ QR Code ในเอกสาร -->
-  <div id="qrResultBar" class="alert alert-success m-2 p-2 shadow-sm position-absolute top-0 start-0 end-0" style="display: none !important; z-index: 1055; border-radius: 8px; max-height: 40vh; overflow-y: auto;">
-    <div class="d-flex align-items-center gap-2 mb-1">
-      <span class="fs-5"><svg class="btn-svg-icon me-1" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></span>
-      <strong class="small text-dark">ตรวจพบ QR Code ในหนังสือ (<span id="qrCountDisplay">0</span> รายการ):</strong>
-    </div>
-    <!-- กล่องรวมปุ่มลิงก์แยกตามแต่ละ QR Code -->
-    <div id="qrButtonsContainer" class="d-flex flex-wrap gap-1"></div>
-  </div>
+          <div class="modal-body p-0 bg-secondary bg-opacity-10 h-100 position-relative" style="overflow: hidden;">
+            <!-- 📌 แถบแสดงผลเมื่อตรวจพบ QR Code ในเอกสาร -->
+            <div id="qrResultBar" class="alert alert-success m-2 p-2 shadow-sm position-absolute top-0 start-0 end-0" style="display: none !important; z-index: 1055; border-radius: 8px; max-height: 40vh; overflow-y: auto;">
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="fs-5"><svg class="btn-svg-icon me-1" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg></span>
+                <strong class="small text-dark">ตรวจพบ QR Code ในหนังสือ (<span id="qrCountDisplay">0</span> รายการ):</strong>
+              </div>
+              <div id="qrButtonsContainer" class="d-flex flex-wrap gap-1"></div>
+            </div>
 
-  <iframe
-  id="pdfModalIframe"
-  src=""
-  class="w-100 h-100 border-0"
-  allow="autoplay; fullscreen">
-</iframe>
-</div>
+            <!-- 🔍 ปุ่มลอยควบคุมการซูมเอกสารโดยเฉพาะ (มุมล่างขวา) -->
+            <div class="position-absolute bottom-0 end-0 m-3 d-flex flex-column gap-2" style="z-index: 1050;">
+              <button type="button" class="btn btn-dark btn-sm rounded-circle shadow-lg d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; opacity: 0.88;" onclick="zoomPdf(0.25)" title="ขยายเอกสาร">
+                <svg class="btn-svg-icon" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+              </button>
+              <button type="button" class="btn btn-dark btn-sm rounded-circle shadow-lg d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; opacity: 0.88;" onclick="zoomPdf(-0.25)" title="ย่อเอกสาร">
+                <svg class="btn-svg-icon" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm rounded-circle shadow-lg d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; opacity: 0.88; font-size: 0.7rem; font-weight: bold;" onclick="resetPdfZoom()" title="รีเซ็ตขนาดปกติ">
+                1x
+              </button>
+            </div>
+
+            <!-- 📄 กล่องพื้นที่แสดงตัวเอกสารที่รองรับการเลื่อนและซูมเฉพาะตัว -->
+            <div id="pdfZoomViewport" style="width: 100%; height: 100%; overflow: auto; -webkit-overflow-scrolling: touch; position: relative;">
+              <div id="pdfZoomWrapper" style="width: 100%; height: 100%; transform-origin: 0 0; transition: transform 0.1s ease-out;">
+                <iframe
+                  id="pdfModalIframe"
+                  src=""
+                  class="w-100 h-100 border-0"
+                  allow="autoplay; fullscreen">
+                </iframe>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -7441,6 +7458,84 @@ function toggleAdminUploadBox() {
     a.click();
     document.body.removeChild(a);
   }
+
+// ==========================================
+  // 🔍 ระบบซูมเฉพาะตัวเอกสาร PDF (รองรับทั้งถ่างนิ้ว และปุ่มกด)
+  // ==========================================
+  let currentPdfScale = 1;
+  let initialPinchDist = 0;
+  let startScale = 1;
+
+  function updatePdfTransform() {
+    const wrapper = document.getElementById('pdfZoomWrapper');
+    const viewport = document.getElementById('pdfZoomViewport');
+    if (!wrapper || !viewport) return;
+
+    wrapper.style.transform = `scale(${currentPdfScale})`;
+    wrapper.style.width = `${100 * currentPdfScale}%`;
+    wrapper.style.height = `${100 * currentPdfScale}%`;
+  }
+
+  function zoomPdf(delta) {
+    currentPdfScale = Math.min(Math.max(1, currentPdfScale + delta), 3.5);
+    updatePdfTransform();
+  }
+
+  function resetPdfZoom() {
+    currentPdfScale = 1;
+    updatePdfTransform();
+    const viewport = document.getElementById('pdfZoomViewport');
+    if (viewport) {
+      viewport.scrollTop = 0;
+      viewport.scrollLeft = 0;
+    }
+  }
+
+  // ดักจับการถ่างนิ้ว (Pinch-to-zoom) เฉพาะบนกรอบเอกสาร
+  function setupPinchZoom() {
+    const viewport = document.getElementById('pdfZoomViewport');
+    if (!viewport) return;
+
+    viewport.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 2) {
+        initialPinchDist = Math.hypot(
+          e.touches[0].pageX - e.touches[1].pageX,
+          e.touches[0].pageY - e.touches[1].pageY
+        );
+        startScale = currentPdfScale;
+      }
+    }, { passive: true });
+
+    viewport.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 2 && initialPinchDist > 0) {
+        const currentDist = Math.hypot(
+          e.touches[0].pageX - e.touches[1].pageX,
+          e.touches[0].pageY - e.touches[1].pageY
+        );
+        const factor = currentDist / initialPinchDist;
+        currentPdfScale = Math.min(Math.max(1, startScale * factor), 3.5);
+        updatePdfTransform();
+      }
+    }, { passive: true });
+
+    viewport.addEventListener('touchend', (e) => {
+      if (e.touches.length < 2) {
+        initialPinchDist = 0;
+      }
+    }, { passive: true });
+  }
+
+  // รีเซ็ตการซูมกลับเป็น 1 เท่า ทุกครั้งที่เปิดเอกสารใหม่ หรือปิดหน้าต่าง
+  if (document.getElementById('pdfViewerModal')) {
+    document.getElementById('pdfViewerModal').addEventListener('show.bs.modal', () => {
+      resetPdfZoom();
+      setupPinchZoom();
+    });
+    document.getElementById('pdfViewerModal').addEventListener('hidden.bs.modal', () => {
+      resetPdfZoom();
+    });
+  }
+
 
 </script>
 <!-- 📝 Modal All-in-One: แสดง QR Code ที่พบด้านบน + ข้อความเอกสารด้านล่าง -->

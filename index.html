@@ -6544,7 +6544,7 @@ let currentPdfFileName = ''; // เพิ่มตัวแปรเก็บช
         } catch(e) {}
 
         // เจาะสแกน QR Code 4 มุมเอกสาร
-        const viewport = page.getViewport({ scale: 3.5 });
+        const viewport = page.getViewport({ scale: 5 });
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
         canvas.width = viewport.width;

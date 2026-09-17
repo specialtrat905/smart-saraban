@@ -2647,7 +2647,7 @@
  // --- 1. การตั้งค่าสิทธิ์พื้นฐานองค์กร ---
   const GH_OWNER = "specialtrat905";
   const GH_REPO = "smart-saraban";
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzgwRo8DOgNmqZA5yqQaa2Ub4TabwWUmvw4yr_1qqNJHOMpUGo7oM6RnIWOibgDUKzsVQ/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwK7e58lk7vqeAMf-QdemabiD7krj0kUBY9npuuvLqIdkC2qjomUT6H56u_LaC7VH4o0Q/exec";
 // ⚡ กำหนดค่าเชื่อมต่อ Firebase (ตาม Config ของคุณ)
 const firebaseConfig = {
   apiKey: "AIzaSyBL_Jv3x_UxEkzcVnN6lpQpZdWoIaJvMNM",
@@ -6322,7 +6322,7 @@ let currentPdfFileName = ''; // เพิ่มตัวแปรเก็บช
   let isTextExtracting = false;
 
 // ==========================================
-  // 📝 ระบบ All-in-One สแกนพร้อมแคชสมบูรณ์แบบ (QR + URL + Email + Text)
+  // 📝 ระบบสแกนข้อความและ QR Code ตรงผ่าน AI (Direct Gemini Engine)
   // ==========================================
   async function scanCurrentPdfText() {
     if (!currentPdfFileId) {
@@ -6360,7 +6360,7 @@ let currentPdfFileName = ''; // เพิ่มตัวแปรเก็บช
     statusLabel.innerText = "กำลังประมวลผล...";
     pdfTextModalInstance.show();
 
-    // ฟังก์ชันช่วยเรนเดอร์หมวดหมู่ลิงก์
+    // ฟังก์ชันช่วยแสดงผลปุ่มลิงก์ QR Code / เว็บไซต์ / อีเมล
     function renderCategorizedLinks(qrList, urlList, emailList) {
       const totalCount = qrList.length + urlList.length + emailList.length;
       if (totalCount > 0 && qrBar && qrBtnContainer) {
@@ -6368,19 +6368,19 @@ let currentPdfFileName = ''; // เพิ่มตัวแปรเก็บช
         if (qrCountSpan) qrCountSpan.innerText = totalCount;
         let sectionsHTML = "";
 
-        // 🟢 1. QR Code
+        // 🟢 1. ลิงก์จากภาพ QR Code
         if (qrList.length > 0) {
           sectionsHTML += `
             <div class="w-100 mb-2 pb-1 border-bottom border-light">
               <div class="fw-bold small text-success mb-1" style="font-size: 0.8rem;">
-                🟢 ลิงก์จาก QR Code (${qrList.length} รายการ):
+                🟢 ลิงก์จากภาพ QR Code (${qrList.length} รายการ):
               </div>
               <div class="d-flex flex-wrap gap-1">
                 ${qrList.map((item, idx) => `
                   <a href="${item.val}" target="_blank" rel="noopener noreferrer" 
                      class="btn btn-sm btn-success fw-bold d-inline-flex align-items-center gap-1 shadow-sm px-2 py-1" 
                      style="font-size: 0.76rem; border-radius: 6px;">
-                    <span>🌐 ลิงก์ QR ${idx + 1} (หน้า ${item.page})</span>
+                    <span>🌐 ลิงก์ QR ${idx + 1}</span>
                     <span style="font-size: 0.65rem;">↗</span>
                   </a>
                 `).join('')}
@@ -6389,7 +6389,7 @@ let currentPdfFileName = ''; // เพิ่มตัวแปรเก็บช
           `;
         }
 
-        // 🔵 2. Website / URL
+        // 🔵 2. ลิงก์เว็บไซต์ / URL
         if (urlList.length > 0) {
           sectionsHTML += `
             <div class="w-100 mb-2 pb-1 border-bottom border-light">
@@ -6401,7 +6401,7 @@ let currentPdfFileName = ''; // เพิ่มตัวแปรเก็บช
                   <a href="${item.val}" target="_blank" rel="noopener noreferrer" 
                      class="btn btn-sm btn-info text-white fw-bold d-inline-flex align-items-center gap-1 shadow-sm px-2 py-1" 
                      style="font-size: 0.76rem; border-radius: 6px; background-color: #0284c7; border-color: #0369a1;">
-                    <span><svg class="btn-svg-icon me-1" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg> เว็บไซต์ ${idx + 1}: ${item.val.length > 35 ? item.val.substring(0, 32) + '...' : item.val}</span>
+                    <span>🔗 เว็บไซต์ ${idx + 1}: ${item.val.length > 35 ? item.val.substring(0, 32) + '...' : item.val}</span>
                     <span style="font-size: 0.65rem;">↗</span>
                   </a>
                 `).join('')}
@@ -6410,7 +6410,7 @@ let currentPdfFileName = ''; // เพิ่มตัวแปรเก็บช
           `;
         }
 
-        // 🔴 3. E-mail
+        // 🔴 3. อีเมล
         if (emailList.length > 0) {
           sectionsHTML += `
             <div class="w-100">
@@ -6444,7 +6444,7 @@ let currentPdfFileName = ''; // เพิ่มตัวแปรเก็บช
         scanTextBtn.innerHTML = '⏳ กำลังสแกน...';
       }
 
-      // ⚡ สเต็ป 1: ดึงจากแคชชีต ocr_cache ก่อนเสมอ (ความเร็ว 0.05 วิ)
+      // ⚡ สเต็ป 1: ตรวจสอบฐานข้อมูลเดิมในชีต ocr_cache ก่อนเสมอ (เร็ว 0.05 วิ)
       try {
         const cacheRes = await fetch(`${SCRIPT_URL}?action=getOcrCache&fileId=${encodeURIComponent(currentPdfFileId)}`);
         const cacheData = await cacheRes.json();
@@ -6456,227 +6456,47 @@ let currentPdfFileName = ''; // เพิ่มตัวแปรเก็บช
         }
       } catch (cacheErr) {}
 
-      // <svg class="btn-svg-icon me-1" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg> สเต็ป 2: ถ้าไม่มีในแคช -> สแกนหน้ากระดาษจริง (ระบบดึงไฟล์แบบทนทาน)
-      textArea.value = "⏳ กำลังดาวน์โหลดเอกสาร PDF และเตรียมประมวลผล...";
-      
-      let uint8Array = null;
+      // 🤖 สเต็ป 2: ถ้ายังไม่มีแคช ให้ส่งตรงหา Gemini ให้ประมวลผลทันที
+      statusLabel.innerText = "🤖 กำลังให้ AI (Gemini) ถอดข้อความภาษาไทยและสแกน QR Code...";
+      textArea.value = "⏳ กำลังประมวลผลผ่าน AI อัจฉริยะ กรุณารอสักครู่ (ประมาณ 3–5 วินาที)...";
 
-      // ทางเลือกที่ 1: ขอ Base64 ผ่าน Apps Script
+      const ocrRes = await fetch(`${SCRIPT_URL}?action=ocrPdfWithGemini&fileId=${encodeURIComponent(currentPdfFileId)}`);
+      const ocrTextRaw = await ocrRes.text();
+      let ocrData = {};
       try {
-        const res = await fetch(`${SCRIPT_URL}?action=getPdfBase64&fileId=${encodeURIComponent(currentPdfFileId)}`);
-        const textRaw = await res.text();
-
-        // ดักจับกรณีที่ Google Apps Script ส่งหน้า HTML มาเตือนเรื่องสิทธิ์
-        if (!textRaw.trim().startsWith("<!DOCTYPE") && !textRaw.trim().startsWith("<html")) {
-          const data = JSON.parse(textRaw);
-          if (data.success && data.base64) {
-            const raw = atob(data.base64);
-            uint8Array = new Uint8Array(raw.length);
-            for (let i = 0; i < raw.length; i++) uint8Array[i] = raw.charCodeAt(i);
-          }
-        }
-      } catch (eBase) {
-        console.warn("ดึงผ่าน Base64 ไม่สำเร็จ กำลังสลับไปใช้ช่องทางตรง...", eBase);
+        ocrData = JSON.parse(ocrTextRaw);
+      } catch(eJson) {
+        throw new Error("การตอบกลับจากเซิร์ฟเวอร์ผิดพลาด: " + ocrTextRaw.substring(0, 80));
       }
 
-      // ทางเลือกที่ 2: ถ้า Apps Script ตอบกลับเป็น HTML ให้ดึง Stream PDF ผ่าน Proxy URL ตรง
-      if (!uint8Array) {
-        try {
-          const directUrl = `${SCRIPT_URL}?action=downloadPdfDirect&fileId=${encodeURIComponent(currentPdfFileId)}`;
-          const resDirect = await fetch(directUrl);
-          const arrayBuffer = await resDirect.arrayBuffer();
-          uint8Array = new Uint8Array(arrayBuffer);
-        } catch (eDirect) {
-          throw new Error("ไม่สามารถดาวน์โหลดไฟล์ PDF ได้ กรุณาตรวจสอบสิทธิ์การแชร์ไฟล์ใน Google Drive");
-        }
+      if (!ocrData.success) {
+        throw new Error(ocrData.message || "AI ไม่สามารถประมวลผลไฟล์นี้ได้");
       }
 
-      if (!uint8Array || uint8Array.length === 0) {
-        throw new Error("ไฟล์ PDF ว่างเปล่าหรือไม่สามารถเปิดอ่านได้");
-      }
+      const finalText = ocrData.text || "⚠️ ไม่พบข้อความในเอกสาร";
+      const qrList = ocrData.qrLinks || [];
+      const urlList = ocrData.urls || [];
+      const emailList = ocrData.emails || [];
 
-      pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-      const pdf = await pdfjsLib.getDocument({ data: uint8Array }).promise;
+      // แสดงผลบนหน้าจอ
+      textArea.value = finalText;
+      statusLabel.innerText = "✨ ถอดข้อความและสแกน QR Code สำเร็จ พร้อมบันทึกผลลัพธ์:";
+      renderCategorizedLinks(qrList, urlList, emailList);
 
-      let detectedQrLinks = [];
-      let detectedTextUrls = [];
-      let detectedEmails = [];
-      let fullExtractedText = "";
-
-      const urlRegex = /(https?:\/\/[^\s<>"'|]+|(?:www\.|forms\.gle\/|bit\.ly\/|line\.me\/|drive\.google\.com\/|shorturl\.asia\/)[^\s<>"'|]+)/gi;
-      const emailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9._-]+)/gi;
-
-      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-        statusLabel.innerText = `กำลังสแกนหาข้อมูล หน้าที่ ${pageNum} / ${pdf.numPages}...`;
-        const page = await pdf.getPage(pageNum);
-
-        // ดึง Annotations
-        try {
-          const annotations = await page.getAnnotations();
-          annotations.forEach(annot => {
-            const linkUrl = annot.url || annot.unsafeUrl;
-            if (annot.subtype === 'Link' && linkUrl) {
-              const cleanUrl = linkUrl.trim().replace(/[.,;:!?)\]}]+$/g, '');
-              if (cleanUrl.startsWith('mailto:')) {
-                detectedEmails.push({ val: cleanUrl.replace('mailto:', ''), page: pageNum });
-              } else if (cleanUrl) {
-                detectedTextUrls.push({ val: cleanUrl, page: pageNum });
-              }
-            }
-          });
-        } catch(e) {}
-
-        // ดึง Text และสกัด URL/Email
-        try {
-          const textContent = await page.getTextContent();
-          let lastY = null, pageText = "";
-          textContent.items.forEach(item => {
-            const str = item.str || '';
-            if (lastY !== null && Math.abs(item.transform[5] - lastY) > 8) pageText += "\n";
-            else if (lastY !== null && pageText.length > 0 && !pageText.endsWith(" ") && !str.startsWith(" ")) pageText += " ";
-            pageText += str;
-            lastY = item.transform[5];
-
-            const matchUrls = str.match(urlRegex);
-            if (matchUrls) {
-              matchUrls.forEach(u => {
-                let clean = u.trim().replace(/[.,;:!?)\]}]+$/g, '');
-                if (!/^https?:\/\//i.test(clean)) clean = 'http://' + clean;
-                detectedTextUrls.push({ val: clean, page: pageNum });
-              });
-            }
-
-            const matchEmails = str.match(emailRegex);
-            if (matchEmails) {
-              matchEmails.forEach(em => {
-                let cleanEm = em.trim().replace(/[.,;:!?)\]}]+$/g, '');
-                detectedEmails.push({ val: cleanEm, page: pageNum });
-              });
-            }
-          });
-
-          if (pageText.trim()) {
-            fullExtractedText += `--- หน้าที่ ${pageNum} ---\n` + pageText.trim() + "\n\n";
-          }
-        } catch(e) {}
-
-        // เจาะสแกน QR Code 4 มุมเอกสาร
-        const viewport = page.getViewport({ scale: 5 });
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        await page.render({ canvasContext: ctx, viewport: viewport }).promise;
-
-        const fullResults = await readQrFromCanvas(canvas, 0, 0);
-        fullResults.forEach(qr => detectedQrLinks.push({ val: qr.url, page: pageNum }));
-
-        const cornerW = Math.floor(canvas.width * 0.48);
-        const cornerH = Math.floor(canvas.height * 0.45);
-        const corners = [
-          { x: canvas.width - cornerW, y: canvas.height - cornerH },
-          { x: 0, y: canvas.height - cornerH },
-          { x: canvas.width - cornerW, y: 0 },
-          { x: 0, y: 0 }
-        ];
-
-        for (let c of corners) {
-          const cornerCanvas = createQrCropCanvas(canvas, c.x, c.y, cornerW, cornerH);
-          const cornerResults = await readQrFromCanvas(cornerCanvas, c.x, c.y);
-          cornerResults.forEach(qr => detectedQrLinks.push({ val: qr.url, page: pageNum }));
-        }
-      }
-
-      // ดึงข้อความถ้าเป็นภาพสแกน
-      let finalExtractedText = fullExtractedText.trim();
-      if (!finalExtractedText) {
-        statusLabel.innerText = "ตรวจพบภาพสแกน กำลังส่งให้ AI (Gemini) ถอดข้อความภาษาไทย...";
-        textArea.value = "🤖 หนังสือฉบับนี้เป็นภาพสแกน กำลังใช้ AI ถอดข้อความภาษาไทย กรุณารอสักครู่...";
-
-        const ocrRes = await fetch(`${SCRIPT_URL}?action=ocrPdfWithGemini&fileId=${encodeURIComponent(currentPdfFileId)}`);
-        const ocrTextRaw = await ocrRes.text();
-        let ocrData = {};
-        try {
-          if (!ocrTextRaw.trim().startsWith("<!DOCTYPE") && !ocrTextRaw.trim().startsWith("<html")) {
-            ocrData = JSON.parse(ocrTextRaw);
-          }
-        } catch(eJson) {}
-
-        if (ocrData.success && ocrData.text) {
-          finalExtractedText = ocrData.text.trim();
-
-          const aiUrls = finalExtractedText.match(urlRegex);
-          if (aiUrls) {
-            aiUrls.forEach(u => {
-              let clean = u.trim().replace(/[.,;:!?)\]}]+$/g, '');
-              if (!/^https?:\/\//i.test(clean)) clean = 'http://' + clean;
-              detectedTextUrls.push({ val: clean, page: 1 });
-            });
-          }
-
-          const aiEmails = finalExtractedText.match(emailRegex);
-          if (aiEmails) {
-            aiEmails.forEach(em => {
-              let cleanEm = em.trim().replace(/[.,;:!?)\]}]+$/g, '');
-              detectedEmails.push({ val: cleanEm, page: 1 });
-            });
-          }
-        }
-      }
-
-      function filterUnique(arr) {
-        const seen = new Set();
-        const resList = [];
-        arr.forEach(item => {
-          const clean = (item.val || '').trim();
-          if (clean && !seen.has(clean.toLowerCase())) {
-            seen.add(clean.toLowerCase());
-            resList.push({ val: clean, page: item.page });
-          }
-        });
-        return resList;
-      }
-
-      const uniqueQr = filterUnique(detectedQrLinks);
-      const qrValues = new Set(uniqueQr.map(q => q.val.toLowerCase()));
-      const uniqueUrls = filterUnique(detectedTextUrls).filter(u => !qrValues.has(u.val.toLowerCase()));
-      const uniqueEmails = filterUnique(detectedEmails);
-
-      textArea.value = finalExtractedText || "⚠️ ไม่พบข้อความในเอกสาร";
-      statusLabel.innerText = "✨ ถอดข้อความและแยกหมวดหมู่สำเร็จ พร้อมบันทึกลงฐานข้อมูล:";
-      renderCategorizedLinks(uniqueQr, uniqueUrls, uniqueEmails);
-
-      // 💾 สเต็ป 3: สั่งบันทึกข้อมูลผ่าน POST พร้อมระบบป้องกันตอบกลับเป็น HTML
-      if (finalExtractedText) {
-        const payloadData = {
+      // 💾 สเต็ป 3: สั่งบันทึกลงแคชชีต ocr_cache อัตโนมัติ สำหรับการเปิดครั้งถัดไป
+      fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
           action: "saveOcrCache",
           fileId: currentPdfFileId,
-          text: finalExtractedText,
-          qrLinks: uniqueQr,
-          urls: uniqueUrls,
-          emails: uniqueEmails
-        };
+          text: finalText,
+          qrLinks: qrList,
+          urls: urlList,
+          emails: emailList
+        })
+      }).catch(err => console.warn("Auto save cache error:", err));
 
-        fetch(SCRIPT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify(payloadData)
-        })
-        .then(async res => {
-          const textRes = await res.text();
-          if (textRes.trim().startsWith("<!DOCTYPE") || textRes.trim().startsWith("<html")) {
-            console.warn("⚠️ Google Apps Script ส่งหน้า HTML กลับมา (ตรวจสอบสิทธิ์ Deployment เป็น Anyone หรือยัง)");
-            return;
-          }
-          try {
-            const jsonRes = JSON.parse(textRes);
-            console.log("✅ บันทึก OCR Cache ลงชีตเรียบร้อย:", jsonRes);
-          } catch (e) {
-            console.warn("⚠️ ไม่สามารถแปลงผลลัพธ์เป็น JSON ได้:", textRes);
-          }
-        })
-        .catch(err => console.warn("Save cache error:", err));
-      }
     } catch (err) {
       console.error("Scanner Error:", err);
       textArea.value = `❌ เกิดข้อผิดพลาด: ${err.message || 'ไม่ทราบสาเหตุ'}`;
@@ -6685,7 +6505,7 @@ let currentPdfFileName = ''; // เพิ่มตัวแปรเก็บช
       isTextExtracting = false;
       if (scanTextBtn) {
         scanTextBtn.disabled = false;
-        scanTextBtn.innerHTML = '📝 สแกนข้อความ';
+        scanTextBtn.innerHTML = '<svg class="btn-svg-icon me-1" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg> สแกนข้อความ';
       }
     }
   }

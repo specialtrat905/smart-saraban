@@ -773,9 +773,9 @@
 }
 
 .btn-nav-action:hover, .btn-nav-action:active {
-  background-color: #fef3c7 !important; /* สีทองอ่อนนวลตา เรียบแบน */
+  background-color: #759965 !important; /* สีทองอ่อนนวลตา เรียบแบน */
   background-image: none !important;
-  border-color: #f59e0b !important;    /* เส้นขอบสีทองอำพันคมชัด */
+  border-color: transparent !important;    /* เส้นขอบสีทองอำพันคมชัด */
 }
 .mobile-nav-svg {
     width: 22px !important;             /* ขนาดปานกลาง ไม่ใหญ่เทอะทะ */
@@ -1466,13 +1466,13 @@
           </svg>
         </button>
 
-        <!-- 3. ไปราชการ (แดงเข้ม) -->
+        <!-- 3. ไปราชการ (รูปรถเก๋ง Sedan มินิมอล สีแดงเข้ม) -->
         <button id="dutyTripBtn" class="btn btn-sm btn-nav-action shadow-sm" onclick="switchToDutyTripView()" title="ไปราชการ">
           <svg class="mobile-nav-svg" viewBox="0 0 24 24" fill="none" stroke="#b91c1c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="1" y="3" width="15" height="13"></rect>
-            <polygon points="16 8 20 8 23 11 23 16 16 16 8"></polygon>
-            <circle cx="5.5" cy="18.5" r="2.5"></circle>
-            <circle cx="18.5" cy="18.5" r="2.5"></circle>
+            <path d="M1 12h2l1.5-4.5A2 2 0 0 1 6.4 6h11.2a2 2 0 0 1 1.9 1.5L21 12h2v4a1 1 0 0 1-1 1h-2"></path>
+            <circle cx="6.5" cy="16.5" r="2.5"></circle>
+            <circle cx="17.5" cy="16.5" r="2.5"></circle>
+            <path d="M9 17h6M1 16h3"></path>
           </svg>
         </button>
 
@@ -1526,7 +1526,7 @@
         <span id="collapseIcon">◀</span> <span class="sidebar-text ms-1">ซ่อนเมนูหลัก</span>
       </button>
 
-      <div class="sidebar-section-title">เมนูระบบ</div>
+      <div class="sidebar-section-title">เมนู</div>
       
       <!-- 1. ระบบส่งหนังสือ -->
       <button class="btn btn-sidebar-item active" id="sideSarabanBtn" onclick="switchToSarabanView()">
@@ -1561,7 +1561,7 @@
         <span class="sidebar-text">ประวัติไปราชการ</span>
       </button>
 
-      <div class="sidebar-section-title admin-only-feature" id="sideAdminTitle">ผู้ดูแลระบบ</div>
+      <div class="sidebar-section-title admin-only-feature" id="sideAdminTitle">Admin</div>
 
       <!-- 4. ส่งออกรายการ (Admin) -->
       <button class="btn btn-sidebar-item admin-only-feature" id="sideExportBtn" onclick="switchToExportView()">
@@ -3830,9 +3830,13 @@ function updateDbManageButtonUI() {
     for (let cat in groups) {
       const members = groups[cat];
       html += `
-        <tr class="table-success table-opacity-50">
-          <td colspan="${isAdmin ? 11 : 6}" class="fw-bold py-2 ps-3 text-dark bg-success bg-opacity-10" style="font-size: 0.92rem;">
-            <svg class="btn-svg-icon me-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"></line><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24z"></path></svg> ${cat} (${members.length} คน)
+        <tr class="table-primary table-opacity-50">
+          <td colspan="${isAdmin ? 11 : 6}" class="fw-bold py-2 ps-3 bg-primary bg-opacity-10" style="font-size: 0.92rem; color: #b8820f !important;">
+            <svg class="btn-svg-icon me-1" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -2px;">
+              <line x1="12" y1="17" x2="12" y2="22"></line>
+              <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24z"></path>
+            </svg>
+            ${cat} (${members.length} คน)
           </td>
         </tr>
       `;
@@ -7269,9 +7273,9 @@ async function refreshApp() {
     // 🎨 ฟังก์ชันไฮไลต์ปุ่มเป็นสีทองอ่อนเรียบแบน (Soft Warm Gold ไม่ไล่เฉด)
     const setBtnActive = (btn) => {
       if (!btn) return;
-      btn.style.setProperty('background-color', '#fef3c7', 'important'); // สีทองอ่อนนวลตา
-      btn.style.setProperty('background-image', 'none', 'important');    // ปิดการไล่เฉดสี
-      btn.style.setProperty('border-color', '#f59e0b', 'important');    // ขอบสีทองอำพัน
+      btn.style.setProperty('background-color', '#cddec8', 'important'); // ใส่รหัสสีใหม่
+      btn.style.setProperty('background-image', 'none', 'important');
+      btn.style.setProperty('border-color', 'transparent', 'important');              // เอาเส้นขอบรอบไฮไลต์ออก
     };
 
     [sarabanNavBtn, staffBtn, dutyBtn, exportBtn, dbBtn].forEach(setBtnNormal);

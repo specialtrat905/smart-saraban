@@ -1344,16 +1344,30 @@
     min-width: 0 !important;
   }
 
-  /* หน้าส่งออกรายการ และหน้าแก้ไขฐานข้อมูล: พอดีความกว้างหน้าจอ ไม่เลื่อนซ้าย-ขวา */
-  #exportResultTable,
-  #dbManageView table {
-    table-layout: fixed !important;
-    width: 100% !important;
-    min-width: 100% !important;
-  }
-  #exportResultTable th, #exportResultTable td,
-  #dbManageView table th, #dbManageView table td {
-    padding: 0.45rem 0.2rem !important;
+  /* 📊 บังคับให้ตาราง ส่งออกรายการ และ แก้ไขฐานข้อมูล พอดี 1 หน้าจอ 100% ทั้งบน PC และมือถือ */
+#exportResultTable,
+#dbManageView table {
+  table-layout: fixed !important;
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
+  margin-bottom: 0 !important;
+}
+
+#exportResultTable th, #exportResultTable td,
+#dbManageView table th, #dbManageView table td {
+  padding: 6px 4px !important;
+  vertical-align: middle !important;
+  overflow: hidden !important;
+}
+
+/* 📝 ตัดคำภาษาไทยอัตโนมัติ ไม่ให้ข้อความดันตารางแตกหรือซ้อนกัน */
+#exportResultTable td.col-title-wrap,
+#dbManageView table td.col-title-wrap {
+  white-space: normal !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  line-height: 1.35 !important;
   }
 }
 /* 📱 ล็อกตารางทุกหน้าบนมือถือให้พอดีความกว้าง 100% ไม่เลื่อนแนวนอน */
@@ -1976,12 +1990,12 @@
         <table class="table table-hover table-bordered align-middle table-scroll-custom mb-0" id="exportResultTable" style="font-size: 0.88rem;">
           <thead class="table-light text-center sticky-top shadow-sm" style="z-index: 5;">
             <tr>
-              <th style="width: 38px;">
+              <th style="width: 8%; min-width: 34px;">
                 <input class="form-check-input" type="checkbox" id="masterExportCheck" onchange="toggleMasterExportCheck(this.checked)" title="เลือกทั้งหมด">
               </th>
-              <th style="width: 78px;">เลขหนังสือ</th>
-              <th>ชื่อเรื่อง / หนังสือ</th>
-              <th style="width: 110px;">ผู้รับผิดชอบ</th>
+              <th style="width: 22%;">เลขหนังสือ</th>
+              <th style="width: 46%;">ชื่อเรื่อง / หนังสือ</th>
+              <th style="width: 24%;">ผู้รับผิดชอบ</th>
             </tr>
           </thead>
           <tbody id="exportViewTableBody"></tbody>
@@ -2016,10 +2030,10 @@
         <table class="table table-hover table-bordered align-middle table-scroll-custom mb-0" style="font-size: 0.88rem;">
           <thead class="table-light text-center sticky-top shadow-sm" style="z-index: 5;">
             <tr>
-              <th style="width: 75px;">วันที่</th>
-              <th>ชื่อหนังสือ / ฝ่าย</th>
-              <th style="width: 105px;">ผู้รับผิดชอบ</th>
-              <th style="width: 45px;">จัดการ</th>
+              <th style="width: 18%;">วันที่</th>
+              <th style="width: 50%;">ชื่อหนังสือ / ฝ่าย</th>
+              <th style="width: 20%;">ผู้รับผิดชอบ</th>
+              <th style="width: 12%;">จัดการ</th>
             </tr>
           </thead>
           <tbody id="dbManageTableBody"></tbody>
@@ -2146,21 +2160,20 @@
                 <svg class="btn-svg-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                 ดาวน์โหลด
               </button>
-              <!-- ✅ เพิ่มปุ่มนี้: ผู้ใช้เลือกกดสแกนเองเมื่อจำเป็น -->
-<button id="scanQrBtn" type="button" class="btn btn-sm btn-outline-info text-white text-nowrap fw-bold d-inline-flex align-items-center gap-1" style="font-size: 0.75rem;" onclick="scanCurrentPdfQr()" title="ค้นหา QR Code ในหนังสือ">
-  <svg class="btn-svg-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-  สแกน QR
-</button>
-<button id="scanTextBtn" type="button" class="btn btn-sm btn-outline-warning text-white text-nowrap fw-bold d-inline-flex align-items-center gap-1" style="font-size: 0.75rem;" onclick="scanCurrentPdfText()" title="คัดลอกข้อความหนังสือ">
-  <svg class="btn-svg-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
-  สแกนข้อความ
-</button>
-<button type="button" class="btn btn-danger btn-sm px-2 py-1 fw-bold shadow-sm d-inline-flex align-items-center gap-1" data-bs-dismiss="modal" title="ปิดหน้าต่าง" style="font-size: 0.8rem; border-radius: 6px;">
-  <svg class="btn-svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-  ปิด
-</button>
+
+              <!-- 📝 ปุ่มสแกนข้อความและตาราง -->
+              <button id="scanTextBtn" type="button" class="btn btn-sm btn-outline-warning text-white text-nowrap fw-bold d-inline-flex align-items-center gap-1" style="font-size: 0.75rem;" onclick="scanCurrentPdfText()" title="คัดลอกข้อความหนังสือ">
+                <svg class="btn-svg-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                สแกนข้อความ
+              </button>
+              
+              <button type="button" class="btn btn-danger btn-sm px-2 py-1 fw-bold shadow-sm d-inline-flex align-items-center gap-1" data-bs-dismiss="modal" title="ปิดหน้าต่าง" style="font-size: 0.8rem; border-radius: 6px;">
+                <svg class="btn-svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                ปิด
+              </button>
             </div>
           </div>
+
           <div class="modal-body p-0 bg-secondary bg-opacity-10 h-100 position-relative" style="overflow: hidden;">
             <!-- 📌 แถบแสดงผลเมื่อตรวจพบ QR Code ในเอกสาร -->
             <div id="qrResultBar" class="alert alert-success m-2 p-2 shadow-sm position-absolute top-0 start-0 end-0" style="display: none !important; z-index: 1055; border-radius: 8px; max-height: 40vh; overflow-y: auto;">
@@ -2171,20 +2184,7 @@
               <div id="qrButtonsContainer" class="d-flex flex-wrap gap-1"></div>
             </div>
 
-            <!-- 🔍 ปุ่มลอยควบคุมการซูมเอกสารโดยเฉพาะ (มุมล่างขวา) -->
-            <div class="position-absolute bottom-0 end-0 m-3 d-flex flex-column gap-2" style="z-index: 1050;">
-              <button type="button" class="btn btn-dark btn-sm rounded-circle shadow-lg d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; opacity: 0.88;" onclick="zoomPdf(0.25)" title="ขยายเอกสาร">
-                <svg class="btn-svg-icon" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
-              </button>
-              <button type="button" class="btn btn-dark btn-sm rounded-circle shadow-lg d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; opacity: 0.88;" onclick="zoomPdf(-0.25)" title="ย่อเอกสาร">
-                <svg class="btn-svg-icon" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
-              </button>
-              <button type="button" class="btn btn-secondary btn-sm rounded-circle shadow-lg d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; opacity: 0.88; font-size: 0.7rem; font-weight: bold;" onclick="resetPdfZoom()" title="รีเซ็ตขนาดปกติ">
-                1x
-              </button>
-            </div>
-
-            <!-- 📄 กล่องพื้นที่แสดงตัวเอกสารที่รองรับการเลื่อนและซูมเฉพาะตัว -->
+            <!-- 📄 กล่องพื้นที่แสดงตัวเอกสาร (รองรับการถ่างนิ้วซูมเฉพาะตัวเอกสาร ไม่ขยายหน้าเว็บ) -->
             <div id="pdfZoomViewport" style="width: 100%; height: 100%; overflow: auto; -webkit-overflow-scrolling: touch; position: relative;">
               <div id="pdfZoomWrapper" style="width: 100%; height: 100%; transform-origin: 0 0; transition: transform 0.1s ease-out;">
                 <iframe
@@ -3658,11 +3658,10 @@ function updateDbManageButtonUI() {
     renderDbManageTableRows(filtered);
   }
 
-  // 📋 เรนเดอร์ข้อมูลตารางจัดการฐานข้อมูล (ข้อมูลตรงช่อง + ปุ่มบน-ล่าง)
   function renderDbManageTableRows(rows) {
     const tbody = document.getElementById('dbManageTableBody');
     if (rows.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="5" class="text-center p-4 text-muted fw-bold">ไม่พบข้อมูลหนังสือ</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="4" class="text-center p-4 text-muted fw-bold">ไม่พบข้อมูลหนังสือ</td></tr>`;
       return;
     }
 
@@ -3694,24 +3693,31 @@ function updateDbManageButtonUI() {
         }
       }
 
-      // 🔘 ปุ่มแก้ไข (บน) และปุ่มลบ (ล่าง) แบบเดียวกับ ไปราชการ
       const actionHTML = `
-        <div class="d-flex flex-column align-items-center justify-content-center gap-1">
-          <button class="btn btn-sm btn-outline-warning text-dark py-0 px-2 fw-bold shadow-sm" style="font-size: 0.75rem; width: 32px;" onclick="openEditBookDeptFromDbManage('${encodeURIComponent(row[2])}')" title="แก้ไขกลุ่มงาน/ผู้รับ"><svg class="btn-svg-icon" viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg></button>
-          <button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold shadow-sm" style="font-size: 0.75rem; width: 32px;" onclick="deleteBookFromDbManage('${encodeURIComponent(row[2])}')" title="ลบหนังสือ"><svg class="btn-svg-icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></button>
+        <div class="d-flex flex-column align-items-center justify-content-center gap-2">
+          <button class="btn btn-sm btn-outline-warning text-dark py-0 px-2 fw-bold shadow-sm" style="font-size: 0.75rem; width: 32px;" onclick="openEditBookDeptFromDbManage('${encodeURIComponent(row[2])}')" title="แก้ไขกลุ่มงาน/ผู้รับ">
+            <svg class="btn-svg-icon" viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+          </button>
+          <button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold shadow-sm" style="font-size: 0.75rem; width: 32px;" onclick="deleteBookFromDbManage('${encodeURIComponent(row[2])}')" title="ลบหนังสือ">
+            <svg class="btn-svg-icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+          </button>
         </div>
       `;
 
       html += `
         <tr class="align-middle fw-bold">
-          <td class="text-center text-muted fw-bold" style="width: 75px; font-size: 0.75rem;">${dateDisplay}</td>
-          <td class="text-start text-dark fw-bold thai-wrap" style="font-size: 0.84rem; line-height: 1.4;">
+          <td class="text-center text-muted fw-bold" style="width: 18%; font-size: 0.76rem; word-break: break-word;">
+            ${dateDisplay}
+          </td>
+          <td class="text-start text-dark fw-bold col-title-wrap" style="width: 50%; font-size: 0.84rem;">
             <span class="text-success me-1">${bookNumber}</span>${bookTitle}
           </td>
-          <td class="text-start" style="width: 105px; font-size: 0.75rem;">
-            <div class="text-truncate" style="max-width: 100px;" title="${row[3] || '-'}">${row[3] || "-"}</div>
+          <td class="text-start col-title-wrap" style="width: 20%; font-size: 0.75rem;">
+            ${row[3] || "-"}
           </td>
-          <td class="text-center" style="width: 45px;">${actionHTML}</td>
+          <td class="text-center" style="width: 12%;">
+            ${actionHTML}
+          </td>
         </tr>
       `;
     });
@@ -5172,35 +5178,31 @@ async function refreshApp() {
     if (totalElem) totalElem.innerText = rows.length;
 
     if (rows.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6" class="text-center p-4 text-muted">ไม่พบข้อมูลหนังสือ</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="4" class="text-center p-4 text-muted">ไม่พบข้อมูลหนังสือ</td></tr>`;
       updateExportSelectedCount();
       return;
     }
 
     let html = "";
-    rows.forEach((row, idx) => {
+    rows.forEach((row) => {
       const details = extractBookExportDetails(row);
       const isChecked = selectedExportFileNames.has(row[2]);
 
-      let rawDate = row[0].split(/[T\s,]+/)[0];
-      let dateDisplay = rawDate;
-      if (rawDate.includes("-")) {
-        const d = rawDate.split("-");
-        if (d.length === 3) {
-          let y = parseInt(d[0]); if (y < 2500) y += 543;
-          dateDisplay = `${parseInt(d[2])}/${parseInt(d[1])}/${y}`;
-        }
-      }
-
       html += `
         <tr class="align-middle">
-          <td class="text-center" style="width: 38px;">
+          <td class="text-center" style="width: 8%;">
             <input class="form-check-input border-success export-row-check" type="checkbox" style="width: 1.2rem; height: 1.2rem; cursor: pointer;"
               ${isChecked ? 'checked' : ''} onchange="toggleExportItem('${encodeURIComponent(row[2])}', this.checked)">
           </td>
-          <td class="text-center fw-bold text-success" style="width: 78px; font-size: 0.8rem; word-break: break-word;">${details.bookNumber}</td>
-          <td class="text-start text-dark fw-bold thai-wrap" style="font-size: 0.84rem; line-height: 1.4;">${details.title}</td>
-          <td class="text-start thai-wrap" style="width: 110px; font-size: 0.75rem; line-height: 1.3;">${details.responsible}</td>
+          <td class="text-center fw-bold text-success" style="width: 22%; font-size: 0.82rem; word-break: break-word;">
+            ${details.bookNumber}
+          </td>
+          <td class="text-start text-dark fw-bold col-title-wrap" style="width: 46%; font-size: 0.84rem;">
+            ${details.title}
+          </td>
+          <td class="text-start col-title-wrap" style="width: 24%; font-size: 0.76rem;">
+            ${details.responsible}
+          </td>
         </tr>
       `;
     });
@@ -7301,7 +7303,7 @@ function toggleAdminUploadBox() {
   }
 
 // ==========================================
-  // 🔍 ระบบซูมเฉพาะตัวเอกสาร PDF (รองรับทั้งถ่างนิ้ว และปุ่มกด)
+  // 🔍 ระบบถ่างนิ้วซูมเฉพาะตัวเอกสาร PDF บนมือถือ
   // ==========================================
   let currentPdfScale = 1;
   let initialPinchDist = 0;
@@ -7317,11 +7319,6 @@ function toggleAdminUploadBox() {
     wrapper.style.height = `${100 * currentPdfScale}%`;
   }
 
-  function zoomPdf(delta) {
-    currentPdfScale = Math.min(Math.max(1, currentPdfScale + delta), 3.5);
-    updatePdfTransform();
-  }
-
   function resetPdfZoom() {
     currentPdfScale = 1;
     updatePdfTransform();
@@ -7332,7 +7329,6 @@ function toggleAdminUploadBox() {
     }
   }
 
-  // ดักจับการถ่างนิ้ว (Pinch-to-zoom) เฉพาะบนกรอบเอกสาร
   function setupPinchZoom() {
     const viewport = document.getElementById('pdfZoomViewport');
     if (!viewport) return;
@@ -7354,6 +7350,7 @@ function toggleAdminUploadBox() {
           e.touches[0].pageY - e.touches[1].pageY
         );
         const factor = currentDist / initialPinchDist;
+        // ขยายได้สูงสุด 3.5 เท่า และย่อสุดที่ 1 เท่า
         currentPdfScale = Math.min(Math.max(1, startScale * factor), 3.5);
         updatePdfTransform();
       }
@@ -7366,33 +7363,21 @@ function toggleAdminUploadBox() {
     }, { passive: true });
   }
 
-  // รีเซ็ตการซูมกลับเป็น 1 เท่า ทุกครั้งที่เปิดเอกสารใหม่ หรือปิดหน้าต่าง
-  if (document.getElementById('pdfViewerModal')) {
-    document.getElementById('pdfViewerModal').addEventListener('show.bs.modal', () => {
-      resetPdfZoom();
-      setupPinchZoom();
-    });
-    document.getElementById('pdfViewerModal').addEventListener('hidden.bs.modal', () => {
-      resetPdfZoom();
-    });
-  }
-
-
 </script>
-<!-- 📝 Modal All-in-One: แสดง QR Code ที่พบด้านบน + ข้อความเอกสารด้านล่าง -->
+<!-- 📝 Modal All-in-One: แสดง QR Code ที่พบด้านบน + ข้อความเอกสารและตารางด้านล่าง -->
 <div class="modal fade" id="pdfTextExtractorModal" tabindex="-1" aria-hidden="true" style="z-index: 1065 !important;">
   <div class="modal-dialog modal-lg modal-dialog-centered" style="z-index: 1066 !important;">
     <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
       <div class="modal-header bg-dark text-white py-2 px-3">
         <h6 class="modal-title fw-bold mb-0 d-flex align-items-center gap-2">
           <span><svg class="btn-svg-icon me-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span>
-          <span>ผลการสแกน QR Code และข้อความในเอกสาร</span>
+          <span>ผลการสแกนข้อความและตารางในเอกสาร</span>
         </h6>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body p-3 bg-light">
         
-        <!-- 🔗 แถบแสดง QR Code ที่ตรวจพบ (อยู่แถวแรกสุด) -->
+        <!-- 🔗 แถบแสดง QR Code และลิงก์ที่ตรวจพบ (อยู่แถวแรกสุด) -->
         <div id="modalQrResultBar" class="p-2 mb-2 bg-white rounded border border-success shadow-sm" style="display: none;">
           <div class="d-flex align-items-center justify-content-between mb-1">
             <div class="fw-bold small text-success d-flex align-items-center gap-1">
@@ -7417,16 +7402,12 @@ function toggleAdminUploadBox() {
           </div>
         </div>
 
-        <!-- 📦 กล่องแสดงผล HTML/ข้อความ/ตาราง -->
+        <!-- 📦 กล่องแสดงผล HTML/ข้อความ/ตาราง (จุดเดียว ไม่ซ้ำซ้อน) -->
         <div id="pdfExtractedContentArea" class="ocr-content-box p-3 bg-white rounded border shadow-sm" style="max-height: 55vh; overflow-y: auto; overflow-x: auto; font-size: 0.88rem; line-height: 1.6; min-height: 220px;">
           <div class="text-muted text-center py-4">กำลังรอการประมวลผล...</div>
         </div>
-      </div>
 
-        <!-- 📦 เปลี่ยนจาก textarea เป็น div ที่เรนเดอร์ HTML ได้สมบูรณ์ -->
-        <div id="pdfExtractedContentArea" class="ocr-content-box p-3 bg-white rounded border shadow-sm" style="max-height: 55vh; overflow-y: auto; overflow-x: auto; font-size: 0.88rem; line-height: 1.6; min-height: 200px;">
-          <div class="text-muted text-center py-4">กำลังรอการประมวลผล...</div>
-        </div>
+      </div>
       <div class="modal-footer bg-white p-2">
         <button type="button" class="btn btn-sm btn-secondary px-4 fw-bold" data-bs-dismiss="modal">ปิด</button>
       </div>

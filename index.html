@@ -3745,8 +3745,9 @@ function updateDbManageButtonUI() {
 
       html += `
         <tr class="align-middle fw-bold">
-          <td class="text-start text-dark fw-bold col-title-wrap" style="width: 62%; font-size: 0.84rem;">
-            <span class="text-success me-1">[${bookNumber}]</span> ${bookTitle}
+          <td class="text-start text-dark col-title-wrap" style="width: 62%; font-size: 0.84rem;">
+            <div class="fw-bold text-success" style="font-size: 0.85rem; margin-bottom: 2px;">[${bookNumber}]</div>
+            <div class="fw-bold text-dark" style="line-height: 1.4;">${bookTitle}</div>
           </td>
           <td class="text-start" style="width: 26%; vertical-align: top; padding-top: 8px;">
             <div class="d-flex flex-column align-items-start">
@@ -4830,7 +4831,7 @@ async function refreshApp() {
     }
   }
 
-  // 📱 1. ฟังก์ชันเรนเดอร์สำหรับมือถือ (แก้บั๊ก ReferenceError: renderNormalTable is not defined)
+  // 📱 1. ฟังก์ชันเรนเดอร์สำหรับมือถือ
   function renderNormalTable(dataRows) {
     const tableBody = document.getElementById('bookData');
     if (!tableBody) return;
@@ -4873,12 +4874,12 @@ async function refreshApp() {
         }
       }
 
-      let fullFileName = col[2];
+      let fullFileName = col[2] ? col[2].toString() : "";
       let cleanFileName = fullFileName;
       const thaiNums = {'๐':'0','๑':'1','๒':'2','๓':'3','๔':'4','๕':'5','๖':'6','๗':'7','๘':'8','๙':'9'};
       cleanFileName = cleanFileName.replace(/[๐-๙]/g, m => thaiNums[m]);
 
-      const deptBadges = (isMissing || currentUser.role !== 'Admin') ? "" : col[3].split(', ').map(d => {
+      const deptBadges = (isMissing || currentUser.role !== 'Admin') ? "" : (col[3] || "").split(', ').map(d => {
         const color = deptColors[d.trim()] || "#adb5bd"; 
         return `<div class="mb-1"><small class="badge border" style="font-size: 0.7rem; font-weight: 400; background-color: ${color}; color: #fff; border-color: rgba(0,0,0,0.1) !important;">${d.trim()}</small></div>`;
       }).join('');
@@ -4892,7 +4893,7 @@ async function refreshApp() {
           const names = nameMatch[1];
           cleanFileName = fullFileName.replace(/\[.*?\]/, "").trim();
           plainFileName = cleanFileName;
-          staffBadge = `<div class="mb-1"><small class="badge border" style="font-size: 0.7rem; font-weight: 400; background-color: #adb5bd; color: #fff;">${names}</small></div>`;
+          staffBadge = `<div class="mb-1"><small class="badge border" style="font-size: 0.7rem; font-weight: 400; background-color: #adb5bd; color: #fff;">👤 ${names}</small></div>`;
         }
 
         const searchTerm = document.getElementById('searchInput') ? document.getElementById('searchInput').value.trim() : "";
@@ -4901,6 +4902,15 @@ async function refreshApp() {
           const regex = new RegExp(`(${escapedSearch})`, 'gi');
           cleanFileName = cleanFileName.replace(regex, `<span style="background-color: #fff59d; padding: 2px 2px; border-radius: 3px; font-weight: bold; color: #000;">$1</span>`);
         }
+      }
+
+      // 📌 แยกเลขหนังสือและชื่อเรื่องไว้ภายในลูปหลังจากได้ plainFileName แล้ว
+      const cleanNoExt = plainFileName.replace(/\.pdf$/i, "").trim();
+      const numMatch = cleanNoExt.match(/^(\d+[-/]\d+)/);
+      const bookNumber = numMatch ? numMatch[1] : "";
+      let bookTitle = cleanNoExt;
+      if (numMatch) {
+        bookTitle = bookTitle.substring(numMatch[1].length).trim();
       }
 
       const deptBadgesContainer = (deptBadges || staffBadge) ? `<div class="d-flex flex-column align-items-start mt-1">${deptBadges}${staffBadge}</div>` : "";
@@ -4943,8 +4953,12 @@ async function refreshApp() {
           ${dateDisplay}
         </td>
         <td class="thai-wrap text-start">
-           <span class="${isMissing ? '' : 'text-dark'} fw-bold d-block mb-1" style="font-size: 0.85rem;">${cleanFileName}</span>
-           ${deptBadgesContainer}
+          ${isMissing ? 
+            `<span class="text-danger fw-bold d-block mb-1" style="font-size: 0.85rem;">${cleanFileName}</span>` : 
+            `<div class="fw-bold text-success" style="font-size: 0.85rem; margin-bottom: 2px;">${bookNumber ? `[${bookNumber}]` : ''}</div>
+             <div class="fw-bold text-dark mb-1" style="font-size: 0.84rem; line-height: 1.4;">${bookTitle || cleanFileName}</div>`
+          }
+          ${deptBadgesContainer}
         </td>
         <td class="text-center">
           ${actionColumnHTML}
@@ -5010,12 +5024,12 @@ async function refreshApp() {
         }
       }
 
-      let fullFileName = col[2];
+      let fullFileName = col[2] ? col[2].toString() : "";
       let cleanFileName = fullFileName;
       const thaiNums = {'๐':'0','๑':'1','๒':'2','๓':'3','๔':'4','๕':'5','๖':'6','๗':'7','๘':'8','๙':'9'};
       cleanFileName = cleanFileName.replace(/[๐-๙]/g, m => thaiNums[m]);
 
-      const deptBadges = (isMissing || currentUser.role !== 'Admin') ? "" : col[3].split(', ').map(d => {
+      const deptBadges = (isMissing || currentUser.role !== 'Admin') ? "" : (col[3] || "").split(', ').map(d => {
         const color = deptColors[d.trim()] || "#adb5bd"; 
         return `<div class="mb-1"><small class="badge border" style="font-size: 0.7rem; font-weight: 400; background-color: ${color}; color: #fff; border-color: rgba(0,0,0,0.1) !important;">${d.trim()}</small></div>`;
       }).join('');
@@ -5029,7 +5043,7 @@ async function refreshApp() {
           const names = nameMatch[1];
           cleanFileName = fullFileName.replace(/\[.*?\]/, "").trim();
           plainFileName = cleanFileName;
-          staffBadge = `<div class="mb-1"><small class="badge border" style="font-size: 0.7rem; font-weight: 400; background-color: #adb5bd; color: #fff;">${names}</small></div>`;
+          staffBadge = `<div class="mb-1"><small class="badge border" style="font-size: 0.7rem; font-weight: 400; background-color: #adb5bd; color: #fff;">👤 ${names}</small></div>`;
         }
 
         const searchTerm = document.getElementById('searchInput') ? document.getElementById('searchInput').value.trim() : "";
@@ -5038,6 +5052,15 @@ async function refreshApp() {
           const regex = new RegExp(`(${escapedSearch})`, 'gi');
           cleanFileName = cleanFileName.replace(regex, `<span style="background-color: #fff59d; padding: 2px 2px; border-radius: 3px; font-weight: bold; color: #000;">$1</span>`);
         }
+      }
+
+      // 📌 แยกเลขหนังสือและชื่อเรื่องไว้ภายในลูป
+      const cleanNoExt = plainFileName.replace(/\.pdf$/i, "").trim();
+      const numMatch = cleanNoExt.match(/^(\d+[-/]\d+)/);
+      const bookNumber = numMatch ? numMatch[1] : "";
+      let bookTitle = cleanNoExt;
+      if (numMatch) {
+        bookTitle = bookTitle.substring(numMatch[1].length).trim();
       }
 
       const deptBadgesContainer = (deptBadges || staffBadge) ? `<div class="d-flex flex-column align-items-start mt-1">${deptBadges}${staffBadge}</div>` : "";
@@ -5082,8 +5105,12 @@ async function refreshApp() {
           ${dateDisplay}
         </td>
         <td class="thai-wrap text-start">
-           <span class="${isMissing ? '' : 'text-dark'} fw-bold d-block mb-1" style="font-size: 0.85rem;">${cleanFileName}</span>
-           ${deptBadgesContainer}
+          ${isMissing ? 
+            `<span class="text-danger fw-bold d-block mb-1" style="font-size: 0.85rem;">${cleanFileName}</span>` : 
+            `<div class="fw-bold text-success" style="font-size: 0.85rem; margin-bottom: 2px;">${bookNumber ? `[${bookNumber}]` : ''}</div>
+             <div class="fw-bold text-dark mb-1" style="font-size: 0.84rem; line-height: 1.4;">${bookTitle || cleanFileName}</div>`
+          }
+          ${deptBadgesContainer}
         </td>
         <td class="text-center">
           ${actionColumnHTML}
@@ -5256,8 +5283,9 @@ async function refreshApp() {
             <input class="form-check-input border-success export-row-check" type="checkbox" style="width: 1.15rem; height: 1.15rem; cursor: pointer;"
               ${isChecked ? 'checked' : ''} onchange="toggleExportItem('${encodeURIComponent(row[2])}', this.checked)">
           </td>
-          <td class="text-start text-dark fw-bold col-title-wrap" style="width: 65%; font-size: 0.84rem;">
-            <span class="text-success me-1">[${details.bookNumber}]</span> ${details.title}
+          <td class="text-start text-dark col-title-wrap" style="width: 65%; font-size: 0.84rem;">
+            <div class="fw-bold text-success" style="font-size: 0.85rem; margin-bottom: 2px;">[${details.bookNumber}]</div>
+            <div class="fw-bold text-dark" style="line-height: 1.4;">${details.title}</div>
           </td>
           <td class="text-start" style="width: 28%; vertical-align: top; padding-top: 8px;">
             <div class="d-flex flex-column align-items-start">

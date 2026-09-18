@@ -2927,28 +2927,38 @@ function loadLogsFromFirebase(year) {
 
     return (year * 10000) + (monthIdx * 100) + day;
   }
-  // 🔄 ฟังก์ชันสลับหน้าจอพร้อมเอฟเฟกต์ทรานซิชั่นเรียบหรู (Smooth View Transition)
-    function switchViewWithTransition(targetViewId) {
-    const allViews = ['sarabanView', 'staffView', 'dutyTripView', 'exportView', 'dbManageView'];
-    allViews.forEach(id => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      if (id === targetViewId) {
-        el.style.display = 'block';
-        el.classList.remove('view-transition');
-        void el.offsetWidth;
-        el.classList.add('view-transition');
-      } else {
-        el.style.display = 'none';
-        el.classList.remove('view-transition');
-      }
-    });
+  /// 🔄 ฟังก์ชันสลับหน้าจอพร้อมคงโครงสร้าง Flexbox บน PC และรีเฟรช Virtual Scroll
+function switchViewWithTransition(targetViewId) {
+  const allViews = ['sarabanView', 'staffView', 'dutyTripView', 'exportView', 'dbManageView'];
+  const isPC = window.innerWidth >= 769;
 
-    // 📱 บันทึกประวัติหน้า เพื่อรองรับปุ่ม Back และการปัดขอบจอย้อนกลับของมือถือ
-    if (targetViewId !== 'sarabanView') {
-      history.pushState({ isSubView: true }, '');
+  allViews.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (id === targetViewId) {
+      // 💻 บน PC ต้องใช้ 'flex' เพื่อให้ Flexbox คุมความสูงตารางพอดีจอ / มือถือใช้ 'block'
+      el.style.display = isPC ? 'flex' : 'block';
+      el.classList.remove('view-transition');
+      void el.offsetWidth;
+      el.classList.add('view-transition');
+    } else {
+      el.style.display = 'none';
+      el.classList.remove('view-transition');
+    }
+  });
+
+  // 📱 บันทึกประวัติหน้า เพื่อรองรับปุ่ม Back บนมือถือ
+  if (targetViewId !== 'sarabanView') {
+    history.pushState({ isSubView: true }, '');
+  } else {
+    // 💻 เมื่อกลับมาหน้าสารบรรณบน PC ให้คำนวณ Virtual Scroll ใหม่ทันที
+    if (isPC) {
+      const container = document.getElementById('tableScrollContainer');
+      if (container) container.scrollTop = 0;
+      renderVirtualSlice();
     }
   }
+}
 
 
   // 🚗 สลับไปหน้ารายการไปราชการ
@@ -3784,37 +3794,44 @@ function updateDbManageButtonUI() {
   }
 
   // ⬅️ สลับกลับหน้าระบบส่งหนังสือหลัก
-    function switchToSarabanView() {
-    // ถ้าระบบมีประวัติค้างอยู่ ให้สั่งย้อนประวัติของเครื่องแทน
-    if (history.state && history.state.isSubView) {
-      history.back();
-    } else {
-      switchViewWithTransition('sarabanView');
-      updateNavForView('saraban');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-      // 📱 ดักจับเมื่อผู้ใช้ปัดขอบจอ (Edge Swipe) หรือกดปุ่มย้อนกลับของมือถือ
-  window.addEventListener('popstate', () => {
-    // สลับหน้าจอกลับมาหน้าหลักทันที
-    const allViews = ['staffView', 'dutyTripView', 'exportView', 'dbManageView'];
-    allViews.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.style.display = 'none';
-    });
-
-    const saraban = document.getElementById('sarabanView');
-    if (saraban) {
-      saraban.style.display = 'block';
-      saraban.classList.remove('view-transition');
-      void saraban.offsetWidth;
-      saraban.classList.add('view-transition');
-    }
-
+function switchToSarabanView() {
+  if (history.state && history.state.isSubView) {
+    history.back();
+  } else {
+    switchViewWithTransition('sarabanView');
     updateNavForView('saraban');
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  });
-  
   }
+}
+
+// 📱 ดักจับเมื่อกดย้อนกลับ หรือปัดขอบจอบนมือถือ (เขียนแยกอยู่นอกฟังก์ชัน)
+window.addEventListener('popstate', () => {
+  const allViews = ['staffView', 'dutyTripView', 'exportView', 'dbManageView'];
+  allViews.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+
+  const saraban = document.getElementById('sarabanView');
+  const isPC = window.innerWidth >= 769;
+  if (saraban) {
+    saraban.style.display = isPC ? 'flex' : 'block';
+    saraban.classList.remove('view-transition');
+    void saraban.offsetWidth;
+    saraban.classList.add('view-transition');
+  }
+
+  updateNavForView('saraban');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  if (isPC) {
+    const container = document.getElementById('tableScrollContainer');
+    if (container) container.scrollTop = 0;
+    renderVirtualSlice();
+  }
+});
+  
+
 
 
   function filterStaffDirectory() {
@@ -5126,17 +5143,19 @@ async function refreshApp() {
   }
 
   function handleVirtualScroll(el) {
-    // บนมือถือปิดการทำงานของ Virtual Scroll ทันที ไม่ให้เขียนทับข้อมูลจริง
-    if (window.innerWidth <= 768) return; 
+  if (window.innerWidth <= 768) return; 
 
-    if (!window._isVirtualScrolling) {
-      window._isVirtualScrolling = true;
-      window.requestAnimationFrame(() => {
+  if (!window._isVirtualScrolling) {
+    window._isVirtualScrolling = true;
+    window.requestAnimationFrame(() => {
+      try {
         renderVirtualSlice();
+      } finally {
         window._isVirtualScrolling = false;
-      });
-    }
+      }
+    });
   }
+}
 
 // ==========================================
   // 📤 ระบบส่งออกรายการหนังสือเต็มจอ (Export View Module)

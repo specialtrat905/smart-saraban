@@ -1422,6 +1422,39 @@
   line-height: 1.6 !important;
 }
 
+/* 🖥️📱 ล็อคขนาดตารางทั้งหน้าส่งออกและหน้าแก้ไขฐานข้อมูลให้พอดีจอ 100% ทั้งบน PC และมือถือ */
+#exportView .table-responsive,
+#dbManageView .table-responsive {
+  width: 100% !important;
+  overflow-x: hidden !important; /* ปิดการเลื่อนแนวนอนเด็ดขาด */
+  overflow-y: auto !important;   /* เลื่อนเฉพาะแนวตั้ง */
+}
+
+#exportResultTable,
+#dbManageView table {
+  table-layout: fixed !important;
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
+  margin-bottom: 0 !important;
+}
+
+#exportResultTable th, #exportResultTable td,
+#dbManageView table th, #dbManageView table td {
+  padding: 6px 4px !important;
+  vertical-align: middle !important;
+  overflow: hidden !important;
+}
+
+/* 📝 ตัดคำภาษาไทยอัตโนมัติ ไม่ให้ข้อความดันตารางแตกหรือซ้อนกัน */
+#exportResultTable td.col-title-wrap,
+#dbManageView table td.col-title-wrap {
+  white-space: normal !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  line-height: 1.4 !important;
+}
+
   </style>
   <!-- ⚡ Firebase App & Realtime Database SDK (Compat Version) -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
@@ -1987,15 +2020,14 @@
 
       <!-- ตารางแสดงรายการส่งออกเต็มจอ -->
       <div id="exportPrintArea" class="table-responsive border rounded shadow-sm bg-white" style="max-height: 68vh;">
-        <table class="table table-hover table-bordered align-middle table-scroll-custom mb-0" id="exportResultTable" style="font-size: 0.88rem;">
+        <table class="table table-hover table-bordered align-middle mb-0" id="exportResultTable" style="font-size: 0.88rem;">
           <thead class="table-light text-center sticky-top shadow-sm" style="z-index: 5;">
             <tr>
-              <th style="width: 8%; min-width: 34px;">
+              <th style="width: 7%; min-width: 36px;">
                 <input class="form-check-input" type="checkbox" id="masterExportCheck" onchange="toggleMasterExportCheck(this.checked)" title="เลือกทั้งหมด">
               </th>
-              <th style="width: 22%;">เลขหนังสือ</th>
-              <th style="width: 46%;">ชื่อเรื่อง / หนังสือ</th>
-              <th style="width: 24%;">ผู้รับผิดชอบ</th>
+              <th style="width: 65%;">เลขหนังสือ / ชื่อเรื่อง</th>
+              <th style="width: 28%;">ผู้รับผิดชอบ</th>
             </tr>
           </thead>
           <tbody id="exportViewTableBody"></tbody>
@@ -2025,15 +2057,14 @@
         </div>
       </div>
 
-      <!-- ตารางจัดการฐานข้อมูล (5 คอลัมน์ตรงเป๊ะ เอาลำดับออก มีปุ่มจัดการบน-ล่าง) -->
+      <!-- ตารางจัดการฐานข้อมูล (เหลือ 3 คอลัมน์ตามต้องการ) -->
       <div class="table-responsive border rounded shadow-sm bg-white" style="max-height: 68vh;">
-        <table class="table table-hover table-bordered align-middle table-scroll-custom mb-0" style="font-size: 0.88rem;">
+        <table class="table table-hover table-bordered align-middle mb-0" style="font-size: 0.88rem;">
           <thead class="table-light text-center sticky-top shadow-sm" style="z-index: 5;">
             <tr>
-              <th style="width: 18%;">วันที่</th>
-              <th style="width: 50%;">ชื่อหนังสือ / ฝ่าย</th>
-              <th style="width: 20%;">ผู้รับผิดชอบ</th>
-              <th style="width: 12%;">จัดการ</th>
+              <th style="width: 62%;">ชื่อหนังสือ / ฝ่าย</th>
+              <th style="width: 26%;">ผู้รับผิดชอบ</th>
+              <th style="width: 12%; min-width: 48px;">จัดการ</th>
             </tr>
           </thead>
           <tbody id="dbManageTableBody"></tbody>
@@ -3661,9 +3692,17 @@ function updateDbManageButtonUI() {
   function renderDbManageTableRows(rows) {
     const tbody = document.getElementById('dbManageTableBody');
     if (rows.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="4" class="text-center p-4 text-muted fw-bold">ไม่พบข้อมูลหนังสือ</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="3" class="text-center p-4 text-muted fw-bold">ไม่พบข้อมูลหนังสือ</td></tr>`;
       return;
     }
+
+    const deptColors = {
+      "ฝ่ายบริหารวิชาการ": "#ffde59", "บริหารงานวิชาการ": "#ffde59",
+      "ฝ่ายบริหารงบประมาณ": "#ff5757", "บริหารแผนงานและงบประมาณ": "#ff5757",
+      "ฝ่ายบริหารงานบุคคล": "#0cc0df", "บริหารงานบุคคล": "#0cc0df",
+      "ฝ่ายบริหารทั่วไป": "#8c52ff", "บริหารงานทั่วไป": "#8c52ff",
+      "ผู้อำนวยการ": "#add8e6", "รองผู้อำนวยการ": "#d2b48c", "อื่นๆ": "#adb5bd"
+    };
 
     let html = "";
     rows.forEach((row) => {
@@ -3677,22 +3716,7 @@ function updateDbManageButtonUI() {
       bookTitle = bookTitle.replace(/\[.*?\]/g, "").trim();
       if (!bookTitle) bookTitle = cleanNoExt;
 
-      let rawDate = (row[0] || "").split(/[T\s,]+/)[0];
-      let dateDisplay = rawDate;
-      if (rawDate.includes("-")) {
-        const d = rawDate.split("-");
-        if (d.length === 3) {
-          let y = parseInt(d[0]); if (y < 2500) y += 543;
-          dateDisplay = `${parseInt(d[2])}/${parseInt(d[1])}/${y}`;
-        }
-      } else if (rawDate.includes("/")) {
-        const d = rawDate.split("/");
-        if (d.length === 3) {
-          let y = parseInt(d[2]); if (y < 2500) y += 543;
-          dateDisplay = `${parseInt(d[0])}/${parseInt(d[1])}/${y}`;
-        }
-      }
-
+      // 🔘 ปุ่มแก้ไข (บน) และปุ่มลบ (ล่าง)
       const actionHTML = `
         <div class="d-flex flex-column align-items-center justify-content-center gap-2">
           <button class="btn btn-sm btn-outline-warning text-dark py-0 px-2 fw-bold shadow-sm" style="font-size: 0.75rem; width: 32px;" onclick="openEditBookDeptFromDbManage('${encodeURIComponent(row[2])}')" title="แก้ไขกลุ่มงาน/ผู้รับ">
@@ -3704,16 +3728,31 @@ function updateDbManageButtonUI() {
         </div>
       `;
 
+      // 🎨 สร้าง Badge สีของกลุ่มงาน แยกบรรทัด
+      const rawDeptStr = row[3] || "";
+      const deptBadges = rawDeptStr ? rawDeptStr.split(',').map(d => {
+        const dTrim = d.trim();
+        const color = deptColors[dTrim] || "#adb5bd";
+        return `<div class="mb-1"><small class="badge border" style="font-size: 0.70rem; font-weight: 400; background-color: ${color}; color: #fff; border-color: rgba(0,0,0,0.1) !important;">${dTrim}</small></div>`;
+      }).join('') : "";
+
+      // ป้ายชื่อบุคคล [ ... ]
+      let staffBadge = "";
+      const nameMatch = rawFileName.match(/\[(.*?)\]/);
+      if (nameMatch && nameMatch[1]) {
+        staffBadge = `<div class="mb-1"><small class="badge border" style="font-size: 0.70rem; font-weight: 400; background-color: #adb5bd; color: #fff;">👤 ${nameMatch[1].trim()}</small></div>`;
+      }
+
       html += `
         <tr class="align-middle fw-bold">
-          <td class="text-center text-muted fw-bold" style="width: 18%; font-size: 0.76rem; word-break: break-word;">
-            ${dateDisplay}
+          <td class="text-start text-dark fw-bold col-title-wrap" style="width: 62%; font-size: 0.84rem;">
+            <span class="text-success me-1">[${bookNumber}]</span> ${bookTitle}
           </td>
-          <td class="text-start text-dark fw-bold col-title-wrap" style="width: 50%; font-size: 0.84rem;">
-            <span class="text-success me-1">${bookNumber}</span>${bookTitle}
-          </td>
-          <td class="text-start col-title-wrap" style="width: 20%; font-size: 0.75rem;">
-            ${row[3] || "-"}
+          <td class="text-start" style="width: 26%; vertical-align: top; padding-top: 8px;">
+            <div class="d-flex flex-column align-items-start">
+              ${deptBadges}
+              ${staffBadge}
+            </div>
           </td>
           <td class="text-center" style="width: 12%;">
             ${actionHTML}
@@ -5178,30 +5217,53 @@ async function refreshApp() {
     if (totalElem) totalElem.innerText = rows.length;
 
     if (rows.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="4" class="text-center p-4 text-muted">ไม่พบข้อมูลหนังสือ</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="3" class="text-center p-4 text-muted">ไม่พบข้อมูลหนังสือ</td></tr>`;
       updateExportSelectedCount();
       return;
     }
+
+    const deptColors = {
+      "ฝ่ายบริหารวิชาการ": "#ffde59", "บริหารงานวิชาการ": "#ffde59",
+      "ฝ่ายบริหารงบประมาณ": "#ff5757", "บริหารแผนงานและงบประมาณ": "#ff5757",
+      "ฝ่ายบริหารงานบุคคล": "#0cc0df", "บริหารงานบุคคล": "#0cc0df",
+      "ฝ่ายบริหารทั่วไป": "#8c52ff", "บริหารงานทั่วไป": "#8c52ff",
+      "ผู้อำนวยการ": "#add8e6", "รองผู้อำนวยการ": "#d2b48c", "อื่นๆ": "#adb5bd"
+    };
 
     let html = "";
     rows.forEach((row) => {
       const details = extractBookExportDetails(row);
       const isChecked = selectedExportFileNames.has(row[2]);
 
+      // 🎨 สร้าง Badge สีของกลุ่มงาน แยกทีละบรรทัด
+      const rawDeptStr = row[3] || "";
+      const deptBadges = rawDeptStr ? rawDeptStr.split(',').map(d => {
+        const dTrim = d.trim();
+        const color = deptColors[dTrim] || "#adb5bd";
+        return `<div class="mb-1"><small class="badge border" style="font-size: 0.70rem; font-weight: 400; background-color: ${color}; color: #fff; border-color: rgba(0,0,0,0.1) !important;">${dTrim}</small></div>`;
+      }).join('') : "";
+
+      // ตรวจหาชื่อบุคลากรในวงเล็บ [ ... ]
+      let staffBadge = "";
+      const nameMatch = (row[2] || "").match(/\[(.*?)\]/);
+      if (nameMatch && nameMatch[1]) {
+        staffBadge = `<div class="mb-1"><small class="badge border" style="font-size: 0.70rem; font-weight: 400; background-color: #adb5bd; color: #fff;">👤 ${nameMatch[1].trim()}</small></div>`;
+      }
+
       html += `
         <tr class="align-middle">
-          <td class="text-center" style="width: 8%;">
-            <input class="form-check-input border-success export-row-check" type="checkbox" style="width: 1.2rem; height: 1.2rem; cursor: pointer;"
+          <td class="text-center" style="width: 7%;">
+            <input class="form-check-input border-success export-row-check" type="checkbox" style="width: 1.15rem; height: 1.15rem; cursor: pointer;"
               ${isChecked ? 'checked' : ''} onchange="toggleExportItem('${encodeURIComponent(row[2])}', this.checked)">
           </td>
-          <td class="text-center fw-bold text-success" style="width: 22%; font-size: 0.82rem; word-break: break-word;">
-            ${details.bookNumber}
+          <td class="text-start text-dark fw-bold col-title-wrap" style="width: 65%; font-size: 0.84rem;">
+            <span class="text-success me-1">[${details.bookNumber}]</span> ${details.title}
           </td>
-          <td class="text-start text-dark fw-bold col-title-wrap" style="width: 46%; font-size: 0.84rem;">
-            ${details.title}
-          </td>
-          <td class="text-start col-title-wrap" style="width: 24%; font-size: 0.76rem;">
-            ${details.responsible}
+          <td class="text-start" style="width: 28%; vertical-align: top; padding-top: 8px;">
+            <div class="d-flex flex-column align-items-start">
+              ${deptBadges}
+              ${staffBadge}
+            </div>
           </td>
         </tr>
       `;

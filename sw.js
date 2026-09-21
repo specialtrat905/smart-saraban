@@ -15,3 +15,27 @@ self.addEventListener('fetch', (e) => {
     fetch(e.request).catch(() => caches.match(e.request))
   );
 });
+// ดักจับเมื่อผู้ใช้แตะที่แถบแจ้งเตือนบนหน้าจอมือถือ
+self.addEventListener('notificationclick', function(event) {
+  event.notification.close();
+  
+  // ล้างเลข Badge สีแดงบนไอคอนเมื่อแตะเปิด
+  if (navigator.clearAppBadge) {
+    navigator.clearAppBadge();
+  }
+
+  // เปิดแอปขึ้นมาทันที หรือโฟกัสแท็บเดิมที่เปิดค้างไว้
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
+      for (let i = 0; i < clientList.length; i++) {
+        let client = clientList[i];
+        if (client.url.includes('index.html') && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow('./index.html');
+      }
+    })
+  );
+});

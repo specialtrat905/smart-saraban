@@ -3185,12 +3185,18 @@ let currentPersonalStaffName = "";
           body: JSON.stringify({ action: "setupStaffPin", name: currentPersonalStaffName, pin: pin })
         });
         const result = await res.json();
-        if (result.success) {
-          alert("✅ " + result.message);
-          localStorage.setItem('personal_staff_auth', currentPersonalStaffName);
-          personalAuthModalInstance.hide();
-          openPersonalDocView();
-        } else {
+        // เมื่อ PIN ถูกต้อง และบันทึกเข้าเครื่องสำเร็จ
+    if (result.success) {
+      localStorage.setItem('personal_staff_auth', currentPersonalStaffName);
+      personalAuthModalInstance.hide();
+      openPersonalDocView();
+      
+      // 🔔 ขอสิทธิ์แจ้งเตือนบนมือถือ (Notification Permission)
+      requestNotificationPermission();
+      
+      // 📡 เริ่มเปิดตัวดักฟังตัวเลขแจ้งเตือนจาก Firebase
+      initPersonalNotificationListener(currentPersonalStaffName);
+    } else {
           errDiv.innerText = result.message;
         }
       } catch (e) { errDiv.innerText = "เชื่อมต่อล้มเหลว"; }
@@ -3219,6 +3225,74 @@ let currentPersonalStaffName = "";
     finally { btn.disabled = false; btn.innerText = "ยืนยันเข้าสู่ระบบ"; }
   }
 
+  // 🔔 1. ฟังก์ชันขอสิทธิ์การแจ้งเตือนจากผู้ใช้
+  function requestNotificationPermission() {
+    if ('Notification' in window && Notification.permission !== 'granted') {
+      Notification.requestPermission().then(permission => {
+        if (permission === 'granted') {
+          console.log('✅ เปิดรับการแจ้งเตือนหนังสือส่วนตัวบนมือถือแล้ว');
+        }
+      });
+    }
+  }
+
+  // 📡 2. ฟังก์ชันตรวจจับสัญญาณหนังสือเข้าใหม่จาก Firebase Realtime Database
+  let personalBadgeListener = null;
+
+  function initPersonalNotificationListener(staffName) {
+    if (!staffName || !rtdb) return;
+
+    // ล้างตัวดักฟังเดิม (ถ้ามี)
+    if (personalBadgeListener) {
+      rtdb.ref('user_badges/' + encodeURIComponent(staffName)).off('value', personalBadgeListener);
+    }
+
+    // เปิดตัวรับสัญญาณแบบ Realtime
+    const badgeRef = rtdb.ref('user_badges/' + encodeURIComponent(staffName));
+    personalBadgeListener = badgeRef.on('value', (snapshot) => {
+      const count = snapshot.val() || 0;
+
+      if (count > 0) {
+        // 🔴 1. แสดงตัวเลขสีแดงบนไอคอนแอปหน้าจอมือถือ (App Badging API)
+        if ('setAppBadge' in navigator) {
+          navigator.setAppBadge(count).catch(err => console.warn('Badge Error:', err));
+        }
+
+        // 🔔 2. ยิงแถบแจ้งเตือนเด้งบนหน้าจอพร้อมสั่น
+        if ('Notification' in window && Notification.permission === 'granted') {
+          navigator.serviceWorker.ready.then(reg => {
+            reg.showNotification('📥 มีหนังสือราชการส่วนตัวส่งถึงคุณ', {
+              body: `มีหนังสือใหม่ ${count} ฉบับที่มอบหมายถึงท่าน แตะเพื่อเปิดอ่าน`,
+              icon: './logo2.png',
+              badge: './logo2.png',
+              vibrate: [200, 100, 200],
+              tag: 'personal-doc-alert',
+              renotify: true
+            });
+          });
+        }
+      } else {
+        // เคลียร์เลขแดงออกเมื่ออ่านหมดแล้ว
+        if ('clearAppBadge' in navigator) {
+          navigator.clearAppBadge().catch(err => console.warn('Clear Badge Error:', err));
+        }
+      }
+    });
+  }
+
+  // 🧹 3. ฟังก์ชันล้างตัวเลข Badge และเคลียร์สถานะใน Firebase เมื่อเปิดดูหนังสือแล้ว
+  function clearPersonalBadge() {
+    if (!currentPersonalStaffName || !rtdb) return;
+
+    // รีเซ็ตค่าใน Firebase เป็น 0
+    rtdb.ref('user_badges/' + encodeURIComponent(currentPersonalStaffName)).set(0);
+
+    // ล้างตัวเลขสีแดงบนไอคอนของเครื่องนี้
+    if ('clearAppBadge' in navigator) {
+      navigator.clearAppBadge().catch(err => console.warn('Clear Badge Error:', err));
+    }
+  }
+
   function openPersonalDocView() {
     document.getElementById('personalStaffNameBadge').innerText = currentPersonalStaffName;
     switchViewWithTransition('personalDocView');
@@ -3226,6 +3300,9 @@ let currentPersonalStaffName = "";
     initPersonalViewDropdown();
     loadPersonalBooks();
     window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // 🧹 ล้างตัวเลขสีแดงบนไอคอนทันทีที่เปิดหน้านี้
+    clearPersonalBadge();
   }
 
   function logoutPersonalStaffSession() {
@@ -6349,6 +6426,15 @@ async function refreshApp() {
           updateProgress(`กำลังแจ้งเตือน LINE ไปยัง [${dept}]...`);
           try {
             if (dept === "อื่นๆ" && otherStaffNames.length > 0) {
+
+              // ⚡ เพิ่มตัวเลขแจ้งเตือนไปยัง Firebase ของครูแต่ละคนที่มีรายชื่อ
+otherStaffNames.forEach(staffName => {
+  const badgeRef = rtdb.ref('user_badges/' + encodeURIComponent(staffName));
+  badgeRef.transaction(currentCount => {
+    return (currentCount || 0) + uploadedFiles.length;
+  });
+});
+
               // 🟢 ส่งแจ้งเตือนรายบุคคลแบบรวมชุด (Batch) ครบทุกฉบับในข้อความเดียว
               await fetch(SCRIPT_URL, {
                 method: 'POST',
@@ -7554,6 +7640,11 @@ let currentPdfFileName = ''; // เพิ่มตัวแปรเก็บช
   }
 
   window.addEventListener('load', () => {
+    const savedPersonalStaff = localStorage.getItem('personal_staff_auth');
+  if (savedPersonalStaff) {
+    currentPersonalStaffName = savedPersonalStaff;
+    initPersonalNotificationListener(savedPersonalStaff);
+  }
     setupAdminUploadVisibility(); // ตรวจสอบสถานะการยุบ/ขยายกล่องส่งหนังสืออัตโนมัติ
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./sw.js').catch(err => console.warn('PWA SW Fail:', err));

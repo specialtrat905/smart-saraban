@@ -3244,7 +3244,7 @@ let currentPersonalStaffName = "";
   }
 
   // 📡 2. ฟังก์ชันตรวจจับสัญญาณหนังสือเข้าใหม่จาก Firebase Realtime Database
-  let personalBadgeListener = null;
+
 
   function initPersonalNotificationListener(staffName) {
     if (!staffName || !rtdb) return;
@@ -3308,7 +3308,7 @@ let currentPersonalStaffName = "";
     loadPersonalBooks();
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    // 🧹 ล้างตัวเลขสีแดงบนไอคอนทันทีที่เปิดหน้านี้
+    // 🧹 ล้างเลขสีแดงบนไอคอนทันทีที่เปิดหน้านี้
     clearPersonalBadge();
   }
 
@@ -6433,14 +6433,13 @@ async function refreshApp() {
           updateProgress(`กำลังแจ้งเตือน LINE ไปยัง [${dept}]...`);
           try {
             if (dept === "อื่นๆ" && otherStaffNames.length > 0) {
-
-              // ⚡ เพิ่มตัวเลขแจ้งเตือนไปยัง Firebase ของครูแต่ละคนที่มีรายชื่อ
-otherStaffNames.forEach(staffName => {
-  const badgeRef = rtdb.ref('user_badges/' + encodeURIComponent(staffName));
-  badgeRef.transaction(currentCount => {
-    return (currentCount || 0) + uploadedFiles.length;
-  });
-});
+           // 🟢 1. สั่งเพิ่มตัวเลข Badge แจ้งเตือนขึ้น Firebase ของครูแต่ละคนทันที (ฟรี ไม่จำกัด)
+           otherStaffNames.forEach(staffName => {
+             const cleanKey = encodeURIComponent(staffName.trim());
+             rtdb.ref('user_badges/' + cleanKey).transaction(currentCount => {
+               return (currentCount || 0) + uploadedFiles.length;
+             });
+           });
 
               // 🟢 ส่งแจ้งเตือนรายบุคคลแบบรวมชุด (Batch) ครบทุกฉบับในข้อความเดียว
               await fetch(SCRIPT_URL, {
@@ -8002,6 +8001,8 @@ function toggleAdminUploadBox() {
     }, { passive: true });
   }
 
+
+  
 // 🔔 ฟังก์ชันทดสอบระบบแจ้งเตือนและ Badge ตัวเลขแดงบนไอคอน
   async function testDirectBadgeAndNotification() {
     // 1. ทดสอบยิงตัวเลขแดงที่ไอคอนแอป
@@ -8040,6 +8041,71 @@ function toggleAdminUploadBox() {
       });
     }
   }
+
+// 📡 ระบบดักฟังแจ้งเตือนหนังสือเข้าใหม่จาก Firebase อัตโนมัติ
+  let personalBadgeListener = null;
+
+  function initPersonalNotificationListener(staffName) {
+    if (!staffName || typeof rtdb === 'undefined') return;
+
+    const cleanKey = encodeURIComponent(staffName.trim());
+    const badgeRef = rtdb.ref('user_badges/' + cleanKey);
+
+    // ล้างตัวดักฟังเก่าก่อน (ถ้ามี)
+    if (personalBadgeListener) {
+      badgeRef.off('value', personalBadgeListener);
+    }
+
+    // เปิดตัวรับสัญญาณแบบ Realtime
+    personalBadgeListener = badgeRef.on('value', async (snapshot) => {
+      const count = snapshot.val() || 0;
+
+      if (count > 0) {
+        // 🔴 1. แสดงตัวเลขสีแดงบนไอคอนแอปหน้าจอมือถือทันที
+        if ('setAppBadge' in navigator) {
+          try {
+            await navigator.setAppBadge(count);
+          } catch(e) {}
+        }
+
+        // 🔔 2. ยิงแถบแจ้งเตือนเด้งบนหน้าจอพร้อมสั่น
+        if ('Notification' in window && Notification.permission === 'granted') {
+          try {
+            const reg = await navigator.serviceWorker.ready;
+            reg.showNotification('📥 มีหนังสือราชการส่งถึงคุณ', {
+              body: `มีหนังสือใหม่ ${count} ฉบับ มอบหมายถึงท่าน แตะเพื่อเปิดอ่าน`,
+              icon: './logo2.png',
+              badge: './logo2.png',
+              vibrate: [200, 100, 200],
+              tag: 'personal-doc-alert',
+              renotify: true
+            });
+          } catch(e) {}
+        }
+      } else {
+        // เมื่ออ่านแล้ว เคลียร์เลขแดงออกจากไอคอน
+        if ('clearAppBadge' in navigator) {
+          try {
+            await navigator.clearAppBadge();
+          } catch(e) {}
+        }
+      }
+    });
+  }
+
+  // 🧹 ฟังก์ชันเคลียร์ตัวเลขสีแดงเมื่อครูเปิดเข้าหน้าหนังสือส่วนตัว
+  function clearPersonalBadge() {
+    const savedStaff = localStorage.getItem('personal_staff_auth') || currentPersonalStaffName;
+    if (!savedStaff || typeof rtdb === 'undefined') return;
+
+    const cleanKey = encodeURIComponent(savedStaff.trim());
+    rtdb.ref('user_badges/' + cleanKey).set(0);
+
+    if ('clearAppBadge' in navigator) {
+      navigator.clearAppBadge().catch(() => {});
+    }
+  }
+  
 
 </script>
 <!-- 📝 Modal All-in-One: แสดง QR Code ที่พบด้านบน + ข้อความเอกสารและตารางด้านล่าง -->

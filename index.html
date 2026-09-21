@@ -15,6 +15,22 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <style>
 
+    /* 📲 สไตล์แบนเนอร์ PWA แบบลอยตัวมุมขวาล่าง ปรับขนาดอัตโนมัติ */
+  .pwa-toast-banner {
+    position: fixed;
+    bottom: 35px;
+    right: 14px;
+    z-index: 9999;
+    background: linear-gradient(135deg, #004d40 0%, #00796b 100%);
+    border: 1.5px solid #ffc107;
+    border-radius: 50px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    padding: 6px 12px;
+    color: #fff;
+    max-width: 88vw;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
 
     
     /* ✨ กรอบโลโก้ 3D Acrylic Badge สำหรับหน้าแรก */
@@ -1679,6 +1695,13 @@
         </svg>
         <span class="sidebar-text">แก้ไขฐานข้อมูล</span>
       </button>
+    <!-- 📲 ปุ่มสำรองสำหรับติดตั้งแอป (แสดงใน Sidebar เผื่อใครกดปิดแบนเนอร์ไปแล้ว) -->
+      <div class="mt-auto pt-2 border-top border-secondary border-opacity-25">
+        <button class="btn btn-sidebar-item text-warning" id="sideInstallPwaBtn" onclick="triggerPwaInstallPrompt()" style="font-size: 0.8rem !important; padding: 6px 8px !important;">
+          <span style="font-size: 1.1rem;">📲</span>
+          <span class="sidebar-text">ติดตั้งแอปลงเครื่อง</span>
+        </button>
+      </div>
     </aside>
 
     <!-- 📄 พื้นที่แสดงเนื้อหาหลัก -->
@@ -2594,21 +2617,52 @@
       <span id="appVersionDisplay" class="badge bg-warning text-dark fw-bold px-2 py-0 shadow-sm flex-shrink-0" style="font-size: 0.65rem; line-height: 1.5;">
         กำลังโหลดเวอร์ชัน...
       </span>
-      <!-- 📲 Smart PWA Banner แนะนำติดตั้งแอป (เด้งเฉพาะบนมือถือที่ยังไม่ได้ติดตั้ง) -->
-  <div id="pwaInstallBanner" style="display: none; position: fixed; bottom: 35px; left: 12px; right: 12px; z-index: 9999; background: linear-gradient(135deg, #004d40 0%, #00796b 100%); border: 1.5px solid #ffc107; border-radius: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.35); padding: 10px 14px; color: #fff;">
-    <div class="d-flex align-items-center justify-content-between gap-2">
-      <div class="d-flex align-items-center gap-2 overflow-hidden">
-        <span style="font-size: 1.6rem;">📲</span>
+
+      <!-- 📲 Smart PWA Banner มินิมอล มุมขวาล่าง (กาง 3 วิ แล้วยุบตัวอัตโนมัติ) -->
+  <div id="pwaInstallBanner" class="pwa-toast-banner" style="display: none;">
+    <!-- โหมดกางออก 3 วินาทีแรก (Expanded View) -->
+    <div id="pwaExpandedContent" style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+      <div class="d-flex align-items-center gap-2 overflow-hidden cursor-pointer" onclick="togglePwaBannerCollapse()">
+        <span class="fs-5">📲</span>
         <div class="text-truncate">
-          <div class="fw-bold text-white" style="font-size: 0.88rem; line-height: 1.2;">ติดตั้งแอปสารบรรณ</div>
-          <div id="pwaBannerSubtext" class="text-warning text-truncate" style="font-size: 0.72rem;">เข้าใช้งานสะดวกรวดเร็วในคลิกเดียว</div>
+          <div class="fw-bold text-white lh-1" style="font-size: 0.82rem;">ติดตั้งแอปสารบรรณ</div>
+          <small class="text-warning" style="font-size: 0.68rem;">แตะเพื่อติดตั้งลงหน้าจอ</small>
         </div>
       </div>
       <div class="d-flex align-items-center gap-1 flex-shrink-0">
-        <button id="pwaActionBtn" class="btn btn-sm btn-warning text-dark fw-bold px-3 py-1 shadow-sm" style="font-size: 0.78rem; border-radius: 50px;">
+        <button id="pwaActionBtn" class="btn btn-sm btn-warning text-dark fw-bold px-2 py-1 shadow-sm" style="font-size: 0.75rem; border-radius: 50px;">
           ติดตั้ง
         </button>
-        <button type="button" class="btn btn-sm text-white-50 p-1" onclick="dismissPwaBanner()" style="font-size: 1.1rem; line-height: 1;">✕</button>
+        <button type="button" class="btn btn-sm text-white-50 p-1" onclick="openDismissOptionsModal()" title="ปิดการแจ้งเตือน" style="font-size: 1rem; line-height: 1;">✕</button>
+      </div>
+    </div>
+
+    <!-- โหมดหดตัวเป็นแคปซูลเล็ก (Collapsed Mini View) -->
+    <div id="pwaCollapsedContent" style="display: none; align-items: center; gap: 4px;">
+      <button class="btn btn-sm btn-warning text-dark fw-bold px-2 py-1 shadow-sm d-flex align-items-center gap-1" onclick="triggerPwaInstallPrompt()" style="font-size: 0.74rem; border-radius: 50px;">
+        <span>📲</span>
+        <span>ติดตั้ง</span>
+      </button>
+      <button type="button" class="btn btn-sm text-white-50 p-1 ms-1" onclick="openDismissOptionsModal()" title="ปิดการแจ้งเตือน" style="font-size: 0.9rem; line-height: 1;">✕</button>
+    </div>
+  </div>
+
+  <!-- 🛑 Modal เลือกระดับการปิดแจ้งเตือน (ปิดชั่วคราว หรือ ไม่ต้องเตือนอีก) -->
+  <div class="modal fade" id="pwaDismissModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+      <div class="modal-content border-0 shadow-lg" style="border-radius: 14px;">
+        <div class="modal-header py-2 px-3 bg-light">
+          <h6 class="modal-title fw-bold text-dark m-0" style="font-size: 0.85rem;">การแจ้งเตือนติดตั้งแอป</h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-3 d-flex flex-column gap-2">
+          <button type="button" class="btn btn-outline-secondary btn-sm py-2 fw-bold text-start" onclick="dismissPwaTemporary()">
+            ⏰ ปิดไว้ก่อน (เตือนใหม่ในอีก 7 วัน)
+          </button>
+          <button type="button" class="btn btn-outline-danger btn-sm py-2 fw-bold text-start" onclick="dismissPwaPermanently()">
+            🚫 ฉันติดตั้งแล้ว (ไม่ต้องเตือนอีก)
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -7349,10 +7403,12 @@ let currentPdfFileName = ''; // เพิ่มตัวแปรเก็บช
   }
 
   // ==========================================
-  // 📲 ระบบจัดการ PWA Smart Banner & Device Detection
+  // 📲 ระบบจัดการ PWA Smart Banner & Device Detection (กาง 3 วิ แล้วยุบตัว + เมนูปิด)
   // ==========================================
   let deferredPrompt = null;
   let iosGuideModalInstance = null;
+  let pwaCollapseTimer = null;
+  let pwaDismissModalInstance = null;
 
   // ตรวจสอบว่าเปิดผ่านไอคอนแอป (Standalone) แล้วหรือยัง
   function isRunningInStandalone() {
@@ -7374,78 +7430,127 @@ let currentPdfFileName = ''; // เพิ่มตัวแปรเก็บช
     return { isIos, isAndroid, isIosSafari, isIosOther };
   }
 
+  // ฟังก์ชันควบคุมการกางออก / หดตัวเป็นแคปซูลเล็ก
+  function setPwaBannerState(isCollapsed) {
+    const banner = document.getElementById('pwaInstallBanner');
+    const expanded = document.getElementById('pwaExpandedContent');
+    const collapsed = document.getElementById('pwaCollapsedContent');
+    if (!banner || !expanded || !collapsed) return;
+
+    if (isCollapsed) {
+      expanded.style.display = 'none';
+      collapsed.style.display = 'flex';
+      banner.style.borderRadius = '50px';
+      banner.style.padding = '4px 8px';
+    } else {
+      collapsed.style.display = 'none';
+      expanded.style.display = 'flex';
+      banner.style.borderRadius = '14px';
+      banner.style.padding = '8px 12px';
+    }
+  }
+
+  function togglePwaBannerCollapse() {
+    const expanded = document.getElementById('pwaExpandedContent');
+    const isCurrentlyExpanded = (expanded && expanded.style.display !== 'none');
+    setPwaBannerState(isCurrentlyExpanded);
+  }
+
+  // เรียกใช้คำสั่งติดตั้งแอป (ใช้ร่วมกันทั้งแบนเนอร์และปุ่มสำรองใน Sidebar)
+  async function triggerPwaInstallPrompt() {
+    const env = getBrowserEnv();
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        dismissPwaPermanently();
+      }
+      deferredPrompt = null;
+    } else if (env.isIos) {
+      if (!iosGuideModalInstance) {
+        iosGuideModalInstance = new bootstrap.Modal(document.getElementById('iosInstallGuideModal'));
+      }
+      iosGuideModalInstance.show();
+    } else {
+      alert("💡 หากไม่มีหน้าต่างเด้งขึ้นมา ท่านสามารถติดตั้งแอปได้โดยแตะเมนู 3 จุดของเบราว์เซอร์ แล้วเลือก 'ติดตั้งแอป' หรือ 'เพิ่มลงในหน้าจอหลัก' ครับ");
+    }
+  }
+
   function initPwaInstallPrompt() {
-    // 1. ถ้าติดตั้งแล้ว และเปิดจากไอคอนแอป ให้ซ่อนแบนเนอร์ถาวร
+    // 1. ถ้าเปิดจากไอคอนแอปอยู่แล้ว ให้ซ่อนแบนเนอร์ถาวร
     if (isRunningInStandalone()) {
       const banner = document.getElementById('pwaInstallBanner');
       if (banner) banner.style.display = 'none';
       return;
     }
 
-    // ถ้าผู้ใช้เคยกดกากบาทปิดไปแล้วภายใน 7 วัน ไม่ต้องเด้งซ้ำ
+    // 2. ถ้าผู้ใช้เคยกด "ฉันติดตั้งแล้ว / ไม่ต้องเตือนอีก" ให้ปิดถาวร
+    if (localStorage.getItem('pwa_never_show') === 'true') {
+      return;
+    }
+
+    // 3. ถ้าเลือกปิดชั่วคราว (7 วัน) ยังไม่ถึงกำหนด ไม่ต้องแสดง
     const dismissedAt = localStorage.getItem('pwa_banner_dismissed');
     if (dismissedAt && (new Date().getTime() - parseInt(dismissedAt)) < 7 * 24 * 60 * 60 * 1000) {
       return;
     }
 
-    const banner = document.getElementById('pwaInstallBanner');
     const actionBtn = document.getElementById('pwaActionBtn');
-    const subtext = document.getElementById('pwaBannerSubtext');
-    const env = getBrowserEnv();
 
-    // 🤖 ฝั่ง Android (Chrome & Chromium Browsers)
+    // 🤖 ฝั่ง Android / Chromium
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
-      if (banner) banner.style.display = 'block';
-
-      if (actionBtn) {
-        actionBtn.onclick = async () => {
-          if (deferredPrompt) {
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            if (outcome === 'accepted') {
-              banner.style.display = 'none';
-            }
-            deferredPrompt = null;
-          }
-        };
-      }
+      showPwaBannerWithTimer();
     });
 
-    // 🍏 ฝั่ง iPhone / iPad
+    // 🍏 ฝั่ง iOS
+    const env = getBrowserEnv();
     if (env.isIos) {
-      if (env.isIosSafari) {
-        // กรณีเปิดด้วย Safari: แนะนำให้กดเพิ่มหน้าจอโฮม
-        if (banner) banner.style.display = 'block';
-        if (subtext) subtext.innerText = "แตะดูวิธีเพิ่มไอคอนลงหน้าจอโฮม";
-        if (actionBtn) {
-          actionBtn.innerText = "วิธีติดตั้ง";
-          actionBtn.onclick = () => {
-            if (!iosGuideModalInstance) {
-              iosGuideModalInstance = new bootstrap.Modal(document.getElementById('iosInstallGuideModal'));
-            }
-            iosGuideModalInstance.show();
-          };
-        }
-      } else {
-        // กรณีเปิดด้วย LINE หรือ Chrome บน iPhone
-        if (banner) banner.style.display = 'block';
-        if (subtext) subtext.innerText = "แนะนำเปิดด้วย Safari เพื่อติดตั้งแอป";
-        if (actionBtn) {
-          actionBtn.innerText = "เปิด Safari";
-          actionBtn.onclick = () => {
-            alert("กรุณากดปุ่มจุด 3 จุด หรือปุ่มแชร์ แล้วเลือก 'เปิดใน Safari' (Open in Safari) เพื่อติดตั้งแอปลงหน้าจอครับ");
-          };
-        }
-      }
+      showPwaBannerWithTimer();
+    }
+
+    if (actionBtn) {
+      actionBtn.onclick = triggerPwaInstallPrompt;
     }
   }
 
-  function dismissPwaBanner() {
+  // แสดงแบนเนอร์กางออก 3 วินาที แล้วยุบตัวลงอัตโนมัติ
+  function showPwaBannerWithTimer() {
+    const banner = document.getElementById('pwaInstallBanner');
+    if (!banner) return;
+
+    banner.style.display = 'block';
+    setPwaBannerState(false); // กางออก
+
+    if (pwaCollapseTimer) clearTimeout(pwaCollapseTimer);
+    pwaCollapseTimer = setTimeout(() => {
+      setPwaBannerState(true); // ยุบเหลือแค่คำว่า ติดตั้ง
+    }, 3000);
+  }
+
+  // เปิด Modal ถามความต้องการเมื่อกดปุ่ม ✕
+  function openDismissOptionsModal() {
+    if (!pwaDismissModalInstance) {
+      pwaDismissModalInstance = new bootstrap.Modal(document.getElementById('pwaDismissModal'));
+    }
+    pwaDismissModalInstance.show();
+  }
+
+  // ตัวเลือกที่ 1: ปิดชั่วคราว 7 วัน
+  function dismissPwaTemporary() {
     const banner = document.getElementById('pwaInstallBanner');
     if (banner) banner.style.display = 'none';
     localStorage.setItem('pwa_banner_dismissed', new Date().getTime().toString());
+    if (pwaDismissModalInstance) pwaDismissModalInstance.hide();
+  }
+
+  // ตัวเลือกที่ 2: ฉันติดตั้งแล้ว (ปิดถาวร ไม่เตือนซ้ำ)
+  function dismissPwaPermanently() {
+    const banner = document.getElementById('pwaInstallBanner');
+    if (banner) banner.style.display = 'none';
+    localStorage.setItem('pwa_never_show', 'true');
+    if (pwaDismissModalInstance) pwaDismissModalInstance.hide();
   }
 
   window.addEventListener('load', () => {
@@ -7502,7 +7607,6 @@ let currentPdfFileName = ''; // เพิ่มตัวแปรเก็บช
         const u = p.get('u');
         const pVal = p.get('p');
         
-        // ล้าง ?u=...&p=... ออกจากแถบ URL ทันที
         window.history.replaceState({}, document.title, window.location.pathname);
 
         localStorage.clear(); 

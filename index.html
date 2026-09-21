@@ -1557,6 +1557,14 @@
           </svg>
         </button>
 
+        <!-- 🔒 4. หนังสือส่วนตัว (ใหม่ - ปุ่มปิดท้ายของกลุ่มทั่วไป) -->
+        <button id="personalDocNavBtn" class="btn btn-sm btn-nav-action shadow-sm" onclick="handlePersonalDocMenuClick()" title="หนังสือส่วนตัว">
+          <svg class="mobile-nav-svg" viewBox="0 0 24 24" fill="none" stroke="#4338ca" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+        </button>
+
         <!-- 4. ส่งออกรายการ (ส้มอิฐเข้ม - เฉพาะ Admin) -->
         <button id="toggleExportModeBtn" class="btn btn-sm btn-nav-action shadow-sm" style="display:none;" onclick="switchToExportView()" title="ส่งออกรายการ">
           <svg class="mobile-nav-svg" viewBox="0 0 24 24" fill="none" stroke="#c2410c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -1640,6 +1648,15 @@
           <circle cx="18.5" cy="18.5" r="2.5"></circle>
         </svg>
         <span class="sidebar-text">ประวัติไปราชการ</span>
+      </button>
+
+      <!-- 🔒 4. หนังสือส่วนตัว (ใหม่ - อยู่ต่อจากไปราชการ) -->
+      <button class="btn btn-sidebar-item" id="sidePersonalDocBtn" onclick="handlePersonalDocMenuClick()">
+        <svg class="sidebar-svg" viewBox="0 0 24 24" fill="none" stroke="#4338ca" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+        <span class="sidebar-text">หนังสือส่วนตัว</span>
       </button>
 
       <div class="sidebar-section-title admin-only-feature" id="sideAdminTitle">Admin</div>
@@ -2071,6 +2088,50 @@
         </table>
       </div>
     </div> <!-- ปิด dbManageView -->
+
+    <!-- 🔒 ส่วนที่ 5: หน้าหนังสือส่วนตัวเฉพาะบุคคล (Personal Document View) -->
+    <div id="personalDocView" style="display:none;" class="card card-border-green p-3 p-md-4 shadow-sm mb-5">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3 pb-2 border-bottom">
+        <div>
+          <h4 class="fw-bold text-success mb-0 d-flex align-items-center gap-2">
+            <span>🔒 หนังสือส่วนตัวของ:</span>
+            <span id="personalStaffNameBadge" class="badge bg-primary text-white fs-6"></span>
+          </h4>
+          <small class="text-muted">รายการหนังสือที่มีคำสั่งมอบหมายเฉพาะบุคคลสำหรับท่าน</small>
+        </div>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-sm btn-outline-danger fw-bold shadow-sm" onclick="logoutPersonalStaffSession()">
+            🔒 ล็อค / สลับผู้ใช้
+          </button>
+        </div>
+      </div>
+
+      <!-- แถบตัวกรองปีและค้นหา -->
+      <div class="row g-2 mb-3 align-items-center">
+        <div class="col-6 col-md-2">
+          <select id="personalYearSelect" class="form-select form-select-sm border-success shadow-sm" onchange="changePersonalYear(this.value)"></select>
+        </div>
+        <div class="col-6 col-md-5">
+          <div class="input-group input-group-sm shadow-sm">
+            <span class="input-group-text bg-white"><svg class="btn-svg-icon me-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span>
+            <input type="text" id="personalSearchInput" class="form-control" placeholder="พิมพ์ค้นหาเลข หรือ ชื่อหนังสือ..." oninput="filterPersonalTable()">
+          </div>
+        </div>
+      </div>
+
+      <!-- ตารางแสดงรายการหนังสือส่วนตัว 100% พอดีจอ -->
+      <div class="table-responsive border rounded shadow-sm bg-white" style="max-height: 68vh;">
+        <table class="table table-hover table-bordered align-middle mb-0" style="font-size: 0.88rem;">
+          <thead class="table-light text-center sticky-top shadow-sm" style="z-index: 5;">
+            <tr>
+              <th style="width: 72%;">เลขหนังสือ / ชื่อเรื่อง</th>
+              <th style="width: 28%; min-width: 90px;">จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="personalTableBody"></tbody>
+        </table>
+      </div>
+    </div> <!-- ปิด personalDocView -->
 
     <!-- 🏢 Modal เลือกกลุ่มงานส่งหนังสือ -->
     <div class="modal fade" id="deptSelectModal" tabindex="-1" aria-hidden="true">
@@ -2699,7 +2760,7 @@
  // --- 1. การตั้งค่าสิทธิ์พื้นฐานองค์กร ---
   const GH_OWNER = "specialtrat905";
   const GH_REPO = "smart-saraban";
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwHyQqGj1ysGboqBB96WGfTPR6bQuHszQD0pqoYp9uvQIecvSjUpX-6TqILlNxWoc_kfA/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzifq5jrD08yrw1HRGUDJtEH9FNXrRv2aGRw77PRCatjF-DNHCPldlHLovgqTfg8bsNfw/exec";
 // ⚡ กำหนดค่าเชื่อมต่อ Firebase (ตาม Config ของคุณ)
 const firebaseConfig = {
   apiKey: "AIzaSyBL_Jv3x_UxEkzcVnN6lpQpZdWoIaJvMNM",
@@ -2929,14 +2990,13 @@ function loadLogsFromFirebase(year) {
   }
   /// 🔄 ฟังก์ชันสลับหน้าจอพร้อมคงโครงสร้าง Flexbox บน PC และรีเฟรช Virtual Scroll
 function switchViewWithTransition(targetViewId) {
-  const allViews = ['sarabanView', 'staffView', 'dutyTripView', 'exportView', 'dbManageView'];
+  const allViews = ['sarabanView', 'staffView', 'dutyTripView', 'personalDocView', 'exportView', 'dbManageView'];
   const isPC = window.innerWidth >= 769;
 
   allViews.forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     if (id === targetViewId) {
-      // 💻 บน PC ต้องใช้ 'flex' เพื่อให้ Flexbox คุมความสูงตารางพอดีจอ / มือถือใช้ 'block'
       el.style.display = isPC ? 'flex' : 'block';
       el.classList.remove('view-transition');
       void el.offsetWidth;
@@ -2947,11 +3007,9 @@ function switchViewWithTransition(targetViewId) {
     }
   });
 
-  // 📱 บันทึกประวัติหน้า เพื่อรองรับปุ่ม Back บนมือถือ
   if (targetViewId !== 'sarabanView') {
     history.pushState({ isSubView: true }, '');
   } else {
-    // 💻 เมื่อกลับมาหน้าสารบรรณบน PC ให้คำนวณ Virtual Scroll ใหม่ทันที
     if (isPC) {
       const container = document.getElementById('tableScrollContainer');
       if (container) container.scrollTop = 0;
@@ -2960,6 +3018,247 @@ function switchViewWithTransition(targetViewId) {
   }
 }
 
+let currentPersonalStaffName = "";
+  let personalAuthModalInstance = null;
+  let currentPersonalYear = currentYearBE;
+  let isSettingUpFirstPin = false;
+
+  function handlePersonalDocMenuClick() {
+    const savedStaff = localStorage.getItem('personal_staff_auth');
+    if (savedStaff) {
+      currentPersonalStaffName = savedStaff;
+      openPersonalDocView();
+    } else {
+      openPersonalAuthModal();
+    }
+  }
+
+  function openPersonalAuthModal() {
+    document.getElementById('personalAuthStaffInput').value = "";
+    document.getElementById('stepNameSection').style.display = 'block';
+    document.getElementById('stepPinSection').style.display = 'none';
+    document.getElementById('stepNameErr').innerText = "";
+    
+    if (!personalAuthModalInstance) {
+      personalAuthModalInstance = new bootstrap.Modal(document.getElementById('personalAuthModal'));
+    }
+    personalAuthModalInstance.show();
+  }
+
+  function backToStepName() {
+    document.getElementById('stepPinSection').style.display = 'none';
+    document.getElementById('stepNameSection').style.display = 'block';
+    document.getElementById('personalAuthPinInput').value = "";
+    document.getElementById('personalAuthPinConfirmInput').value = "";
+    document.getElementById('personalAuthErr').innerText = "";
+  }
+
+  async function proceedStaffName() {
+    const nameInput = document.getElementById('personalAuthStaffInput');
+    const cleanName = nameInput.value.trim();
+    const errDiv = document.getElementById('stepNameErr');
+
+    if (!cleanName) {
+      errDiv.innerText = "กรุณาพิมพ์หรือเลือกชื่อ-นามสกุลก่อน";
+      return;
+    }
+
+    errDiv.innerText = "กำลังตรวจสอบชื่อในระบบ...";
+
+    try {
+      const res = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: "checkStaffPin", name: cleanName })
+      });
+      const data = await res.json();
+
+      if (!data.success || !data.found) {
+        errDiv.innerText = "⚠️ ไม่พบรายชื่อนี้ในฐานข้อมูลบุคลากร";
+        return;
+      }
+
+      errDiv.innerText = "";
+      currentPersonalStaffName = cleanName;
+      document.getElementById('displaySelectedStaffName').innerText = cleanName;
+      
+      document.getElementById('stepNameSection').style.display = 'none';
+      document.getElementById('stepPinSection').style.display = 'block';
+      
+      isSettingUpFirstPin = !data.hasPin;
+
+      if (isSettingUpFirstPin) {
+        document.getElementById('pinPromptLabel').innerText = "✨ กำหนด PIN 6 หลักเพื่อใช้งานครั้งแรก:";
+        document.getElementById('pinConfirmDiv').style.display = 'block';
+        document.getElementById('personalAuthSubmitBtn').innerText = "บันทึกรหัสผ่าน";
+      } else {
+        document.getElementById('pinPromptLabel').innerText = "🔑 ใส่รหัส PIN 6 หลัก:";
+        document.getElementById('pinConfirmDiv').style.display = 'none';
+        document.getElementById('personalAuthSubmitBtn').innerText = "ยืนยันเข้าสู่ระบบ";
+      }
+      document.getElementById('personalAuthPinInput').value = "";
+      document.getElementById('personalAuthPinConfirmInput').value = "";
+      document.getElementById('personalAuthPinInput').focus();
+    } catch (e) {
+      errDiv.innerText = "เชื่อมต่อเซิร์ฟเวอร์ล้มเหลว";
+    }
+  }
+
+  async function submitPersonalAuth() {
+    const pin = document.getElementById('pFersonalAuthPinInput').value.trim();
+    const pinConfirm = document.getElementById('personalAuthPinConfirmInput').value.trim();
+    const errDiv = document.getElementById('personalAuthErr');
+    const btn = document.getElementById('personalAuthSubmitBtn');
+
+    if (!pin || pin.length !== 6 || !/^\d{6}$/.test(pin)) {
+      errDiv.innerText = "กรุณากรอกตัวเลข PIN ให้ครบ 6 หลัก";
+      return;
+    }
+
+    if (isSettingUpFirstPin) {
+      if (pin !== pinConfirm) {
+        errDiv.innerText = "รหัส PIN ยืนยันไม่ตรงกัน";
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerText = "กำลังบันทึก...";
+
+      try {
+        const res = await fetch(SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: "setupStaffPin", name: currentPersonalStaffName, pin: pin })
+        });
+        const result = await res.json();
+        if (result.success) {
+          alert("✅ " + result.message);
+          localStorage.setItem('personal_staff_auth', currentPersonalStaffName);
+          personalAuthModalInstance.hide();
+          openPersonalDocView();
+        } else {
+          errDiv.innerText = result.message;
+        }
+      } catch (e) { errDiv.innerText = "เชื่อมต่อล้มเหลว"; }
+      finally { btn.disabled = false; btn.innerText = "บันทึกรหัสผ่าน"; }
+      return;
+    }
+
+    // กรณียืนยัน PIN เดิม
+    btn.disabled = true;
+    btn.innerText = "กำลังตรวจสอบ...";
+    try {
+      const res = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: "verifyStaffPin", name: currentPersonalStaffName, pin: pin })
+      });
+      const result = await res.json();
+      if (result.success) {
+        localStorage.setItem('personal_staff_auth', currentPersonalStaffName);
+        personalAuthModalInstance.hide();
+        openPersonalDocView();
+      } else {
+        errDiv.innerText = result.message || "รหัสผ่านผิด *ลืมรหัสผ่านกรุณาติดต่อ Admin";
+      }
+    } catch (e) { errDiv.innerText = "เชื่อมต่อล้มเหลว"; }
+    finally { btn.disabled = false; btn.innerText = "ยืนยันเข้าสู่ระบบ"; }
+  }
+
+  function openPersonalDocView() {
+    document.getElementById('personalStaffNameBadge').innerText = currentPersonalStaffName;
+    switchViewWithTransition('personalDocView');
+    updateNavForView('personalDoc');
+    initPersonalViewDropdown();
+    loadPersonalBooks();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function logoutPersonalStaffSession() {
+    localStorage.removeItem('personal_staff_auth');
+    currentPersonalStaffName = "";
+    switchToSarabanView();
+  }
+
+  function initPersonalViewDropdown() {
+    const ySelect = document.getElementById('personalYearSelect');
+    if (ySelect) {
+      let opts = "";
+      for (let y = currentYearBE + 1; y >= 2568; y--) {
+        opts += `<option value="${y}" ${y === currentPersonalYear ? 'selected' : ''}>ปี พ.ศ. ${y}</option>`;
+      }
+      ySelect.innerHTML = opts;
+    }
+  }
+
+  function changePersonalYear(val) {
+    currentPersonalYear = parseInt(val);
+    loadPersonalBooks();
+  }
+
+  function loadPersonalBooks() {
+    const tbody = document.getElementById('personalTableBody');
+    tbody.innerHTML = `<tr><td colspan="2" class="text-center p-4"><div class="spinner-border spinner-border-sm text-success me-2"></div> กำลังค้นหาหนังสือของท่าน...</td></tr>`;
+
+    rtdb.ref('logs_' + currentPersonalYear).once('value', (snapshot) => {
+      const rawData = snapshot.val();
+      const logs = rawData ? (Array.isArray(rawData) ? rawData : Object.values(rawData)) : [];
+      window._currentPersonalLogs = logs;
+      filterPersonalTable();
+    });
+  }
+
+  function filterPersonalTable() {
+    const tbody = document.getElementById('personalTableBody');
+    const logs = window._currentPersonalLogs || [];
+    const search = (document.getElementById('personalSearchInput')?.value || "").toLowerCase().trim();
+
+    // กรองเฉพาะเล่มที่มีชื่อครูในวงเล็บ [ ... ]
+    const filtered = logs.filter(row => {
+      if (!row || row[0] === "❌") return false;
+      const fileName = (row[2] || "").toString();
+      const hasMyName = fileName.includes(currentPersonalStaffName);
+      if (!hasMyName) return false;
+      if (search) return fileName.toLowerCase().includes(search);
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="2" class="text-center p-4 text-muted fw-bold">ไม่พบหนังสือที่มอบหมายถึง "${currentPersonalStaffName}"</td></tr>`;
+      return;
+    }
+
+    let html = "";
+    filtered.forEach(row => {
+      const rawFileName = (row[2] || "").trim();
+      const cleanNoExt = rawFileName.replace(/\.pdf$/i, "").trim();
+      const numMatch = cleanNoExt.match(/^(\d+[-/]\d+)/);
+      const bookNumber = numMatch ? numMatch[1] : "";
+      let bookTitle = cleanNoExt;
+      if (numMatch) bookTitle = bookTitle.substring(numMatch[1].length).trim();
+      bookTitle = bookTitle.replace(/\[.*?\]/g, "").trim();
+
+      html += `
+        <tr class="align-middle">
+          <td class="text-start text-dark col-title-wrap" style="width: 72%; font-size: 0.84rem;">
+            <div class="fw-bold text-success" style="font-size: 0.85rem; margin-bottom: 2px;">${bookNumber ? `[${bookNumber}]` : ''}</div>
+            <div class="fw-bold text-dark" style="line-height: 1.4;">${bookTitle}</div>
+          </td>
+          <td class="text-center" style="width: 28%;">
+            <div class="d-flex justify-content-center gap-1">
+              <button onclick="openPdfViewer('${row[4]}', '${encodeURIComponent(cleanNoExt)}')" class="btn btn-sm btn-primary shadow-sm px-2 py-1" style="font-size: 0.78rem;">
+                เปิดดู
+              </button>
+              <button onclick="copyDeepLink('${row[4]}', '${encodeURIComponent(cleanNoExt)}')" class="btn btn-sm btn-copy shadow-sm px-2 py-1" style="font-size: 0.78rem;">
+                คัดลอก
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    });
+    tbody.innerHTML = html;
+  }
 
   // 🚗 สลับไปหน้ารายการไปราชการ
   function switchToDutyTripView() {
@@ -4563,13 +4862,22 @@ window.addEventListener('popstate', () => {
   }
 
 function updateNavForView(viewName) {
+  const sarabanNavBtn = document.getElementById('sarabanNavBtn');
   const staffBtn = document.getElementById('manageStaffBtn');
   const dutyBtn = document.getElementById('dutyTripBtn');
+  const personalNavBtn = document.getElementById('personalDocNavBtn');
   const exportBtn = document.getElementById('toggleExportModeBtn');
   const dbBtn = document.getElementById('editDbBtn');
   const backBtn = document.getElementById('backToSarabanBtn');
   const logoutBtn = document.getElementById('logoutBtn');
   const isAdmin = (currentUser.role === 'Admin');
+
+  const sideSarabanBtn = document.getElementById('sideSarabanBtn');
+  const sideStaffBtn = document.getElementById('sideStaffBtn');
+  const sideDutyBtn = document.getElementById('sideDutyBtn');
+  const sidePersonalBtn = document.getElementById('sidePersonalDocBtn');
+  const sideExportBtn = document.getElementById('sideExportBtn');
+  const sideDbBtn = document.getElementById('sideDbBtn');
 
   // แสดงปุ่มออกจากระบบ/ปิดแอปเสมอในทุกหน้า
   if (logoutBtn) logoutBtn.style.display = 'inline-block';
@@ -4582,38 +4890,58 @@ function updateNavForView(viewName) {
   // 2. ฟังก์ชันช่วยคืนค่าสีปุ่มเป็นสีขาวปกติ
   const setBtnNormal = (btn) => {
     if (!btn) return;
-    btn.style.backgroundColor = '#ffffff';
-    btn.style.color = '#004d40';
+    btn.style.setProperty('background-color', '#ffffff', 'important');
+    btn.style.setProperty('background-image', 'none', 'important');
+    btn.style.setProperty('color', '#004d40', 'important');
+    btn.style.setProperty('border-color', '#b2dfdb', 'important');
   };
 
-  // 3. ฟังก์ชันช่วยไฮไลต์ปุ่มเป็นสีทองเมื่อเลือกหน้านั้น
-  // ✅ เปลี่ยนเป็น
-const setBtnActive = (btn) => {
-  if (!btn) return;
-  btn.style.backgroundColor = '#d8b4fe'; // สีม่วงอ่อน (Soft Lavender)
-  btn.style.color = '#3b0764';           // สีตัวอักษรม่วงเข้มคมชัด
-};
+  // 3. ฟังก์ชันช่วยไฮไลต์ปุ่มเมื่อเลือกหน้านั้น
+  const setBtnActive = (btn) => {
+    if (!btn) return;
+    btn.style.setProperty('background-color', '#d8b4fe', 'important'); // สีม่วงอ่อน (Soft Lavender)
+    btn.style.setProperty('background-image', 'none', 'important');
+    btn.style.setProperty('border-color', 'transparent', 'important');
+  };
 
-  // รีเซ็ตสีปุ่มทั้งหมดกลับเป็นสีขาว
-  [staffBtn, dutyBtn, exportBtn, dbBtn].forEach(setBtnNormal);
+  // รีเซ็ตสีปุ่มเมนูด้านบนทั้งหมดกลับเป็นสีปกติ
+  [sarabanNavBtn, staffBtn, dutyBtn, personalNavBtn, exportBtn, dbBtn].forEach(setBtnNormal);
 
-  // 4. แสดงปุ่มตามสิทธิ์ (User แสดงแค่ 2 ปุ่ม | Admin แสดงครบ 4 ปุ่ม)
+  // 4. แสดงปุ่มตามสิทธิ์
   const staffLabel = isAdmin ? "จัดการบุคลากร" : "รายชื่อบุคลากร";
-if (staffBtn) {
-  staffBtn.style.display = 'inline-flex';
-  staffBtn.title = staffLabel; // เก็บข้อความไว้เป็น Tooltip ไม่แสดงในปุ่ม
-}
+  if (sarabanNavBtn) sarabanNavBtn.style.display = 'inline-flex';
+  if (staffBtn) {
+    staffBtn.style.display = 'inline-flex';
+    staffBtn.title = staffLabel;
+  }
   if (dutyBtn) dutyBtn.style.display = 'inline-flex';
+  if (personalNavBtn) personalNavBtn.style.display = 'inline-flex';
 
-  // ✅ เปลี่ยนเป็น
-if (exportBtn) exportBtn.style.setProperty('display', isAdmin ? 'inline-flex' : 'none', 'important');
-if (dbBtn) dbBtn.style.setProperty('display', isAdmin ? 'inline-flex' : 'none', 'important');
+  if (exportBtn) exportBtn.style.setProperty('display', isAdmin ? 'inline-flex' : 'none', 'important');
+  if (dbBtn) dbBtn.style.setProperty('display', isAdmin ? 'inline-flex' : 'none', 'important');
 
-  // 5. ไฮไลต์สีทองตามหน้าย่อยที่กำลังเปิดอยู่
-  if (viewName === 'staff') setBtnActive(staffBtn);
+  // 5. ไฮไลต์ปุ่มตามหน้าย่อยที่กำลังเปิดอยู่
+  if (viewName === 'saraban') setBtnActive(sarabanNavBtn);
+  else if (viewName === 'staff') setBtnActive(staffBtn);
   else if (viewName === 'dutyTrip') setBtnActive(dutyBtn);
+  else if (viewName === 'personalDoc') setBtnActive(personalNavBtn);
   else if (viewName === 'export') setBtnActive(exportBtn);
   else if (viewName === 'dbManage') setBtnActive(dbBtn);
+
+  // แถบ Sidebar ของ PC
+  const sideAdminElems = document.querySelectorAll('.admin-only-feature');
+  sideAdminElems.forEach(el => el.style.setProperty('display', isAdmin ? 'flex' : 'none', 'important'));
+  
+  const sideStaffLabel = document.getElementById('sideStaffLabel');
+  if (sideStaffLabel) sideStaffLabel.innerText = isAdmin ? "จัดการบุคลากร" : "รายชื่อบุคลากร";
+
+  document.querySelectorAll('.btn-sidebar-item').forEach(btn => btn.classList.remove('active'));
+  if (viewName === 'saraban') sideSarabanBtn?.classList.add('active');
+  else if (viewName === 'staff') sideStaffBtn?.classList.add('active');
+  else if (viewName === 'dutyTrip') sideDutyBtn?.classList.add('active');
+  else if (viewName === 'personalDoc') sidePersonalBtn?.classList.add('active');
+  else if (viewName === 'export') sideExportBtn?.classList.add('active');
+  else if (viewName === 'dbManage') sideDbBtn?.classList.add('active');
 }
   
 // 👤 แสดงผลชื่อผู้ใช้งานบน Navbar (Admin แสดงแบบเดิม / User แสดงป้ายสีเดียวตามกลุ่มงาน)
@@ -7523,5 +7851,55 @@ function toggleAdminUploadBox() {
     </div>
   </div>
 </div>
+
+<!-- 🔒 Modal ล็อกอินยืนยันตัวตนดูหนังสือส่วนตัว (แบบกดปุ่มถัดไป) -->
+<div class="modal fade" id="personalAuthModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered" style="max-width: 380px;">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+      <div class="modal-header bg-dark text-white py-2 px-3">
+        <h6 class="modal-title fw-bold mb-0">🔒 ตรวจสอบสิทธิ์หนังสือส่วนตัว</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4 bg-light">
+        
+        <!-- สเต็ปที่ 1: เลือกชื่อบุคลากร -->
+        <div id="stepNameSection">
+          <label class="form-label fw-bold small text-dark mb-1">👤 เลือกชื่อ - นามสกุลของท่าน:</label>
+          <div class="input-group input-group-sm mb-3">
+            <input type="text" id="personalAuthStaffInput" list="staffList" class="form-control" placeholder="พิมพ์หรือเลือกชื่อบุคลากร...">
+          </div>
+          <div id="stepNameErr" class="text-danger small fw-bold text-center mb-2"></div>
+          <button type="button" class="btn btn-success w-100 py-2 fw-bold shadow-sm" onclick="proceedStaffName()">
+            ถัดไป ➔
+          </button>
+        </div>
+
+        <!-- สเต็ปที่ 2: ใส่ PIN (ตั้งค่าครั้งแรก หรือ ตรวจสอบรหัสเดิม) -->
+        <div id="stepPinSection" style="display: none;">
+          <div class="mb-2 text-muted small">ผู้ใช้งาน: <span id="displaySelectedStaffName" class="fw-bold text-success"></span></div>
+          
+          <div id="pinPromptLabel" class="fw-bold small text-dark mb-1">🔑 ใส่รหัส PIN 6 หลัก:</div>
+          <input type="password" id="personalAuthPinInput" class="form-control text-center fw-bold fs-3 mb-2" maxlength="6" placeholder="• • • • • •" style="letter-spacing: 6px;">
+          
+          <div id="pinConfirmDiv" style="display: none;" class="mb-2">
+            <label class="form-label small fw-bold text-muted mb-1">ยืนยัน PIN 6 หลักอีกครั้ง:</label>
+            <input type="password" id="personalAuthPinConfirmInput" class="form-control text-center fw-bold fs-3" maxlength="6" placeholder="• • • • • •" style="letter-spacing: 6px;">
+          </div>
+
+          <div id="personalAuthErr" class="text-danger small fw-bold text-center mb-2"></div>
+          
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-secondary btn-sm px-3 fw-bold" onclick="backToStepName()">⬅️ เปลี่ยนชื่อ</button>
+            <button type="button" id="personalAuthSubmitBtn" class="btn btn-primary flex-grow-1 py-2 fw-bold shadow-sm" onclick="submitPersonalAuth()">
+              ยืนยันเข้าสู่ระบบ
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

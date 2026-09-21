@@ -2129,6 +2129,13 @@
         </div>
       </div>
 
+      <!-- 🔔 ปุ่มสำหรับกดทดสอบระบบแจ้งเตือน (วางตรงนี้ชั่วคราว) -->
+<div class="mb-2">
+  <button type="button" class="btn btn-sm btn-warning fw-bold shadow-sm" onclick="testDirectBadgeAndNotification()">
+    🔔 กดทดสอบแจ้งเตือน + ตัวเลขแดงบนไอคอน
+  </button>
+</div>
+
       <!-- แถบตัวกรองปีและค้นหา -->
       <div class="row g-2 mb-3 align-items-center">
         <div class="col-6 col-md-2">
@@ -7993,6 +8000,45 @@ function toggleAdminUploadBox() {
         initialPinchDist = 0;
       }
     }, { passive: true });
+  }
+
+// 🔔 ฟังก์ชันทดสอบระบบแจ้งเตือนและ Badge ตัวเลขแดงบนไอคอน
+  async function testDirectBadgeAndNotification() {
+    // 1. ทดสอบยิงตัวเลขแดงที่ไอคอนแอป
+    if ('setAppBadge' in navigator) {
+      try {
+        await navigator.setAppBadge(1);
+        alert('🔴 สั่งขึ้นเลข 1 บนไอคอนแล้ว! (ลองพับหน้าจอออกไปดูที่ไอคอนแอป)');
+      } catch (e) {
+        alert('❌ setAppBadge ไม่สำเร็จ: ' + e.message);
+      }
+    } else {
+      alert('⚠️ เบราว์เซอร์/อุปกรณ์นี้ยังไม่รองรับการขึ้นตัวเลขบนไอคอน (setAppBadge)');
+    }
+
+    // 2. ทดสอบเด้งแถบแจ้งเตือนด้านบน
+    if (Notification.permission === 'granted') {
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        reg.showNotification('📥 ทดสอบแจ้งเตือนหนังสือ', {
+          body: 'ระบบแจ้งเตือนและสั่นทำงานถูกต้อง!',
+          icon: './logo2.png',
+          badge: './logo2.png',
+          vibrate: [200, 100, 200]
+        });
+      } catch (err) {
+        alert('❌ เด้งแจ้งเตือนไม่สำเร็จ: ' + err.message);
+      }
+    } else {
+      alert('⚠️ ยังไม่ได้รับสิทธิ์ Notification (สถานะปัจจุบัน: ' + Notification.permission + ') กำลังขอสิทธิ์...');
+      Notification.requestPermission().then(permission => {
+        if (permission === 'granted') {
+          alert('✅ ได้รับสิทธิ์แล้ว ลองกดปุ่มทดสอบใหม่อีกครั้งครับ');
+        } else {
+          alert('❌ ผู้ใช้ไม่อนุญาตให้แจ้งเตือน');
+        }
+      });
+    }
   }
 
 </script>

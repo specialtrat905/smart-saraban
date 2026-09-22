@@ -5329,6 +5329,178 @@ async function refreshApp() {
     }
   }
 
+  // 👥 ฟังก์ชันจัดการแสดงรายชื่อผู้รับผิดชอบในรายการหนังสือ (จำกัด 3 คน + ปุ่มดูทั้งหมด)
+  function renderBookStaffBadges(namesStr, bookTitleEscaped) {
+    if (!namesStr) return "";
+    const list = namesStr.split(',').map(s => s.trim()).filter(Boolean);
+    if (list.length === 0) return "";
+
+    if (list.length <= 3) {
+      return list.map(name => `
+        <div class="mb-1"><small class="badge border" style="font-size: 0.7rem; font-weight: 400; background-color: #adb5bd; color: #fff;">👤 ${name}</small></div>
+      `).join('');
+    }
+
+    // กรณีมากกว่า 3 คน: แสดง 3 คนแรก + ปุ่มกดดูรายชื่อที่เหลือ
+    const firstThree = list.slice(0, 3);
+    let badges = firstThree.map(name => `
+      <div class="mb-1"><small class="badge border" style="font-size: 0.7rem; font-weight: 400; background-color: #adb5bd; color: #fff;">👤 ${name}</small></div>
+    `).join('');
+
+    const encodedNames = encodeURIComponent(namesStr);
+    badges += `
+      <div class="mt-1">
+        <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 fw-bold shadow-sm d-inline-flex align-items-center gap-1" style="font-size: 0.68rem; border-radius: 12px; background: #fff;" onclick="openBookStaffListModal('${encodedNames}', '${bookTitleEscaped}')">
+          <span>👤 ดูทั้งหมด (${list.length} คน)</span>
+        </button>
+      </div>
+    `;
+    return badges;
+  }
+
+  // 🎨 แมปสีกลุ่มงาน
+  const globalDeptColors = {
+    "ฝ่ายบริหารวิชาการ": "#ffde59", "บริหารงานวิชาการ": "#ffde59",
+    "ฝ่ายบริหารงบประมาณ": "#ff5757", "บริหารแผนงานและงบประมาณ": "#ff5757",
+    "ฝ่ายบริหารงานบุคคล": "#0cc0df", "บริหารงานบุคคล": "#0cc0df",
+    "ฝ่ายบริหารทั่วไป": "#8c52ff", "บริหารงานทั่วไป": "#8c52ff",
+    "ผู้อำนวยการ": "#add8e6", "รองผู้อำนวยการ": "#d2b48c", "อื่นๆ": "#adb5bd"
+  };
+
+  // ✂️ ฟังก์ชันตัดคำนำหน้าชื่อไทยออก เหลือเฉพาะชื่อและนามสกุล
+  function stripThaiPrefix(name) {
+    if (!name) return "";
+    return name.toString().trim()
+      .replace(/^(นาย|นางสาว|นาง|ว่าที่ร้อยตรี|ว่าที่ ร\.ต\.|ดร\.|อาจารย์|ครู)\s*/g, "")
+      .trim();
+  }
+
+  // 🏷️ ฟังก์ชันจัดเลย์เอาต์ป้ายฝ่ายงานและรายชื่อบุคลากร (แยกตาม PC และ มือถือ)
+  function renderUnifiedDeptBadges(rawDeptStr, fullFileName, cleanFileName, isMobile) {
+    if (!rawDeptStr && !fullFileName) return "";
+    
+    const depts = (rawDeptStr || "").split(',').map(d => d.trim()).filter(Boolean);
+    const nameMatch = fullFileName.match(/\[(.*?)\]/);
+    const rawStaffList = nameMatch && nameMatch[1] ? nameMatch[1].split(',').map(s => s.trim()).filter(Boolean) : [];
+    const encodedTitle = encodeURIComponent(cleanFileName);
+
+    // 💻 ฝั่ง PC: เรียงต่อกันใน 1 บรรทัด (Flex Wrap)
+    if (!isMobile) {
+      let html = `<div class="d-flex flex-wrap align-items-center gap-1 mt-1">`;
+      
+      depts.forEach(d => {
+        const color = globalDeptColors[d] || "#adb5bd";
+        if (d === "อื่นๆ") {
+          html += `<span class="badge border py-1 px-2" style="font-size: 0.70rem; font-weight: 500; background-color: ${color}; color: #fff;">อื่นๆ</span>`;
+          if (rawStaffList.length > 0) {
+            const showList = rawStaffList.slice(0, 3);
+            showList.forEach(name => {
+              html += `<span class="badge border py-1 px-2 text-dark bg-light shadow-sm" style="font-size: 0.70rem; font-weight: 500;">👤 ${stripThaiPrefix(name)}</span>`;
+            });
+            if (rawStaffList.length > 3) {
+              const encNames = encodeURIComponent(nameMatch[1]);
+              html += `<button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 fw-bold shadow-sm d-inline-flex align-items-center" style="font-size: 0.68rem; border-radius: 12px; background: #fff; height: 20px;" onclick="openBookStaffListModal('${encNames}', '${encodedTitle}')">👤 ดูทั้งหมด (${rawStaffList.length} คน)</button>`;
+            }
+          }
+        } else {
+          html += `<span class="badge border py-1 px-2" style="font-size: 0.70rem; font-weight: 500; background-color: ${color}; color: #fff;">${d}</span>`;
+        }
+      });
+
+      html += `</div>`;
+      return html;
+    }
+
+    // 📱 ฝั่งมือถือ: ปรับใหม่ตามรูปแบบที่กำหนด
+    let html = `<div class="d-flex flex-column gap-1 mt-1 w-100">`;
+    const standardDepts = depts.filter(d => d !== "อื่นๆ");
+    
+    // ฝ่ายงานทั่วไป: 2 ฝ่ายต่อบรรทัด
+    for (let i = 0; i < standardDepts.length; i += 2) {
+      html += `<div class="row g-1 m-0 w-100">`;
+      const d1 = standardDepts[i];
+      const c1 = globalDeptColors[d1] || "#adb5bd";
+      html += `<div class="col-6 p-0 pe-1"><span class="badge border w-100 text-truncate text-center py-1" style="font-size: 0.68rem; font-weight: 500; background-color: ${c1}; color: #fff;">${d1}</span></div>`;
+      
+      if (i + 1 < standardDepts.length) {
+        const d2 = standardDepts[i + 1];
+        const c2 = globalDeptColors[d2] || "#adb5bd";
+        html += `<div class="col-6 p-0 ps-1"><span class="badge border w-100 text-truncate text-center py-1" style="font-size: 0.68rem; font-weight: 500; background-color: ${c2}; color: #fff;">${d2}</span></div>`;
+      }
+      html += `</div>`;
+    }
+
+    // จัดการกลุ่ม "อื่นๆ"
+    if (depts.includes("อื่นๆ") || rawStaffList.length > 0) {
+      if (rawStaffList.length === 0) {
+        html += `<div class="w-100"><span class="badge border py-1 px-2" style="font-size: 0.68rem; font-weight: 500; background-color: #adb5bd; color: #fff;">อื่นๆ</span></div>`;
+      } else {
+        const cleanNames = rawStaffList.map(stripThaiPrefix);
+
+        // 📌 แถวที่ 1: ป้าย "อื่นๆ" เดี่ยวๆ
+        html += `<div><span class="badge border py-1 px-2" style="font-size: 0.68rem; font-weight: 500; background-color: #adb5bd; color: #fff;">อื่นๆ</span></div>`;
+
+        // 📌 แถวที่ 2: คนที่ 1 และ คนที่ 2 (แบ่งครึ่งคนละ 50%)
+        html += `<div class="row g-1 m-0 w-100">`;
+        html += `<div class="col-6 p-0 pe-1"><span class="badge border w-100 text-truncate text-start py-1 px-2 text-dark bg-light shadow-sm" style="font-size: 0.68rem; font-weight: 500;" title="${cleanNames[0]}">👤 ${cleanNames[0]}</span></div>`;
+        if (cleanNames.length > 1) {
+          html += `<div class="col-6 p-0 ps-1"><span class="badge border w-100 text-truncate text-start py-1 px-2 text-dark bg-light shadow-sm" style="font-size: 0.68rem; font-weight: 500;" title="${cleanNames[1]}">👤 ${cleanNames[1]}</span></div>`;
+        }
+        html += `</div>`;
+
+        // 📌 แถวที่ 3: คนที่ 3 + ปุ่ม "ดูทั้งหมด" (ถ้ามี)
+        if (cleanNames.length >= 3) {
+          const encNames = encodeURIComponent(nameMatch[1]);
+          html += `<div class="row g-1 m-0 w-100">`;
+          if (cleanNames.length > 3) {
+            html += `<div class="col-6 p-0 pe-1"><span class="badge border w-100 text-truncate text-start py-1 px-2 text-dark bg-light shadow-sm" style="font-size: 0.68rem; font-weight: 500;" title="${cleanNames[2]}">👤 ${cleanNames[2]}</span></div>`;
+            html += `<div class="col-6 p-0 ps-1"><button type="button" class="btn btn-sm btn-outline-secondary w-100 text-truncate py-1 px-1 fw-bold shadow-sm d-flex align-items-center justify-content-center" style="font-size: 0.66rem; border-radius: 6px; background: #fff; height: 23px;" onclick="openBookStaffListModal('${encNames}', '${encodedTitle}')">👤 ดูทั้งหมด (${rawStaffList.length})</button></div>`;
+          } else {
+            // กรณีมีพอดี 3 คน
+            html += `<div class="col-6 p-0 pe-1"><span class="badge border w-100 text-truncate text-start py-1 px-2 text-dark bg-light shadow-sm" style="font-size: 0.68rem; font-weight: 500;" title="${cleanNames[2]}">👤 ${cleanNames[2]}</span></div>`;
+          }
+          html += `</div>`;
+        }
+      }
+    }
+
+    html += `</div>`;
+    return html;
+  }
+
+  // 📋 ฟังก์ชันเปิด Modal แสดงรายชื่อทั้งหมด (จัดชิดซ้ายเป็นแนวตรงกัน)
+  let bookStaffListModalInstance = null;
+  function openBookStaffListModal(encodedNames, encodedTitle) {
+    const rawNames = decodeURIComponent(encodedNames);
+    const title = decodeURIComponent(encodedTitle);
+    const list = rawNames.split(',').map(s => s.trim()).filter(Boolean);
+
+    const titleEl = document.getElementById('bookStaffModalTitle');
+    const countEl = document.getElementById('bookStaffModalCount');
+    const container = document.getElementById('bookStaffModalList');
+
+    if (titleEl) titleEl.innerText = title;
+    if (countEl) countEl.innerText = list.length;
+    
+    if (container) {
+      container.innerHTML = list.map((name, index) => `
+        <li class="list-group-item py-2 px-3 fw-bold text-dark d-flex align-items-center justify-content-between" style="font-size: 0.85rem;">
+          <div class="d-flex align-items-center gap-2 text-start flex-grow-1 overflow-hidden pe-2">
+            <span class="text-secondary" style="width: 22px; flex-shrink: 0;">${index + 1}.</span>
+            <span class="text-truncate">👤 ${name}</span>
+          </div>
+          <span class="badge bg-secondary bg-opacity-10 text-secondary border fw-normal flex-shrink-0" style="font-size: 0.7rem;">ผู้รับผิดชอบ</span>
+        </li>
+      `).join('');
+    }
+
+    if (!bookStaffListModalInstance) {
+      const modalEl = document.getElementById('bookStaffListModal');
+      if (modalEl) bookStaffListModalInstance = new bootstrap.Modal(modalEl);
+    }
+    if (bookStaffListModalInstance) bookStaffListModalInstance.show();
+  }
+
   // 📱 1. ฟังก์ชันเรนเดอร์สำหรับมือถือ
   function renderNormalTable(dataRows) {
     const tableBody = document.getElementById('bookData');
@@ -5383,16 +5555,11 @@ async function refreshApp() {
       }).join('');
 
       let staffBadge = "";
-      let plainFileName = cleanFileName;
-
+      // 1. ดึงชื่อหนังสือล้วนโดยตัด [ชื่อคน] ออกไปคำนวณ
+      let plainFileName = fullFileName;
       if (!isMissing) {
-        const nameMatch = fullFileName.match(/\[(.*?)\]/);
-        if (nameMatch) {
-          const names = nameMatch[1];
-          cleanFileName = fullFileName.replace(/\[.*?\]/, "").trim();
-          plainFileName = cleanFileName;
-          staffBadge = `<div class="mb-1"><small class="badge border" style="font-size: 0.7rem; font-weight: 400; background-color: #adb5bd; color: #fff;">👤 ${names}</small></div>`;
-        }
+        cleanFileName = fullFileName.replace(/\[.*?\]/, "").trim();
+        plainFileName = cleanFileName;
 
         const searchTerm = document.getElementById('searchInput') ? document.getElementById('searchInput').value.trim() : "";
         if (searchTerm) {
@@ -5402,7 +5569,6 @@ async function refreshApp() {
         }
       }
 
-      // 📌 แยกเลขหนังสือและชื่อเรื่องไว้ภายในลูปหลังจากได้ plainFileName แล้ว
       const cleanNoExt = plainFileName.replace(/\.pdf$/i, "").trim();
       const numMatch = cleanNoExt.match(/^(\d+[-/]\d+)/);
       const bookNumber = numMatch ? numMatch[1] : "";
@@ -5411,7 +5577,8 @@ async function refreshApp() {
         bookTitle = bookTitle.substring(numMatch[1].length).trim();
       }
 
-      const deptBadgesContainer = (deptBadges || staffBadge) ? `<div class="d-flex flex-column align-items-start mt-1">${deptBadges}${staffBadge}</div>` : "";
+      // 2. เรียกใช้ตัวสร้างป้ายสำหรับมือถือ (isMobile = true)
+      const deptBadgesContainer = isMissing ? "" : renderUnifiedDeptBadges(col[3], fullFileName, bookTitle || cleanFileName, true);
       
       let actionColumnHTML = "";
       if (isMissing) {
@@ -5533,16 +5700,11 @@ async function refreshApp() {
       }).join('');
 
       let staffBadge = "";
+      // 1. ดึงชื่อหนังสือล้วนโดยตัด [ชื่อคน] ออกไปคำนวณ
       let plainFileName = cleanFileName;
-
       if (!isMissing) {
-        const nameMatch = fullFileName.match(/\[(.*?)\]/);
-        if (nameMatch) {
-          const names = nameMatch[1];
-          cleanFileName = fullFileName.replace(/\[.*?\]/, "").trim();
-          plainFileName = cleanFileName;
-          staffBadge = `<div class="mb-1"><small class="badge border" style="font-size: 0.7rem; font-weight: 400; background-color: #adb5bd; color: #fff;">👤 ${names}</small></div>`;
-        }
+        cleanFileName = fullFileName.replace(/\[.*?\]/, "").trim();
+        plainFileName = cleanFileName;
 
         const searchTerm = document.getElementById('searchInput') ? document.getElementById('searchInput').value.trim() : "";
         if (searchTerm) {
@@ -5552,7 +5714,6 @@ async function refreshApp() {
         }
       }
 
-      // 📌 แยกเลขหนังสือและชื่อเรื่องไว้ภายในลูป
       const cleanNoExt = plainFileName.replace(/\.pdf$/i, "").trim();
       const numMatch = cleanNoExt.match(/^(\d+[-/]\d+)/);
       const bookNumber = numMatch ? numMatch[1] : "";
@@ -5561,7 +5722,8 @@ async function refreshApp() {
         bookTitle = bookTitle.substring(numMatch[1].length).trim();
       }
 
-      const deptBadgesContainer = (deptBadges || staffBadge) ? `<div class="d-flex flex-column align-items-start mt-1">${deptBadges}${staffBadge}</div>` : "";
+      // 2. เรียกใช้ตัวสร้างป้ายสำหรับ PC (isMobile = false)
+      const deptBadgesContainer = isMissing ? "" : renderUnifiedDeptBadges(col[3], fullFileName, bookTitle || cleanFileName, false);
       
       let actionColumnHTML = "";
       if (isMissing) {
@@ -8234,5 +8396,30 @@ function toggleAdminUploadBox() {
   </div>
 </div>
 
+<!-- 👥 Modal แสดงรายชื่อผู้รับผิดชอบหนังสือทั้งหมด -->
+  <div class="modal fade" id="bookStaffListModal" tabindex="-1" aria-hidden="true" style="z-index: 1065;">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 420px;">
+      <div class="modal-content border-0 shadow-lg" style="border-radius: 14px;">
+        <div class="modal-header bg-success text-white py-2 px-3">
+          <h6 class="modal-title fw-bold d-flex align-items-center gap-2 m-0" style="font-size: 0.9rem;">
+            <span>👥</span>
+            <span>รายชื่อผู้รับผิดชอบ (<span id="bookStaffModalCount">0</span> คน)</span>
+          </h6>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-3 bg-light">
+          <div class="p-2 bg-white rounded border mb-2 shadow-sm">
+            <small class="text-muted d-block" style="font-size: 0.72rem;">เรื่อง / หนังสือ:</small>
+            <div id="bookStaffModalTitle" class="fw-bold text-dark text-break" style="font-size: 0.84rem; line-height: 1.35;"></div>
+          </div>
+          <div class="fw-bold text-secondary mb-1" style="font-size: 0.75rem;">รายชื่อบุคลากรที่ได้รับมอบหมาย:</div>
+          <ol id="bookStaffModalList" class="list-group list-group-numbered shadow-sm" style="max-height: 50vh; overflow-y: auto;"></ol>
+        </div>
+        <div class="modal-footer bg-white p-2">
+          <button type="button" class="btn btn-sm btn-secondary px-3 fw-bold" data-bs-dismiss="modal">ปิดหน้าต่าง</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

@@ -2654,25 +2654,7 @@
     </div>
   </div>
 
-  <!-- 🛑 Modal เลือกระดับการปิดแจ้งเตือน (ปิดชั่วคราว หรือ ไม่ต้องเตือนอีก) -->
-  <div class="modal fade" id="pwaDismissModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-sm">
-      <div class="modal-content border-0 shadow-lg" style="border-radius: 14px;">
-        <div class="modal-header py-2 px-3 bg-light">
-          <h6 class="modal-title fw-bold text-dark m-0" style="font-size: 0.85rem;">การแจ้งเตือนติดตั้งแอป</h6>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
-        <div class="modal-body p-3 d-flex flex-column gap-2">
-          <button type="button" class="btn btn-outline-secondary btn-sm py-2 fw-bold text-start" onclick="dismissPwaTemporary()">
-            ⏰ ปิดไว้ก่อน (เตือนใหม่ในอีก 7 วัน)
-          </button>
-          <button type="button" class="btn btn-outline-danger btn-sm py-2 fw-bold text-start" onclick="dismissPwaPermanently()">
-            🚫 ฉันติดตั้งแล้ว (ไม่ต้องเตือนอีก)
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
+ 
 
   <!-- 🍏 Modal สอนติดตั้งบน iPhone Safari -->
   <div class="modal fade" id="iosInstallGuideModal" tabindex="-1" aria-hidden="true">
@@ -2702,6 +2684,27 @@
     </div>
   </div>
     </footer>
+
+ <!-- 🛑 Modal เลือกระดับการปิดแจ้งเตือน (ปิดชั่วคราว หรือ ไม่ต้องเตือนอีก) -->
+  <div class="modal fade" id="pwaDismissModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+      <div class="modal-content border-0 shadow-lg" style="border-radius: 14px;">
+        <div class="modal-header py-2 px-3 bg-light">
+          <h6 class="modal-title fw-bold text-dark m-0" style="font-size: 0.85rem;">การแจ้งเตือนติดตั้งแอป</h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-3 d-flex flex-column gap-2">
+          <button type="button" class="btn btn-outline-secondary btn-sm py-2 fw-bold text-start" onclick="dismissPwaTemporary()">
+            ⏰ ปิดไว้ก่อน (เตือนใหม่ในอีก 7 วัน)
+          </button>
+          <button type="button" class="btn btn-outline-danger btn-sm py-2 fw-bold text-start" onclick="dismissPwaPermanently()">
+            🚫 ฉันติดตั้งแล้ว (ไม่ต้องเตือนอีก)
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
     <!-- 📝 Modal เพิ่ม/แก้ไขข้อมูลการไปราชการ -->
     <div class="modal fade" id="dutyTripFormModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
       <div class="modal-dialog modal-lg modal-dialog-centered">

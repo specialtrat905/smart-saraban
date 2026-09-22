@@ -1504,21 +1504,23 @@
     </div>
     <h3 class="fw-bold text-success mb-4">ระบบส่งหนังสือ ศกศ.ตราด</h3>
     
-    <!-- สเต็ป 1: กรอกผู้ใช้และรหัสผ่าน -->
+    <!-- สเต็ป 1: กรอกผู้ใช้และรหัสผ่าน (เพิ่มการกด Enter) -->
     <div id="loginStep1">
-      <input type="text" id="user" class="form-control mb-3" placeholder="ชื่อผู้ใช้">
-      <input type="password" id="pass" class="form-control mb-3" placeholder="รหัสผ่าน">
+      <input type="text" id="user" class="form-control mb-3" placeholder="ชื่อผู้ใช้" onkeydown="if(event.key==='Enter'){document.getElementById('pass').focus();}">
+      <input type="password" id="pass" class="form-control mb-3" placeholder="รหัสผ่าน" onkeydown="if(event.key==='Enter'){login();}">
       <button id="loginBtn" onclick="login()" class="btn btn-success w-100 py-2 fw-bold shadow-sm btn-interactive">
         เข้าสู่ระบบ
       </button>
     </div>
 
-    <!-- สเต็ป 2: กรอกรหัส Google Authenticator (แสดงเฉพาะ Admin) -->
+    <!-- สเต็ป 2: กรอกรหัส Google Authenticator (กด Enter ได้ + ครบ 6 หลักส่งทันที) -->
     <div id="loginStep2" style="display: none;">
       <div class="alert alert-success py-2 px-3 small mb-3 text-start">
         🛡️ กรุณาเปิดแอป <b>Google Authenticator</b> แล้วกรอกรหัส 6 หลัก:
       </div>
-      <input type="tel" id="totpInput" class="form-control text-center mb-3 fw-bold fs-3" placeholder="• • • • • •" maxlength="6" style="letter-spacing: 6px;">
+      <input type="tel" id="totpInput" class="form-control text-center mb-3 fw-bold fs-3" placeholder="• • • • • •" maxlength="6" style="letter-spacing: 6px;" 
+             oninput="if(this.value.trim().length===6){submitAdminTotp();}" 
+             onkeydown="if(event.key==='Enter'){submitAdminTotp();}">
       <button id="verifyTotpBtn" onclick="submitAdminTotp()" class="btn btn-success w-100 py-2 fw-bold shadow-sm btn-interactive mb-2">
         ยืนยันตัวตน
       </button>
@@ -6029,8 +6031,10 @@ async function refreshApp() {
     }, 200);
   }
 
-  // 🔢 ฟังก์ชันส่งรหัส Admin พร้อม TOTP
+  let isSubmittingTotp = false;
+
   async function submitAdminTotp() {
+    if (isSubmittingTotp) return; // ป้องกันการกดยิงซ้ำ
     const otp = document.getElementById('totpInput').value.trim();
     const btn = document.getElementById('verifyTotpBtn');
     const errDiv = document.getElementById('loginErr');
@@ -6041,13 +6045,14 @@ async function refreshApp() {
       return;
     }
 
+    isSubmittingTotp = true;
     btn.disabled = true;
-    btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> กำลังตรวจสอบ...`;
+    btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> กำลังเข้าสู่ระบบ...`;
 
     try {
       const response = await fetch(SCRIPT_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // 👈 ใส่บรรทัดนี้กลับคืนมา
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
           action: "loginAdminTotp",
           user: tempAdminAuth.user,
@@ -6058,24 +6063,15 @@ async function refreshApp() {
 
       const textRes = await response.text();
       
-      // ป้องกันกรณี Apps Script ส่งหน้า HTML แจ้งเตือนสิทธิ์กลับมา
       if (textRes.trim().startsWith("<!DOCTYPE") || textRes.trim().startsWith("<html")) {
-        errDiv.innerText = "⚠️ เซิร์ฟเวอร์ส่งหน้า HTML กลับมา (โปรดตรวจสอบสิทธิ์ Deploy ให้เป็น Anyone)";
+        errDiv.innerText = "⚠️ เซิร์ฟเวอร์กำลังประมวลผล กรุณากด Enter ลองใหม่อีกครั้ง";
         return;
       }
 
-      let resData;
-      try {
-        resData = JSON.parse(textRes);
-      } catch (jsonErr) {
-        errDiv.innerText = "⚠️ ผลลัพธ์จากเซิร์ฟเวอร์ไม่ถูกต้อง: " + textRes.substring(0, 80);
-        return;
-      }
+      const resData = JSON.parse(textRes);
 
       if (resData.success && resData.user) {
         currentUser = resData.user;
-        
-        // 📅 ดึงวันที่วันนี้แล้วประทับตราขึ้น Firebase กลาง
         const now = new Date();
         const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         
@@ -6089,10 +6085,13 @@ async function refreshApp() {
         });
       } else {
         errDiv.innerText = resData.message || "รหัสยืนยันตัวตนไม่ถูกต้อง";
+        document.getElementById('totpInput').value = "";
+        document.getElementById('totpInput').focus();
       }
     } catch (e) {
-      errDiv.innerText = "เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์: " + (e.message || "");
+      errDiv.innerText = "เกิดข้อผิดพลาดในการเชื่อมต่อ: " + (e.message || "");
     } finally {
+      isSubmittingTotp = false;
       btn.disabled = false;
       btn.innerHTML = `ยืนยันตัวตน`;
     }

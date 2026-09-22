@@ -4,7 +4,7 @@
   <link rel="icon" href="./logo2.png">
   <link rel="apple-touch-icon" href="./logo.png?v=3">
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#004d40">
+  <meta name="theme-color" id="themeColorMeta" content="#004d40">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta charset="UTF-8">
@@ -260,10 +260,19 @@
     .nav-custom { 
       background: linear-gradient(135deg, #004d40 0%, #00796b 100%) !important; 
       color: #ffffff !important; 
-      border-bottom: 1.5px solid rgba(255, 255, 255, 0.85) !important; /* เส้นสีขาวตัดขอบ คั่นไม่ให้กลืนกับแถบข้าง */
-      padding-top: env(safe-area-inset-top, 15px) !important;
-      box-sizing: content-box;
+      border-bottom: 1.5px solid rgba(255, 255, 255, 0.85) !important;
+      /* 📱 เว้นระยะปลอดภัยด้านบนตามรอยบาก/กล้องหน้า และขั้นต่ำ 32px ไม่ให้ปุ่มทับนาฬิกา */
+      padding-top: max(env(safe-area-inset-top), 32px) !important;
+      padding-bottom: 8px !important;
+      box-sizing: border-box !important;
       z-index: 1025 !important;
+    }
+
+    @media (min-width: 769px) {
+      .nav-custom {
+        padding-top: 10px !important;
+        padding-bottom: 10px !important;
+      }
     }
     .card { border-radius: 15px; border: none; }
     .main-app { display: none; }
@@ -7761,8 +7770,22 @@ let currentPdfFileName = ''; // เพิ่มตัวแปรเก็บช
       document.documentElement.setAttribute('data-theme', themeName);
     }
     localStorage.setItem('saraban_theme', themeName);
+    
+    // 🎨 สลับไอคอนปุ่มธีม
     const btn = document.getElementById('themeToggleBtn');
     if (btn) btn.innerHTML = themeIcons[themeName];
+
+    // 📱 สลับสีแถบ Status Bar (นาฬิกา, แบตเตอรี่) ให้กลืนไปกับแถบบนสุดอัตโนมัติ
+    const metaTheme = document.getElementById('themeColorMeta');
+    if (metaTheme) {
+      if (themeName === 'dark') {
+        metaTheme.setAttribute('content', '#181d34'); // 🌙 ธีมมืด: สีน้ำเงินเข้ม Midnight
+      } else if (themeName === 'amoled') {
+        metaTheme.setAttribute('content', '#080808'); // ⬛ ธีมดำสนิท: สีดำเนียนกริบ
+      } else {
+        metaTheme.setAttribute('content', '#004d40'); // 🌿 ธีมสว่าง: สีเขียวมรกตเดิม
+      }
+    }
   }
 
   function cycleTheme() {

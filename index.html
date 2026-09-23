@@ -5240,6 +5240,8 @@ function updateNavForView(viewName) {
   }
 
   // --- 4. ระบบจัดการไฟล์นำเข้าเอกสารสารบรรณ ---
+  
+  // 📄 ดักจับไฟล์หนังสือนำ (PDF)
   document.getElementById('fileInput').addEventListener('change', function(e) {
     const files = Array.from(e.target.files);
     files.forEach(file => {
@@ -5249,7 +5251,19 @@ function updateNavForView(viewName) {
     this.value = "";
   });
 
-  // 📎 แสดงรายการไฟล์แนบใต้ปุ่มเลือกหนังสือ (เต็มความกว้างของคอลัมน์)
+  // 📎 ดักจับไฟล์สิ่งที่ส่งมาด้วย (Excel, Word, รูป, ฯลฯ)
+  document.getElementById('attachFileInput')?.addEventListener('change', function(e) {
+    const files = Array.from(e.target.files);
+    files.forEach(file => {
+      if (!selectedAttachFilesArray.some(f => f.name === file.name)) {
+        selectedAttachFilesArray.push(file);
+      }
+    });
+    renderAttachFileList();
+    this.value = "";
+  });
+
+  // 📄 แสดงรายการไฟล์หนังสือนำ
   function renderFileList() {
     const fileBadge = document.getElementById('fileCountBadge');
     const container = document.getElementById('fileChipsContainer');
@@ -5271,6 +5285,41 @@ function updateNavForView(viewName) {
         </div>
       `).join('');
     }
+  }
+
+  // 📎 แสดงรายการชิปไฟล์สิ่งที่ส่งมาด้วย
+  function renderAttachFileList() {
+    const badge = document.getElementById('attachCountBadge');
+    const container = document.getElementById('attachChipsContainer');
+    if (!badge || !container) return;
+
+    if (selectedAttachFilesArray.length === 0) {
+      badge.className = "badge bg-light text-dark";
+      badge.innerText = "0 ไฟล์";
+      container.innerHTML = "";
+    } else {
+      badge.className = "badge bg-warning text-dark fw-bold";
+      badge.innerText = `${selectedAttachFilesArray.length} ไฟล์`;
+      container.innerHTML = selectedAttachFilesArray.map((file, index) => `
+        <div class="p-1 px-2 bg-white rounded border d-flex justify-content-between align-items-center shadow-sm" style="font-size: 0.75rem;">
+          <div class="text-truncate me-2" style="max-width: 85%;">
+            <span class="badge bg-secondary text-white me-1" style="font-size:0.65rem;">แนบ ${index + 1}</span>
+            <span class="text-dark">${file.name}</span>
+          </div>
+          <span role="button" class="text-danger fw-bold cursor-pointer" onclick="removeAttachFile(${index})">✕</span>
+        </div>
+      `).join('');
+    }
+  }
+
+  function removeFile(index) { 
+    selectedFilesArray.splice(index, 1); 
+    renderFileList(); 
+  }
+
+  function removeAttachFile(index) {
+    selectedAttachFilesArray.splice(index, 1);
+    renderAttachFileList();
   }
 
 // 📱 ฟังก์ชันปิดแอปสำหรับสมาร์ตโฟน (ไม่ล้างสิทธิ์ล็อกอิน)
@@ -5344,23 +5393,6 @@ async function refreshApp() {
       btn.onclick = logout;
       btn.title = "ออกจากระบบและล้างสิทธิ์";
     }
-  }
-
-  function removeFile(index) { 
-    // 📎 ผูก Event Listener รับไฟล์สิ่งที่ส่งมาด้วยเข้า Array
-document.getElementById('attachFileInput')?.addEventListener('change', function(e) {
- const files = Array.from(e.target.files);
- files.forEach(file => {
-   if (!selectedAttachFilesArray.some(f => f.name === file.name)) {
-     selectedAttachFilesArray.push(file);
-   }
- });
- renderAttachFileList();
- this.value = "";
-});
-
-    selectedFilesArray.splice(index, 1); 
-    renderFileList(); 
   }
 
   function copyLink(url) {
@@ -8509,37 +8541,6 @@ function toggleAdminUploadBox() {
     renderAttachFileList();
     this.value = "";
   });
-
-  function renderAttachFileList() {
-    const badge = document.getElementById('attachCountBadge');
-    const container = document.getElementById('attachChipsContainer');
-    if (!badge || !container) return;
-
-    if (selectedAttachFilesArray.length === 0) {
-      badge.className = "badge bg-light text-dark";
-      badge.innerText = "0 ไฟล์";
-      container.innerHTML = "";
-    } else {
-      badge.className = "badge bg-warning text-dark fw-bold";
-      badge.innerText = `${selectedAttachFilesArray.length} ไฟล์`;
-      container.innerHTML = selectedAttachFilesArray.map((file, index) => `
-        <div class="p-1 px-2 bg-white rounded border d-flex justify-content-between align-items-center shadow-sm" style="font-size: 0.75rem;">
-          <div class="text-truncate me-2" style="max-width: 85%;">
-            <span class="badge bg-secondary text-white me-1" style="font-size:0.65rem;">แนบ ${index + 1}</span>
-            <span class="text-dark">${file.name}</span>
-          </div>
-          <span role="button" class="text-danger fw-bold cursor-pointer" onclick="removeAttachFile(${index})">✕</span>
-        </div>
-      `).join('');
-    }
-  }
-
-  function removeAttachFile(index) {
-    selectedAttachFilesArray.splice(index, 1);
-    renderAttachFileList();
-  }
-
-
 
 </script>
 <!-- 📝 Modal All-in-One: แสดง QR Code ที่พบด้านบน + ข้อความเอกสารและตารางด้านล่าง -->

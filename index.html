@@ -293,15 +293,38 @@
     .action-buttons { display: flex; gap: 5px; }
     /* 🟠 ปุ่มคัดลอก (คงโทนสีเหลืองอมส้ม เรียบแบน ไร้เฉด 3D) */
 .btn-copy {
-  background-color: #fef3c7 !important;
-  color: #b45309 !important;
-  border: 1px solid #fcd34d !important;
+  background-color: #1d4ed8 !important;
+  color: #ffffff !important;
+  border: none !important;
   background-image: none !important;
   box-shadow: none !important;
 }
+.btn-warning {
+  background-color: #fef08a !important;
+  color: #854d0e !important;
+  border: 1px solid #facc15 !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+.btn-warning:hover {
+  background-color: #fde047 !important;
+  color: #713f12 !important;
+}
 .btn-copy:hover {
-  background-color: #fde68a !important;
-  color: #78350f !important;
+  background-color: #1e40af !important;
+  color: #ffffff !important;
+}
+/* 🟠 ปุ่มไฟล์แนบ: สีส้มอำพัน (โทนคัดลอกเดิม) ตัวหนังสือสีขาว ไร้เส้นขอบ */
+.btn-attach {
+  background-color: #d97706 !important;
+  color: #ffffff !important;
+  border: none !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+.btn-attach:hover {
+  background-color: #b45309 !important;
+  color: #ffffff !important;
 }
     /* เพิ่มต่อท้ายในส่วน <style> */
     .row-missing { background-color: #ffeea8 !important; /* สีเหลืองนวลจางๆ */}
@@ -1744,13 +1767,29 @@
               <div id="selectedDeptsDisplay" class="mt-2 overflow-y-auto overflow-x-hidden" style="max-height: 120px;"></div>
             </div>
 
-            <div class="col-12 col-md-7" id="dropZone">
+            <div class="col-12 col-md-4" id="dropZone">
               <label for="fileInput" class="btn btn-action-file w-100 py-2 fw-bold text-start d-flex justify-content-between align-items-center shadow-sm mb-0 cursor-pointer">
-                <span class="text-truncate" style="font-size: 0.88rem;"><svg class="btn-svg-icon me-1" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg> เลือกไฟล์หนังสือ</span>
+                <span class="text-truncate d-inline-flex align-items-center" style="font-size: 0.85rem;">
+                  <svg class="btn-svg-icon me-1" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                  ไฟล์หนังสือ (PDF)
+                </span>
                 <span id="fileCountBadge" class="badge bg-light text-dark">0 ไฟล์</span>
               </label>
               <input type="file" id="fileInput" class="d-none" multiple accept=".pdf">
-              <div id="fileChipsContainer" class="mt-2 d-flex flex-column gap-1 overflow-auto" style="max-height: 120px;"></div>
+              <div id="fileChipsContainer" class="mt-2 d-flex flex-column gap-1 overflow-auto" style="max-height: 100px;"></div>
+            </div>
+
+            <!-- 📎 ช่องเลือกสิ่งที่ส่งมาด้วย (สีส้มอำพัน ตัวหนังสือขาว ไอคอนมินิมอล) -->
+            <div class="col-12 col-md-3">
+              <label for="attachFileInput" class="btn btn-attach w-100 py-2 fw-bold text-start d-flex justify-content-between align-items-center shadow-sm mb-0 cursor-pointer">
+                <span class="text-truncate d-inline-flex align-items-center text-white" style="font-size: 0.85rem;">
+                  <svg class="btn-svg-icon me-1" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                  สิ่งที่ส่งมาด้วย (ถ้ามี)
+                </span>
+                <span id="attachCountBadge" class="badge bg-light text-dark">0 ไฟล์</span>
+              </label>
+              <input type="file" id="attachFileInput" class="d-none" multiple accept=".xlsx,.xls,.docx,.doc,.jpg,.jpeg,.png,.zip,.rar,.pdf">
+              <div id="attachChipsContainer" class="mt-2 d-flex flex-column gap-1 overflow-auto" style="max-height: 100px;"></div>
             </div>
 
             <div class="col-12 col-md-2">
@@ -2114,9 +2153,10 @@
         <table class="table table-hover table-bordered align-middle mb-0" style="font-size: 0.88rem;">
           <thead class="table-light text-center sticky-top shadow-sm" style="z-index: 5;">
             <tr>
-              <th style="width: 62%;">ชื่อหนังสือ / ฝ่าย</th>
-              <th style="width: 26%;">ผู้รับผิดชอบ</th>
-              <th style="width: 12%; min-width: 48px;">จัดการ</th>
+              <th style="width: 50%;">ชื่อหนังสือ / ฝ่าย</th>
+              <th style="width: 22%;">ผู้รับผิดชอบ</th>
+              <th style="width: 18%;">เลขที่หนังสือจริง</th>
+              <th style="width: 10%; min-width: 44px;">จัดการ</th>
             </tr>
           </thead>
           <tbody id="dbManageTableBody"></tbody>
@@ -2836,7 +2876,7 @@
  // --- 1. การตั้งค่าสิทธิ์พื้นฐานองค์กร ---
   const GH_OWNER = "specialtrat905";
   const GH_REPO = "smart-saraban";
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyXKCXTBdWgZhThm9UTioz-ipIRlmvqXqFRItFs7CNCOuSh6rNmKRn6eALTsMGQOSYP5Q/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyXQHzAF8dDPsB69Wj9YVUm_l2p1mvaptk7eJWfLTrHuQHPiIC2jN1iHgfKm1VVfX6yVw/exec";
 // ⚡ กำหนดค่าเชื่อมต่อ Firebase (ตาม Config ของคุณ)
 const firebaseConfig = {
   apiKey: "AIzaSyBL_Jv3x_UxEkzcVnN6lpQpZdWoIaJvMNM",
@@ -2890,6 +2930,7 @@ function loadLogsFromFirebase(year) {
   let currentUser = {};
   let allLogs = [];
   let selectedFilesArray = [];
+  let selectedAttachFilesArray = [];
   let currentYearBE = new Date().getFullYear() + 543;
   
   // 👥 ตัวแปรจัดเก็บข้อมูลบุคลากรแบบเต็ม 10 คอลัมน์
@@ -4154,7 +4195,7 @@ function updateDbManageButtonUI() {
   function renderDbManageTableRows(rows) {
     const tbody = document.getElementById('dbManageTableBody');
     if (rows.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="3" class="text-center p-4 text-muted fw-bold">ไม่พบข้อมูลหนังสือ</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="4" class="text-center p-4 text-muted fw-bold">ไม่พบข้อมูลหนังสือ</td></tr>`;
       return;
     }
 
@@ -4178,46 +4219,73 @@ function updateDbManageButtonUI() {
       bookTitle = bookTitle.replace(/\[.*?\]/g, "").trim();
       if (!bookTitle) bookTitle = cleanNoExt;
 
-      // 🔘 ปุ่มแก้ไข (บน) และปุ่มลบ (ล่าง)
+      // 🔘 ปุ่มจัดการลบ / ย้ายฝ่าย
       const actionHTML = `
-        <div class="d-flex flex-column align-items-center justify-content-center gap-2">
-          <button class="btn btn-sm btn-outline-warning text-dark py-0 px-2 fw-bold shadow-sm" style="font-size: 0.75rem; width: 32px;" onclick="openEditBookDeptFromDbManage('${encodeURIComponent(row[2])}')" title="แก้ไขกลุ่มงาน/ผู้รับ">
+        <div class="d-flex flex-column align-items-center justify-content-center gap-1">
+          <button class="btn btn-sm btn-outline-warning text-dark py-0 px-2 fw-bold shadow-sm" style="font-size: 0.75rem; width: 30px; height: 26px;" onclick="openEditBookDeptFromDbManage('${encodeURIComponent(row[2])}')" title="แก้ไขกลุ่มงาน/ผู้รับ">
             <svg class="btn-svg-icon" viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
           </button>
-          <button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold shadow-sm" style="font-size: 0.75rem; width: 32px;" onclick="deleteBookFromDbManage('${encodeURIComponent(row[2])}')" title="ลบหนังสือ">
+          <button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold shadow-sm" style="font-size: 0.75rem; width: 30px; height: 26px;" onclick="deleteBookFromDbManage('${encodeURIComponent(row[2])}')" title="ลบหนังสือ">
             <svg class="btn-svg-icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
           </button>
         </div>
       `;
 
-      // 🎨 สร้าง Badge สีของกลุ่มงาน แยกบรรทัด
+      // 🎨 กลุ่มงาน
       const rawDeptStr = row[3] || "";
       const deptBadges = rawDeptStr ? rawDeptStr.split(',').map(d => {
         const dTrim = d.trim();
         const color = deptColors[dTrim] || "#adb5bd";
-        return `<div class="mb-1"><small class="badge border" style="font-size: 0.70rem; font-weight: 400; background-color: ${color}; color: #fff; border-color: rgba(0,0,0,0.1) !important;">${dTrim}</small></div>`;
+        return `<div class="mb-1"><small class="badge border" style="font-size: 0.70rem; font-weight: 400; background-color: ${color}; color: #fff;">${dTrim}</small></div>`;
       }).join('') : "";
 
-      // ป้ายชื่อบุคคล [ ... ]
       let staffBadge = "";
       const nameMatch = rawFileName.match(/\[(.*?)\]/);
       if (nameMatch && nameMatch[1]) {
-        staffBadge = `<div class="mb-1"><small class="badge border" style="font-size: 0.70rem; font-weight: 400; background-color: #adb5bd; color: #fff;">👤 ${nameMatch[1].trim()}</small></div>`;
+        staffBadge = `<div class="mb-1"><small class="badge border text-dark bg-light shadow-sm" style="font-size: 0.70rem; font-weight: 500;">👤 ${stripThaiPrefix(nameMatch[1].trim())}</small></div>`;
+      }
+
+      // 🏷️ แสดงสถานะเลขหนังสือจริง (มีเครื่องหมายถูกสีเขียว หรือ ปุ่มให้กดใส่)
+      const officialNo = (row[5] || "").toString().trim();
+      let officialNoHTML = "";
+      const encFileName = encodeURIComponent(row[2]);
+      const encOfficialNo = encodeURIComponent(officialNo);
+
+      if (officialNo) {
+        officialNoHTML = `
+          <div class="d-flex flex-column align-items-center gap-1">
+            <span class="text-primary fw-bold text-break text-center lh-sm" style="font-size: 0.80rem;">${officialNo}</span>
+            <button class="btn btn-sm btn-outline-success py-0 px-2 fw-bold shadow-sm d-inline-flex align-items-center gap-1" style="font-size: 0.68rem; border-radius: 20px;" onclick="openEditOfficialNoModal('${encFileName}', '${encOfficialNo}')">
+              <span>✅ แก้ไข</span>
+            </button>
+          </div>
+        `;
+      } else {
+        officialNoHTML = `
+          <div class="text-center">
+            <button class="btn btn-sm btn-warning text-dark py-1 px-2 fw-bold shadow-sm d-inline-flex align-items-center gap-1" style="font-size: 0.72rem; border-radius: 20px;" onclick="openEditOfficialNoModal('${encFileName}', '')">
+              <span>➕ ใส่เลขจริง</span>
+            </button>
+          </div>
+        `;
       }
 
       html += `
         <tr class="align-middle fw-bold">
-          <td class="text-start text-dark col-title-wrap" style="width: 62%; font-size: 0.84rem;">
+          <td class="text-start text-dark col-title-wrap" style="width: 50%; font-size: 0.84rem;">
             <div class="fw-bold text-success" style="font-size: 0.85rem; margin-bottom: 2px;">[${bookNumber}]</div>
             <div class="fw-bold text-dark" style="line-height: 1.4;">${bookTitle}</div>
           </td>
-          <td class="text-start" style="width: 26%; vertical-align: top; padding-top: 8px;">
+          <td class="text-start" style="width: 22%; vertical-align: top; padding-top: 8px;">
             <div class="d-flex flex-column align-items-start">
               ${deptBadges}
               ${staffBadge}
             </div>
           </td>
-          <td class="text-center" style="width: 12%;">
+          <td class="text-center" style="width: 18%; vertical-align: middle;">
+            ${officialNoHTML}
+          </td>
+          <td class="text-center" style="width: 10%;">
             ${actionHTML}
           </td>
         </tr>
@@ -5279,6 +5347,22 @@ async function refreshApp() {
   }
 
   function removeFile(index) { 
+    // 📎 ผูก Event Listener รับไฟล์สิ่งที่ส่งมาด้วยเข้า Array
+document.getElementById('attachFileInput')?.addEventListener('change', function(e) {
+ const files = Array.from(e.target.files);
+ files.forEach(file => {
+   if (!selectedAttachFilesArray.some(f => f.name === file.name)) {
+     selectedAttachFilesArray.push(file);
+   }
+ });
+ renderAttachFileList();
+ this.value = "";
+});
+
+function removeAttachFile(index) {
+ selectedAttachFilesArray.splice(index, 1);
+ renderAttachFileList();
+}
     selectedFilesArray.splice(index, 1); 
     renderFileList(); 
   }
@@ -5600,6 +5684,14 @@ async function refreshApp() {
           </div>
         `;
       } else {
+        // 📱 มือถือ: แสดงเฉพาะไอคอนมินิมอล ไม่มีข้อความ เรียงแถวแนวตั้งห่าง 14px
+        const attachUrl = (col[6] || "").toString().trim();
+        const attachButtonHTML = attachUrl ? `
+          <a href="${attachUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-attach shadow-sm text-white" title="ไฟล์แนบ (สิ่งที่ส่งมาด้วย)">
+            <svg class="btn-svg-icon" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+          </a>
+        ` : "";
+
         actionColumnHTML = `
           <div class="action-buttons justify-content-center">
             <button onclick="openPdfViewer('${col[4]}', '${encodeURIComponent(plainFileName)}')" class="btn btn-sm btn-primary shadow-sm" title="เปิดดูเอกสาร">
@@ -5608,9 +5700,22 @@ async function refreshApp() {
             <button onclick="copyDeepLink('${col[4]}', '${encodeURIComponent(plainFileName)}')" class="btn btn-sm btn-copy shadow-sm" title="คัดลอกลิงก์เปิดอ่านในแอป">
               <svg class="btn-svg-icon" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
             </button>
+            ${attachButtonHTML}
           </div>
         `;
       }
+
+      // 🏷️ ดึงเลขที่หนังสือจริงจากตำแหน่งที่ 6 (col[5])
+      const officialNo = (col[5] || "").toString().trim();
+      const officialNoBadge = officialNo ? `<span class="text-primary fw-bold" style="font-size: 0.85rem;">${officialNo}</span>` : "";
+
+      // 📌 บรรทัดบนสุด: รวม [เลขรับ] (สีเขียว) และ เลขจริง (สีน้ำเงิน) ให้อยู่บรรทัดเดียวกัน
+      const headerLine = `
+        <div class="d-flex flex-wrap align-items-center mb-1" style="gap: 6px;">
+          ${bookNumber ? `<span class="fw-bold text-success" style="font-size: 0.85rem;">[${bookNumber}]</span>` : ''}
+          ${officialNoBadge}
+        </div>
+      `;
 
       return `
       <tr class="${isMissing ? 'row-missing' : ''} align-middle">
@@ -5620,7 +5725,7 @@ async function refreshApp() {
         <td class="thai-wrap text-start">
           ${isMissing ? 
             `<span class="text-danger fw-bold d-block mb-1" style="font-size: 0.85rem;">${cleanFileName}</span>` : 
-            `<div class="fw-bold text-success" style="font-size: 0.85rem; margin-bottom: 2px;">${bookNumber ? `[${bookNumber}]` : ''}</div>
+            `${headerLine}
              <div class="fw-bold text-dark mb-1" style="font-size: 0.84rem; line-height: 1.4;">${bookTitle || cleanFileName}</div>`
           }
           ${deptBadgesContainer}
@@ -5745,19 +5850,42 @@ async function refreshApp() {
           </div>
         `;
       } else {
+        // 💻 PC: ปุ่มตัวอักษรล้วน ไร้ไอคอน ขนาดเท่ากันเป๊ะ แนวนอนเรียงสวยงาม
+        const attachUrl = (col[6] || "").toString().trim();
+        const attachButtonHTML = attachUrl ? `
+          <a href="${attachUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-attach shadow-sm flex-fill px-1 text-nowrap d-inline-flex align-items-center justify-content-center text-white" style="font-size: 0.78rem; min-width: 52px; height: 30px;" title="เปิดโฟลเดอร์ไฟล์แนบ">
+            ไฟล์แนบ
+          </a>
+        ` : "";
+
         actionColumnHTML = `
-          <div class="action-buttons justify-content-center">
-            <button onclick="openPdfViewer('${col[4]}', '${encodeURIComponent(plainFileName)}')" class="btn btn-sm btn-primary shadow-sm w-50 px-1 text-nowrap d-inline-flex align-items-center justify-content-center gap-1" style="font-size: 0.78rem;">
-              <svg class="btn-svg-icon" style="width:13px; height:13px;" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+          <div class="d-flex align-items-center justify-content-center gap-1 w-100" style="max-width: 170px; margin: 0 auto;">
+            <button onclick="openPdfViewer('${col[4]}', '${encodeURIComponent(plainFileName)}')" class="btn btn-sm btn-primary shadow-sm px-1 text-nowrap d-inline-flex align-items-center justify-content-center text-white" style="font-size: 0.78rem; flex: 1 1 0px; width: 0; min-width: 54px; height: 30px;" title="เปิดดูเอกสาร">
               เปิดดู
             </button>
-            <button onclick="copyDeepLink('${col[4]}', '${encodeURIComponent(plainFileName)}')" class="btn btn-sm btn-copy shadow-sm w-50 px-1 text-nowrap d-inline-flex align-items-center justify-content-center gap-1" style="font-size: 0.78rem;" title="คัดลอกลิงก์เปิดอ่านในแอป">
-              <svg class="btn-svg-icon" style="width:13px; height:13px;" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            <button onclick="copyDeepLink('${col[4]}', '${encodeURIComponent(plainFileName)}')" class="btn btn-sm btn-copy shadow-sm px-1 text-nowrap d-inline-flex align-items-center justify-content-center text-white" style="font-size: 0.78rem; flex: 1 1 0px; width: 0; min-width: 54px; height: 30px;" title="คัดลอกลิงก์เปิดอ่านในแอป">
               คัดลอก
             </button>
+            ${attachUrl ? `
+              <a href="${attachUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-attach shadow-sm px-1 text-nowrap d-inline-flex align-items-center justify-content-center text-white" style="font-size: 0.78rem; flex: 1 1 0px; width: 0; min-width: 54px; height: 30px;" title="เปิดโฟลเดอร์ไฟล์แนบ">
+                ไฟล์แนบ
+              </a>
+            ` : ""}
           </div>
         `;
       }
+
+      // 🏷️ ดึงเลขที่หนังสือจริงจากตำแหน่งที่ 6 (col[5])
+      const officialNo = (col[5] || "").toString().trim();
+      const officialNoBadge = officialNo ? `<span class="text-primary fw-bold" style="font-size: 0.85rem;">${officialNo}</span>` : "";
+
+      // 📌 บรรทัดบนสุด: รวม [เลขรับ] (สีเขียว) และ เลขจริง (สีน้ำเงิน) ให้อยู่บรรทัดเดียวกัน
+      const headerLine = `
+        <div class="d-flex flex-wrap align-items-center mb-1" style="gap: 6px;">
+          ${bookNumber ? `<span class="fw-bold text-success" style="font-size: 0.85rem;">[${bookNumber}]</span>` : ''}
+          ${officialNoBadge}
+        </div>
+      `;
 
       return `
       <tr class="${isMissing ? 'row-missing' : ''} align-middle">
@@ -5767,7 +5895,7 @@ async function refreshApp() {
         <td class="thai-wrap text-start">
           ${isMissing ? 
             `<span class="text-danger fw-bold d-block mb-1" style="font-size: 0.85rem;">${cleanFileName}</span>` : 
-            `<div class="fw-bold text-success" style="font-size: 0.85rem; margin-bottom: 2px;">${bookNumber ? `[${bookNumber}]` : ''}</div>
+            `${headerLine}
              <div class="fw-bold text-dark mb-1" style="font-size: 0.84rem; line-height: 1.4;">${bookTitle || cleanFileName}</div>`
           }
           ${deptBadgesContainer}
@@ -6369,8 +6497,11 @@ async function refreshApp() {
       const rawFileName = (row[2] || "").toString();
       const rowDept = (row[3] || "").toString();
 
+      const rowOfficialNo = (row[5] || "").toString().toLowerCase();
       let matchSearch = (searchTerm === "") ? true : (
-        rawFileName.toLowerCase().includes(searchTerm) || rowDept.toLowerCase().includes(searchTerm)
+        rawFileName.toLowerCase().includes(searchTerm) || 
+        rowDept.toLowerCase().includes(searchTerm) ||
+        rowOfficialNo.includes(searchTerm)
       );
 
       let matchDept = true;
@@ -6577,13 +6708,26 @@ async function refreshApp() {
                   ? originalName.slice(0, -4) + currentSuffix + ".pdf" 
                   : originalName + currentSuffix;
 
+              // แปลงไฟล์สิ่งที่ส่งมาด้วยทั้งหมด (ถ้ามี)
+              let attachPayloads = [];
+              for (let attFile of selectedAttachFilesArray) {
+                const attData = await new Promise((resAtt, rejAtt) => {
+                  const r = new FileReader();
+                  r.onload = ev => resAtt(ev.target.result);
+                  r.onerror = err => rejAtt(err);
+                  r.readAsDataURL(attFile);
+                });
+                attachPayloads.push({ name: attFile.name, data: attData });
+              }
+
               const res = await fetch(SCRIPT_URL, { 
                   method: 'POST', 
                   body: JSON.stringify({ 
                       department: dept, 
                       sender: currentUser.name, 
                       fileName: newFileName, 
-                      fileData: fileData 
+                      fileData: fileData,
+                      attachments: attachPayloads
                   }) 
               });
               const result = await res.json();
@@ -6654,9 +6798,15 @@ async function refreshApp() {
       if (uploadModalInstance) uploadModalInstance.hide();
       alert(`สำเร็จ! ส่งหนังสือ ${totalFilesCount} ฉบับ ให้กับ ${totalDeptsCount} กลุ่มงาน เรียบร้อยแล้ว`);
       
+      // 1. ล้างไฟล์หนังสือนำ (PDF) ของเดิม
       selectedFilesArray = []; 
       renderFileList(); 
 
+      // 📎 2. ล้างไฟล์สิ่งที่ส่งมาด้วย (วางตรงนี้ได้เลย)
+      selectedAttachFilesArray = [];
+      renderAttachFileList();
+
+      // 3. ล้างกลุ่มงานที่เลือกไว้ (ของเดิม)
       selectedDepartments = [];
       otherStaffNames = [];
       document.querySelectorAll('.dept-checkbox').forEach(cb => cb.checked = false);
@@ -8294,6 +8444,106 @@ function toggleAdminUploadBox() {
     }
   }
   
+  let officialNoModalInstance = null;
+  let currentTargetFileNameForOfficialNo = "";
+
+  function openEditOfficialNoModal(encodedFileName, encodedCurrentNo) {
+    currentTargetFileNameForOfficialNo = decodeURIComponent(encodedFileName);
+    const currentNo = decodeURIComponent(encodedCurrentNo || "");
+
+    const titleEl = document.getElementById('modalTargetBookTitle');
+    const inputEl = document.getElementById('modalOfficialNoInput');
+
+    if (titleEl) titleEl.innerText = currentTargetFileNameForOfficialNo;
+    if (inputEl) {
+      inputEl.value = currentNo;
+      setTimeout(() => inputEl.focus(), 300);
+    }
+
+    if (!officialNoModalInstance) {
+      officialNoModalInstance = new bootstrap.Modal(document.getElementById('officialNoModal'));
+    }
+    officialNoModalInstance.show();
+  }
+
+  async function saveOfficialNo() {
+    const inputEl = document.getElementById('modalOfficialNoInput');
+    const val = inputEl ? inputEl.value.trim() : "";
+    const btn = document.getElementById('saveOfficialNoBtn');
+
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> กำลังบันทึก...`;
+
+    try {
+      const res = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: "updateOfficialBookNo",
+          fileName: currentTargetFileNameForOfficialNo,
+          officialNo: val,
+          year: currentDbManageYear.toString()
+        })
+      });
+      const result = await res.json();
+      if (result.success) {
+        if (officialNoModalInstance) officialNoModalInstance.hide();
+        // อัปเดตข้อมูลบนหน้าจอทันที
+        loadDbManageDataForYear(currentDbManageYear);
+      } else {
+        alert("⚠️ บันทึกไม่สำเร็จ: " + (result.message || ""));
+      }
+    } catch (e) {
+      alert("❌ เชื่อมต่อเซิร์ฟเวอร์ล้มเหลว");
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `💾 บันทึก`;
+    }
+  }
+
+
+  // ดักฟังการเลือกไฟล์สิ่งที่ส่งมาด้วย
+  document.getElementById('attachFileInput')?.addEventListener('change', function(e) {
+    const files = Array.from(e.target.files);
+    files.forEach(file => {
+      if (!selectedAttachFilesArray.some(f => f.name === file.name)) {
+        selectedAttachFilesArray.push(file);
+      }
+    });
+    renderAttachFileList();
+    this.value = "";
+  });
+
+  function renderAttachFileList() {
+    const badge = document.getElementById('attachCountBadge');
+    const container = document.getElementById('attachChipsContainer');
+    if (!badge || !container) return;
+
+    if (selectedAttachFilesArray.length === 0) {
+      badge.className = "badge bg-light text-dark";
+      badge.innerText = "0 ไฟล์";
+      container.innerHTML = "";
+    } else {
+      badge.className = "badge bg-warning text-dark fw-bold";
+      badge.innerText = `${selectedAttachFilesArray.length} ไฟล์`;
+      container.innerHTML = selectedAttachFilesArray.map((file, index) => `
+        <div class="p-1 px-2 bg-white rounded border d-flex justify-content-between align-items-center shadow-sm" style="font-size: 0.75rem;">
+          <div class="text-truncate me-2" style="max-width: 85%;">
+            <span class="badge bg-secondary text-white me-1" style="font-size:0.65rem;">แนบ ${index + 1}</span>
+            <span class="text-dark">${file.name}</span>
+          </div>
+          <span role="button" class="text-danger fw-bold cursor-pointer" onclick="removeAttachFile(${index})">✕</span>
+        </div>
+      `).join('');
+    }
+  }
+
+  function removeAttachFile(index) {
+    selectedAttachFilesArray.splice(index, 1);
+    renderAttachFileList();
+  }
+
+
 
 </script>
 <!-- 📝 Modal All-in-One: แสดง QR Code ที่พบด้านบน + ข้อความเอกสารและตารางด้านล่าง -->
@@ -8421,5 +8671,30 @@ function toggleAdminUploadBox() {
       </div>
     </div>
   </div>
+
+<!-- 📝 Modal กรอก/แก้ไขเลขที่หนังสือจริง -->
+  <div class="modal fade" id="officialNoModal" tabindex="-1" aria-hidden="true" style="z-index: 1065;">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+      <div class="modal-content border-0 shadow-lg" style="border-radius: 14px;">
+        <div class="modal-header bg-primary text-white py-2 px-3">
+          <h6 class="modal-title fw-bold m-0" style="font-size: 0.88rem;">📄 บันทึกเลขที่หนังสือจริง (ต้นทาง)</h6>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-3 bg-light">
+          <div class="p-2 bg-white rounded border mb-2 shadow-sm">
+            <small class="text-muted d-block" style="font-size: 0.72rem;">หนังสือที่กำลังทำรายการ:</small>
+            <div id="modalTargetBookTitle" class="fw-bold text-dark text-break" style="font-size: 0.82rem; line-height: 1.35;"></div>
+          </div>
+          <label class="form-label fw-bold small text-dark mb-1">เลขที่หนังสือจริง (เช่น ศธ 04007.01/5225):</label>
+          <input type="text" id="modalOfficialNoInput" class="form-control form-control-sm border-primary fw-bold" placeholder="ระบุเลขที่หนังสือจริง..." onkeydown="if(event.key==='Enter'){saveOfficialNo();}">
+        </div>
+        <div class="modal-footer bg-white p-2 d-flex justify-content-between">
+          <button type="button" class="btn btn-sm btn-secondary px-3" data-bs-dismiss="modal">ยกเลิก</button>
+          <button type="button" id="saveOfficialNoBtn" class="btn btn-sm btn-primary px-4 fw-bold shadow-sm" onclick="saveOfficialNo()">💾 บันทึก</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </body>
 </html>

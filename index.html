@@ -3280,14 +3280,69 @@ let currentPersonalStaffName = "";
     finally { btn.disabled = false; btn.innerText = "ยืนยันเข้าสู่ระบบ"; }
   }
 
-  // 🔔 1. ฟังก์ชันขอสิทธิ์การแจ้งเตือนจากผู้ใช้
-  function requestNotificationPermission() {
-    if ('Notification' in window && Notification.permission !== 'granted') {
-      Notification.requestPermission().then(permission => {
-        if (permission === 'granted') {
-          console.log('✅ เปิดรับการแจ้งเตือนหนังสือส่วนตัวบนมือถือแล้ว');
-        }
-      });
+  // 🔑 VAPID Public Key จาก Firebase Cloud Messaging
+  const FIREBASE_VAPID_KEY = "BN1yw2LUgf_c0FGypMNuLQvE_YtuXoRTq32adW20bAROUFFLq0D83sWEroDgnGxO-BvE7kkf9jLms_ipb1BVKI8";
+
+  // ฟังก์ชันแปลง VAPID Key เป็น Uint8Array สำหรับเบราว์เซอร์
+  function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  }
+
+  // 🔔 ขอสิทธิ์และดึง Device Push Token ส่งไปบันทึกลง Google Sheets
+  async function requestNotificationPermission() {
+    if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+      console.warn('เบราว์เซอร์นี้ไม่รองรับ Web Push Notification');
+      return;
+    }
+
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        console.warn('ผู้ใช้ไม่อนุญาตการแจ้งเตือน');
+        return;
+      }
+
+      console.log('✅ ได้รับสิทธิ์แจ้งเตือนแล้ว กำลังลงทะเบียน Push Token...');
+
+      const reg = await navigator.serviceWorker.ready;
+      let subscription = await reg.pushManager.getSubscription();
+
+      // ถ้ายังไม่เคย Subscribe ให้ขอ Key ใหม่จาก FCM
+      if (!subscription) {
+        subscription = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(FIREBASE_VAPID_KEY)
+        });
+      }
+
+      if (subscription && currentPersonalStaffName) {
+        const subJsonString = JSON.stringify(subscription);
+        console.log('📡 ส่ง Push Token ขึ้นระบบ...');
+
+        // ส่งไปบันทึกเก็บในคอลัมน์ N ของ Google Sheet
+        fetch(SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: "savePushSubscription",
+            name: currentPersonalStaffName,
+            subscriptionJson: subJsonString
+          })
+        }).then(res => res.json()).then(res => {
+          if (res.success) {
+            console.log('🎉 บันทึก Push Token ลง Sheet เรียบร้อยแล้ว!');
+          }
+        });
+      }
+    } catch (err) {
+      console.error('Push Registration Error:', err);
     }
   }
 
@@ -3359,6 +3414,9 @@ let currentPersonalStaffName = "";
 
     // 🧹 ล้างเลขสีแดงบนไอคอนทันทีที่เปิดหน้านี้
     clearPersonalBadge();
+
+    // 🔔 ตรวจสอบและลงทะเบียน Push Token สำหรับเครื่องนี้
+    requestNotificationPermission();
   }
 
   function logoutPersonalStaffSession() {
@@ -8599,6 +8657,20 @@ window.addEventListener('load', function() {
     console.warn("Auto open personal doc error:", err);
   }
 });
+
+// 📱 ตรวจสอบว่าเปิดแอปมาจากการแตะแจ้งเตือนเพื่อดูหนังสือส่วนตัวหรือไม่
+  window.addEventListener('load', function() {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('view') === 'personal') {
+        setTimeout(() => {
+          handlePersonalDocMenuClick();
+        }, 700);
+      }
+    } catch (err) {
+      console.warn("Auto open personal view error:", err);
+    }
+  });
 
 </script>
 <!-- 📝 Modal All-in-One: แสดง QR Code ที่พบด้านบน + ข้อความเอกสารและตารางด้านล่าง -->

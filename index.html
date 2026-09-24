@@ -5181,18 +5181,17 @@ window.addEventListener('popstate', () => {
     
     if (savedUser) {
         const parsedUser = JSON.parse(savedUser);
+        const isPC = window.innerWidth >= 769;
 
-        // 🛡️ ถ้าเป็น Admin: ให้เชื่อมต่อตรวจ Session กลางกับ Firebase
-        if (parsedUser.role === 'Admin') {
-          // ดึงวันที่ของเครื่องปัจจุบัน (รูปแบบ พ.ศ./ค.ศ. มาตรฐาน YYYY-MM-DD)
+        // 🛡️ ถ้าเป็น Admin บน PC: บังคับตรวจเซสชันรายวัน (รีเซ็ตทุกเที่ยงคืน)
+        if (parsedUser.role === 'Admin' && isPC) {
           const now = new Date();
           const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-          // ตรวจสอบกับ Firebase Realtime Database
           rtdb.ref('admin_session_date').once('value', (snapshot) => {
             const activeSessionDate = snapshot.val();
 
-            // หากใน Firebase ไม่มีข้อมูล หรือวันที่บันทึกไม่ใช่วันนี้ (เลยเที่ยงคืนแล้ว)
+            // หากข้ามวันแล้ว (วันที่ไม่ตรงกับวันนี้) ให้เคลียร์สิทธิ์บน PC เพื่อให้ล็อกอินใหม่
             if (!activeSessionDate || activeSessionDate !== todayStr) {
               localStorage.removeItem('sarabanUser');
               document.getElementById('loginPage').style.display = 'block';
@@ -5200,15 +5199,15 @@ window.addEventListener('popstate', () => {
               return;
             }
 
-            // ถ้าเป็นของวันนี้และถูกต้อง ให้เข้าใช้งานต่อตามปกติ
+            // ถ้ายังเป็นวันเดียวกัน ให้เข้าใช้งานได้ปกติ
             currentUser = parsedUser;
             initAdminUI();
-            listenAdminSessionExpiry(todayStr); // เปิดตัวดักฟังถ้าข้ามเที่ยงคืนขณะเปิดค้างไว้
+            listenAdminSessionExpiry(todayStr); // เฝ้าระวังกรณีเปิดหน้าจอข้ามเที่ยงคืน
           });
           return;
         }
 
-        // 👥 ถ้าเป็น User กลุ่มงานทั่วไป: จำสิทธิ์ถาวรตามเดิม ไม่ต้องเช็กวันหมดอายุ
+        // 📱 ถ้าเป็น Admin บนมือถือ หรือ User กลุ่มงานทั่วไป: จำสิทธิ์ตลอดไป ไม่ตัดเซสชัน
         currentUser = parsedUser;
         document.getElementById('loginPage').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
@@ -5217,8 +5216,13 @@ window.addEventListener('popstate', () => {
         document.getElementById('logoutBtn').style.display = 'block'; 
         setupExitButton();
 
-        document.getElementById('adminView').style.display = 'none';
-        document.getElementById('deptFilterContainer').style.display = 'none';
+        if (currentUser.role === 'Admin') {
+          document.getElementById('adminView').style.display = 'block';
+          document.getElementById('deptFilterContainer').style.display = 'block';
+        } else {
+          document.getElementById('adminView').style.display = 'none';
+          document.getElementById('deptFilterContainer').style.display = 'none';
+        }
 
         updateNavForView('saraban');
         updateYearOptions();
@@ -5226,32 +5230,18 @@ window.addEventListener('popstate', () => {
     }
   }
 
-  // ฟังก์ชันช่วยเปิดหน้าต่างเมื่อ Admin ได้รับอนุญาต
-  function initAdminUI() {
-    document.getElementById('loginPage').style.display = 'none';
-    document.getElementById('mainApp').style.display = 'block';
-    renderUserNavbar();
-
-    document.getElementById('logoutBtn').style.display = 'block'; 
-    setupExitButton();
-
-    document.getElementById('adminView').style.display = 'block';
-    document.getElementById('deptFilterContainer').style.display = 'block';
-
-    updateNavForView('saraban');
-    updateYearOptions();
-    resetAndReloadLogs();
-  }
-
-  // 📡 ตัวดักฟัง Realtime: หากเปิดหน้าจอค้างไว้ข้ามเที่ยงคืน หรือมีการกด Logout จากอีกเครื่อง จะดีดออกทันที
+  // 📡 ตัวดักฟัง Realtime: ดีดออกเฉพาะหน้าจอ PC เมื่อข้ามเที่ยงคืน (มือถือจะไม่ถูกดีดออก)
   function listenAdminSessionExpiry(sessionDate) {
+    const isPC = window.innerWidth >= 769;
+    if (!isPC) return; // บนมือถือไม่เปิดตัวดีดออกเด็ดขาด
+
     rtdb.ref('admin_session_date').on('value', (snapshot) => {
       const activeDate = snapshot.val();
       const now = new Date();
       const currentToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
       if (currentUser.role === 'Admin' && (!activeDate || activeDate !== currentToday)) {
-        alert("🔒 หมดเวลาเซสชันผู้ดูแลระบบประจำวัน (หลังเที่ยงคืน) กรุณาลงชื่อเข้าใช้ใหม่เพื่อความปลอดภัย");
+        alert("🔒 หมดเวลาเซสชันผู้ดูแลระบบประจำวัน (หลังเที่ยงคืน) กรุณาสแกน QR หรือลงชื่อเข้าใช้ใหม่");
         logout();
       }
     });

@@ -1503,6 +1503,49 @@
   overflow-wrap: break-word !important;
   line-height: 1.4 !important;
 }
+/* 📝 บังคับตัดข้อความสูงสุด 3 บรรทัด แล้วใส่จุดไข่ปลา (...) อัตโนมัติ */
+.clamp-3-lines {
+  display: -webkit-box !important;
+  -webkit-line-clamp: 3 !important;
+  line-clamp: 3 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  line-height: 1.35 !important;
+  max-height: 4.1em !important;
+  word-break: break-word !important;
+  white-space: normal !important;
+}
+
+/* 📱 ปรับแต่งตารางเฉพาะบนจอมือถือ (<= 768px) */
+@media (max-width: 768px) {
+  /* ปรับคอลัมน์และขนาดช่อง Checkbox ให้กว้างขึ้น ไม่เบียด */
+  .col-checkbox-mobile {
+    width: 10% !important;
+    min-width: 38px !important;
+    padding: 4px 2px !important;
+  }
+  .col-checkbox-mobile input[type="checkbox"] {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+  }
+
+  /* ปุ่มใส่เลขจริง / แก้ไข แบบไอคอนมินิมอลทรงกลม */
+  .btn-official-mini {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  .btn-official-mini svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+}
 
   </style>
   <!-- ⚡ Firebase App & Realtime Database SDK (Compat Version) -->
@@ -2106,10 +2149,10 @@
         <table class="table table-hover table-bordered align-middle mb-0" id="exportResultTable" style="font-size: 0.88rem;">
           <thead class="table-light text-center sticky-top shadow-sm" style="z-index: 5;">
             <tr>
-              <th style="width: 7%; min-width: 36px;">
+              <th class="col-checkbox-mobile" style="width: 11%; min-width: 38px;">
                 <input class="form-check-input" type="checkbox" id="masterExportCheck" onchange="toggleMasterExportCheck(this.checked)" title="เลือกทั้งหมด">
               </th>
-              <th style="width: 65%;">เลขหนังสือ / ชื่อเรื่อง</th>
+              <th style="width: 61%;">เลขหนังสือ / ชื่อเรื่อง</th>
               <th style="width: 28%;">ผู้รับผิดชอบ</th>
             </tr>
           </thead>
@@ -2144,13 +2187,13 @@
       <div class="table-responsive border rounded shadow-sm bg-white" style="max-height: 68vh;">
         <table class="table table-hover table-bordered align-middle mb-0" style="font-size: 0.88rem;">
           <thead class="table-light text-center sticky-top shadow-sm" style="z-index: 5;">
-            <tr>
-              <th style="width: 50%;">ชื่อหนังสือ / ฝ่าย</th>
-              <th style="width: 22%;">ผู้รับผิดชอบ</th>
-              <th style="width: 18%;">เลขที่หนังสือจริง</th>
-              <th style="width: 10%; min-width: 44px;">จัดการ</th>
-            </tr>
-          </thead>
+         <tr>
+           <th style="width: 48%;">ชื่อหนังสือ / ฝ่าย</th>
+           <th style="width: 28%;">ผู้รับผิดชอบ</th>
+           <th style="width: 14%; min-width: 40px;">เลขจริง</th>
+           <th style="width: 10%; min-width: 38px;">จัดการ</th>
+         </tr>
+       </thead>
           <tbody id="dbManageTableBody"></tbody>
         </table>
       </div>
@@ -4270,33 +4313,36 @@ function updateDbManageButtonUI() {
       bookTitle = bookTitle.replace(/\[.*?\]/g, "").trim();
       if (!bookTitle) bookTitle = cleanNoExt;
 
-      // 🔘 ปุ่มจัดการลบ / ย้ายฝ่าย
+      // 🔘 ปุ่มจัดการลบ / ย้ายฝ่าย (ทรงมินิมอล)
       const actionHTML = `
         <div class="d-flex flex-column align-items-center justify-content-center gap-1">
-          <button class="btn btn-sm btn-outline-warning text-dark py-0 px-2 fw-bold shadow-sm" style="font-size: 0.75rem; width: 30px; height: 26px;" onclick="openEditBookDeptFromDbManage('${encodeURIComponent(row[2])}')" title="แก้ไขกลุ่มงาน/ผู้รับ">
-            <svg class="btn-svg-icon" viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+          <button class="btn btn-sm btn-outline-warning text-dark py-0 px-1 fw-bold shadow-sm d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 26px; border-radius: 6px;" onclick="openEditBookDeptFromDbManage('${encodeURIComponent(row[2])}')" title="แก้ไขกลุ่มงาน/ผู้รับ">
+            <svg class="btn-svg-icon" style="width:13px; height:13px;" viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
           </button>
-          <button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold shadow-sm" style="font-size: 0.75rem; width: 30px; height: 26px;" onclick="deleteBookFromDbManage('${encodeURIComponent(row[2])}')" title="ลบหนังสือ">
-            <svg class="btn-svg-icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+          <button class="btn btn-sm btn-outline-danger py-0 px-1 fw-bold shadow-sm d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 26px; border-radius: 6px;" onclick="deleteBookFromDbManage('${encodeURIComponent(row[2])}')" title="ลบหนังสือ">
+            <svg class="btn-svg-icon" style="width:13px; height:13px;" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
           </button>
         </div>
       `;
 
-      // 🎨 กลุ่มงาน
+      // 🎨 กลุ่มงาน: ตัดคำว่า "ฝ่าย" ออก และกว้างเต็มช่อง 100%
       const rawDeptStr = row[3] || "";
       const deptBadges = rawDeptStr ? rawDeptStr.split(',').map(d => {
         const dTrim = d.trim();
+        const shortDept = stripDeptPrefix(dTrim); // ตัดคำว่า "ฝ่าย"
         const color = deptColors[dTrim] || "#adb5bd";
-        return `<div class="mb-1"><small class="badge border" style="font-size: 0.70rem; font-weight: 400; background-color: ${color}; color: #fff;">${dTrim}</small></div>`;
+        return `<div class="mb-1 w-100"><small class="badge border w-100 text-truncate text-center" style="font-size: 0.68rem; font-weight: 500; background-color: ${color}; color: #fff; padding: 2px 4px;">${shortDept}</small></div>`;
       }).join('') : "";
 
+      // 👤 ชื่อบุคลากร: ตัดไอคอน และตัดคำนำหน้า (นาย/นาง/นางสาว) ออก
       let staffBadge = "";
       const nameMatch = rawFileName.match(/\[(.*?)\]/);
       if (nameMatch && nameMatch[1]) {
-        staffBadge = `<div class="mb-1"><small class="badge border text-dark bg-light shadow-sm" style="font-size: 0.70rem; font-weight: 500;">👤 ${stripThaiPrefix(nameMatch[1].trim())}</small></div>`;
+        const cleanStaffName = stripThaiPrefix(nameMatch[1].trim());
+        staffBadge = `<div class="mb-1 w-100"><small class="badge border text-dark bg-light shadow-sm w-100 text-truncate text-start" style="font-size: 0.68rem; font-weight: 500; padding: 2px 4px;" title="${cleanStaffName}">${cleanStaffName}</small></div>`;
       }
 
-      // 🏷️ แสดงสถานะเลขหนังสือจริง (มีเครื่องหมายถูกสีเขียว หรือ ปุ่มให้กดใส่)
+      // 🏷️ แสดงสถานะเลขหนังสือจริง (ไอคอนมินิมอลวงกลม)
       const officialNo = (row[5] || "").toString().trim();
       let officialNoHTML = "";
       const encFileName = encodeURIComponent(row[2]);
@@ -4304,18 +4350,18 @@ function updateDbManageButtonUI() {
 
       if (officialNo) {
         officialNoHTML = `
-          <div class="d-flex flex-column align-items-center gap-1">
-            <span class="text-primary fw-bold text-break text-center lh-sm" style="font-size: 0.80rem;">${officialNo}</span>
-            <button class="btn btn-sm btn-outline-success py-0 px-2 fw-bold shadow-sm d-inline-flex align-items-center gap-1" style="font-size: 0.68rem; border-radius: 20px;" onclick="openEditOfficialNoModal('${encFileName}', '${encOfficialNo}')">
-              <span>✅ แก้ไข</span>
+          <div class="d-flex flex-column align-items-center justify-content-center gap-1">
+            <span class="text-primary fw-bold text-break text-center lh-sm" style="font-size: 0.76rem;">${officialNo}</span>
+            <button class="btn btn-sm btn-outline-success btn-official-mini shadow-sm" onclick="openEditOfficialNoModal('${encFileName}', '${encOfficialNo}')" title="แก้ไขเลขจริง: ${officialNo}">
+              <svg class="btn-svg-icon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
             </button>
           </div>
         `;
       } else {
         officialNoHTML = `
-          <div class="text-center">
-            <button class="btn btn-sm btn-warning text-dark py-1 px-2 fw-bold shadow-sm d-inline-flex align-items-center gap-1" style="font-size: 0.72rem; border-radius: 20px;" onclick="openEditOfficialNoModal('${encFileName}', '')">
-              <span>➕ ใส่เลขจริง</span>
+          <div class="d-flex align-items-center justify-content-center">
+            <button class="btn btn-sm btn-warning text-dark btn-official-mini shadow-sm" onclick="openEditOfficialNoModal('${encFileName}', '')" title="ใส่เลขที่หนังสือจริง">
+              <svg class="btn-svg-icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
             </button>
           </div>
         `;
@@ -4323,20 +4369,20 @@ function updateDbManageButtonUI() {
 
       html += `
         <tr class="align-middle fw-bold">
-          <td class="text-start text-dark col-title-wrap" style="width: 50%; font-size: 0.84rem;">
+          <td class="text-start text-dark col-title-wrap" style="width: 48%; font-size: 0.84rem;">
             <div class="fw-bold text-success" style="font-size: 0.85rem; margin-bottom: 2px;">[${bookNumber}]</div>
-            <div class="fw-bold text-dark" style="line-height: 1.4;">${bookTitle}</div>
+            <div class="fw-bold text-dark clamp-3-lines" title="${bookTitle}">${bookTitle}</div>
           </td>
-          <td class="text-start" style="width: 22%; vertical-align: top; padding-top: 8px;">
-            <div class="d-flex flex-column align-items-start">
+          <td class="text-start" style="width: 28%; vertical-align: top; padding: 6px 3px;">
+            <div class="d-flex flex-column align-items-start w-100 overflow-hidden">
               ${deptBadges}
               ${staffBadge}
             </div>
           </td>
-          <td class="text-center" style="width: 18%; vertical-align: middle;">
+          <td class="text-center" style="width: 14%; vertical-align: middle; padding: 4px 2px;">
             ${officialNoHTML}
           </td>
-          <td class="text-center" style="width: 10%;">
+          <td class="text-center" style="width: 10%; padding: 4px 1px;">
             ${actionHTML}
           </td>
         </tr>
@@ -5567,12 +5613,18 @@ async function refreshApp() {
     "ผู้อำนวยการ": "#add8e6", "รองผู้อำนวยการ": "#d2b48c", "อื่นๆ": "#adb5bd"
   };
 
-  // ✂️ ฟังก์ชันตัดคำนำหน้าชื่อไทยออก เหลือเฉพาะชื่อและนามสกุล
+  // ✂️ ตัดคำนำหน้าชื่อออก (นาย, นาง, นางสาว, ฯลฯ)
   function stripThaiPrefix(name) {
     if (!name) return "";
     return name.toString().trim()
       .replace(/^(นาย|นางสาว|นาง|ว่าที่ร้อยตรี|ว่าที่ ร\.ต\.|ดร\.|อาจารย์|ครู)\s*/g, "")
       .trim();
+  }
+
+  // ✂️ ตัดคำว่า "ฝ่าย" ออก เพื่อให้ป้ายกระชับขึ้น เช่น "ฝ่ายบริหารงานบุคคล" -> "บริหารงานบุคคล"
+  function stripDeptPrefix(deptName) {
+    if (!deptName) return "";
+    return deptName.toString().trim().replace(/^ฝ่าย/g, "").trim();
   }
 
   // 🏷️ ฟังก์ชันจัดเลย์เอาต์ป้ายฝ่ายงานและรายชื่อบุคลากร (แยกตาม PC และ มือถือ)
@@ -6165,36 +6217,39 @@ async function refreshApp() {
 
     let html = "";
     rows.forEach((row) => {
+      const rawFileName = (row[2] || "").toString().trim();
       const details = extractBookExportDetails(row);
       const isChecked = selectedExportFileNames.has(row[2]);
 
-      // 🎨 สร้าง Badge สีของกลุ่มงาน แยกทีละบรรทัด
+      // 🎨 กลุ่มงาน: ตัดคำว่า "ฝ่าย" ออก และแสดงเต็มช่อง
       const rawDeptStr = row[3] || "";
       const deptBadges = rawDeptStr ? rawDeptStr.split(',').map(d => {
         const dTrim = d.trim();
+        const shortDept = stripDeptPrefix(dTrim); // ตัดคำว่า "ฝ่าย"
         const color = deptColors[dTrim] || "#adb5bd";
-        return `<div class="mb-1"><small class="badge border" style="font-size: 0.70rem; font-weight: 400; background-color: ${color}; color: #fff; border-color: rgba(0,0,0,0.1) !important;">${dTrim}</small></div>`;
+        return `<div class="mb-1 w-100"><small class="badge border w-100 text-truncate text-center" style="font-size: 0.68rem; font-weight: 500; background-color: ${color}; color: #fff; padding: 2px 4px;">${shortDept}</small></div>`;
       }).join('') : "";
 
-      // ตรวจหาชื่อบุคลากรในวงเล็บ [ ... ]
+      // 👤 ชื่อบุคลากร: ตัด นาย/นาง/นางสาว และไอคอนออก
       let staffBadge = "";
-      const nameMatch = (row[2] || "").match(/\[(.*?)\]/);
+      const nameMatch = rawFileName.match(/\[(.*?)\]/);
       if (nameMatch && nameMatch[1]) {
-        staffBadge = `<div class="mb-1"><small class="badge border" style="font-size: 0.70rem; font-weight: 400; background-color: #adb5bd; color: #fff;">👤 ${nameMatch[1].trim()}</small></div>`;
+        const cleanStaffName = stripThaiPrefix(nameMatch[1].trim());
+        staffBadge = `<div class="mb-1 w-100"><small class="badge border text-dark bg-light shadow-sm w-100 text-truncate text-start" style="font-size: 0.68rem; font-weight: 500; padding: 2px 4px;" title="${cleanStaffName}">${cleanStaffName}</small></div>`;
       }
 
       html += `
         <tr class="align-middle">
-          <td class="text-center" style="width: 7%;">
-            <input class="form-check-input border-success export-row-check" type="checkbox" style="width: 1.15rem; height: 1.15rem; cursor: pointer;"
+          <td class="text-center col-checkbox-mobile" style="width: 11%;">
+            <input class="form-check-input border-success export-row-check" type="checkbox"
               ${isChecked ? 'checked' : ''} onchange="toggleExportItem('${encodeURIComponent(row[2])}', this.checked)">
           </td>
-          <td class="text-start text-dark col-title-wrap" style="width: 65%; font-size: 0.84rem;">
+          <td class="text-start text-dark col-title-wrap" style="width: 61%; font-size: 0.84rem;">
             <div class="fw-bold text-success" style="font-size: 0.85rem; margin-bottom: 2px;">[${details.bookNumber}]</div>
-            <div class="fw-bold text-dark" style="line-height: 1.4;">${details.title}</div>
+            <div class="fw-bold text-dark clamp-3-lines" title="${details.title}">${details.title}</div>
           </td>
-          <td class="text-start" style="width: 28%; vertical-align: top; padding-top: 8px;">
-            <div class="d-flex flex-column align-items-start">
+          <td class="text-start" style="width: 28%; vertical-align: top; padding: 6px 3px;">
+            <div class="d-flex flex-column align-items-start w-100 overflow-hidden">
               ${deptBadges}
               ${staffBadge}
             </div>

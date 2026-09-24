@@ -39,3 +39,27 @@ self.addEventListener('notificationclick', function(event) {
     })
   );
 });
+// 🔔 เมื่อผู้ใช้แตะที่แถบแจ้งเตือนบนหน้าจอมือถือ
+self.addEventListener('notificationclick', function(event) {
+  event.notification.close(); // ปิดแถบเตือน
+
+  // สั่งให้เปิดหน้าเว็บพร้อมต่อท้าย URL ด้วย ?view=personal
+  const targetUrl = './index.html?view=personal';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
+      // ถ้าแอปเปิดค้างไว้อยู่แล้ว ให้ดึงขึ้นมาข้างหน้า แล้วเปลี่ยนหน้าไปหนังสือส่วนตัว
+      for (let i = 0; i < clientList.length; i++) {
+        let client = clientList[i];
+        if ('focus' in client) {
+          client.navigate(targetUrl);
+          return client.focus();
+        }
+      }
+      // ถ้าแอปยังไม่ได้เปิด ให้เปิดหน้าต่างใหม่
+      if (clients.openWindow) {
+        return clients.openWindow(targetUrl);
+      }
+    })
+  );
+});

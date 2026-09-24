@@ -2135,12 +2135,21 @@
           </select>
         </div>
 
-        <!-- 4. ช่องพิมพ์ค้นหาบุคลากร (แสดงเมื่อเลือก 'อื่นๆ') -->
-        <div id="exportStaffSelectorContainer" style="display:none; width: 220px; flex-shrink: 0;">
-          <div class="input-group input-group-sm shadow-sm">
-            <span class="input-group-text bg-white border-info text-info py-0">👤</span>
-            <input type="text" id="exportStaffSelector" list="exportStaffDatalist" class="form-control border-info" placeholder="พิมพ์ชื่อบุคลากร..." oninput="handleExportStaffSelect(this.value)">
-            <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('exportStaffSelector').value=''; handleExportStaffSelect('');" title="ล้างชื่อ">✕</button>
+        <!-- 4. ช่องพิมพ์ค้นหาบุคลากร (ปรับปุ่มกากบาทให้มีระยะห่างสวยงาม กลมกลืน) -->
+        <div id="exportStaffSelectorContainer" style="display:none; width: 235px; flex-shrink: 0;">
+          <div class="d-flex align-items-center gap-1 w-100">
+            <div class="input-group input-group-sm shadow-sm flex-grow-1">
+              <span class="input-group-text bg-white border-info text-info py-0">👤</span>
+              <input type="text" id="exportStaffSelector" list="exportStaffDatalist" class="form-control border-info" placeholder="พิมพ์ชื่อบุคลากร..." oninput="handleExportStaffSelect(this.value)">
+            </div>
+            <!-- ปุ่มกากบาทล้างค่า: ทรงกลม แยกห่าง 4px พอดีสายตา -->
+            <button class="btn btn-sm btn-outline-secondary d-flex align-items-center justify-content-center shadow-sm flex-shrink-0" 
+                    type="button" 
+                    style="width: 30px; height: 30px; border-radius: 50% !important; padding: 0; font-size: 0.75rem; border-color: #cbd5e1 !important;" 
+                    onclick="document.getElementById('exportStaffSelector').value=''; handleExportStaffSelect('');" 
+                    title="ล้างชื่อ">
+              ✕
+            </button>
           </div>
           <datalist id="exportStaffDatalist"></datalist>
         </div>

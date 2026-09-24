@@ -1555,6 +1555,8 @@
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
 <!-- ✅ เพิ่มตรงนี้ -->
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
+<!-- ⚡ ไลบรารีสร้าง QR Code สดบนหน้าจอ PC -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 
@@ -1573,36 +1575,65 @@
     <div class="small mb-1" style="color: #fef08a; text-shadow: 0 1px 6px rgba(0,0,0,0.6); letter-spacing: 0.3px;">ศูนย์การศึกษาพิเศษประจำจังหวัดตราด</div>
   </div>
 
-<div id="loginPage" class="container mt-5" style="max-width: 400px;">
-  <div class="card p-4 shadow-lg text-center border-0">
+<div id="loginPage" class="container mt-5" style="max-width: 420px;">
+  <div class="card p-4 shadow-lg text-center border-0 card-border-green">
     <div class="mb-3 text-center">
-      <img src="./logo2.png" alt="Logo ศกศ.ตราด" class="img-fluid" style="max-height: 95px; width: auto; object-fit: contain; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));">
+      <img src="./logo2.png" alt="Logo ศกศ.ตราด" class="img-fluid" style="max-height: 90px; width: auto; object-fit: contain; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));">
     </div>
-    <h3 class="fw-bold text-success mb-4">ระบบส่งหนังสือ ศกศ.ตราด</h3>
-    
-    <!-- สเต็ป 1: กรอกผู้ใช้และรหัสผ่าน (เพิ่มการกด Enter) -->
-    <div id="loginStep1">
-      <input type="text" id="user" class="form-control mb-3" placeholder="ชื่อผู้ใช้" onkeydown="if(event.key==='Enter'){document.getElementById('pass').focus();}">
-      <input type="password" id="pass" class="form-control mb-3" placeholder="รหัสผ่าน" onkeydown="if(event.key==='Enter'){login();}">
-      <button id="loginBtn" onclick="login()" class="btn btn-success w-100 py-2 fw-bold shadow-sm btn-interactive">
-        เข้าสู่ระบบ
+    <h4 class="fw-bold text-success mb-3">ระบบส่งหนังสือ ศกศ.ตราด</h4>
+
+    <!-- 🔘 ปุ่มสลับโหมดล็อกอิน: ปกติ / สแกน QR Code (สำหรับคอมพิวเตอร์) -->
+    <div class="d-flex justify-content-center gap-1 mb-3 p-1 bg-light rounded-pill border">
+      <button type="button" id="tabBtnPassword" class="btn btn-sm btn-success rounded-pill px-3 py-1 fw-bold shadow-sm" onclick="switchLoginTab('password')">
+        🔑 รหัสผ่าน
       </button>
+      <button type="button" id="tabBtnQr" class="btn btn-sm btn-light rounded-pill px-3 py-1 fw-bold" onclick="switchLoginTab('qr')">
+        📷 สแกน QR Code
+      </button>
+    </div>
+    
+    <!-- 1️⃣ โหมดเดิม: กรอกชื่อผู้ใช้และรหัสผ่าน -->
+    <div id="loginPasswordSection">
+      <div id="loginStep1">
+        <input type="text" id="user" class="form-control mb-3" placeholder="ชื่อผู้ใช้" onkeydown="if(event.key==='Enter'){document.getElementById('pass').focus();}">
+        <input type="password" id="pass" class="form-control mb-3" placeholder="รหัสผ่าน" onkeydown="if(event.key==='Enter'){login();}">
+        <button id="loginBtn" onclick="login()" class="btn btn-success w-100 py-2 fw-bold shadow-sm btn-interactive">
+          เข้าสู่ระบบ
+        </button>
+      </div>
+
+      <!-- สเต็ป 2: TOTP (ยังคงไว้สำรองเผื่อมือถือแบตหมด) -->
+      <div id="loginStep2" style="display: none;">
+        <div class="alert alert-success py-2 px-3 small mb-3 text-start">
+          🛡️ กรุณาเปิดแอป <b>Google Authenticator</b> แล้วกรอกรหัส 6 หลัก:
+        </div>
+        <input type="tel" id="totpInput" class="form-control text-center mb-3 fw-bold fs-3" placeholder="• • • • • •" maxlength="6" style="letter-spacing: 6px;" 
+               oninput="if(this.value.trim().length===6){submitAdminTotp();}" 
+               onkeydown="if(event.key==='Enter'){submitAdminTotp();}">
+        <button id="verifyTotpBtn" onclick="submitAdminTotp()" class="btn btn-success w-100 py-2 fw-bold shadow-sm btn-interactive mb-2">
+          ยืนยันตัวตน
+        </button>
+        <button type="button" class="btn btn-link text-muted btn-sm text-decoration-none" onclick="cancelTotpStep()">
+          ⬅️ ย้อนกลับ
+        </button>
+      </div>
     </div>
 
-    <!-- สเต็ป 2: กรอกรหัส Google Authenticator (กด Enter ได้ + ครบ 6 หลักส่งทันที) -->
-    <div id="loginStep2" style="display: none;">
-      <div class="alert alert-success py-2 px-3 small mb-3 text-start">
-        🛡️ กรุณาเปิดแอป <b>Google Authenticator</b> แล้วกรอกรหัส 6 หลัก:
+    <!-- 2️⃣ โหมดใหม่: แสดง QR Code บนหน้าจอคอมเพื่อสแกนด้วยมือถือ -->
+    <div id="loginQrSection" style="display: none;">
+      <div class="p-3 bg-white rounded border border-success border-opacity-50 shadow-sm d-inline-block position-relative mb-2">
+        <div id="loginQrCodeBox" style="width: 190px; height: 190px; display: flex; align-items: center; justify-content: center; margin: 0 auto;"></div>
+        <div id="loginQrExpiredMask" class="position-absolute top-0 start-0 w-100 h-100 bg-white bg-opacity-95 d-flex flex-column align-items-center justify-content-center" style="display: none !important;">
+          <span class="small text-danger fw-bold mb-2">⚠️ QR Code หมดอายุ</span>
+          <button class="btn btn-sm btn-outline-success fw-bold" onclick="generateNewAdminQrSession()">🔄 แตะเพื่อสร้างใหม่</button>
+        </div>
       </div>
-      <input type="tel" id="totpInput" class="form-control text-center mb-3 fw-bold fs-3" placeholder="• • • • • •" maxlength="6" style="letter-spacing: 6px;" 
-             oninput="if(this.value.trim().length===6){submitAdminTotp();}" 
-             onkeydown="if(event.key==='Enter'){submitAdminTotp();}">
-      <button id="verifyTotpBtn" onclick="submitAdminTotp()" class="btn btn-success w-100 py-2 fw-bold shadow-sm btn-interactive mb-2">
-        ยืนยันตัวตน
-      </button>
-      <button type="button" class="btn btn-link text-muted btn-sm text-decoration-none" onclick="cancelTotpStep()">
-        ⬅️ ย้อนกลับ
-      </button>
+      <div class="small text-muted mb-2">
+        ใช้มือถือที่ผูกสิทธิ์ Admin เปิดแอปแล้วกด <br><b class="text-success">"📷 สแกน QR เข้าคอม"</b>
+      </div>
+      <div class="badge bg-light text-secondary border fw-normal" style="font-size: 0.72rem;">
+        ⏱️ รหัสจะเปลี่ยนใน: <span id="qrExpireCountdown" class="fw-bold text-danger">120</span> วินาที
+      </div>
     </div>
 
     <div id="loginErr" class="text-danger mt-3 small fw-bold"></div>
@@ -1617,6 +1648,11 @@
       <div class="nav-brand-section">
         <img src="./logo2.png" alt="Logo ศกศ.ตราด" class="navbar-logo-glow">
         <div id="userNavContainer" class="d-flex align-items-center gap-2"></div>
+        <!-- 📷 ปุ่มเปิดกล้องสแกน QR สำหรับ Admin บนมือถือ -->
+<button id="adminQrScannerBtn" class="btn btn-sm btn-warning text-dark fw-bold shadow-sm px-2 py-1 d-none align-items-center gap-1" onclick="openAdminQrScannerModal()" title="สแกน QR เพื่อล็อกอินคอม">
+  <span>📷</span>
+  <span style="font-size: 0.78rem;">เข้าคอม</span>
+</button>
       </div>
 
       <!-- 📌 โซน 2: ปุ่มเมนูหลักบนมือถือ (ไอคอนมินิมอล 5 สีเข้ม ไม่มีข้อความ ขนาดปานกลาง) -->
@@ -5306,6 +5342,19 @@ function updateNavForView(viewName) {
   
 // 👤 แสดงผลชื่อผู้ใช้งานบน Navbar (Admin แสดงแบบเดิม / User แสดงป้ายสีเดียวตามกลุ่มงาน)
   function renderUserNavbar() {
+    // ในฟังก์ชัน renderUserNavbar():
+const qrBtn = document.getElementById('adminQrScannerBtn');
+const isMobile = window.innerWidth <= 768;
+if (qrBtn) {
+  // แสดงปุ่มนี้เฉพาะบนมือถือ และต้องล็อกอินในฐานะ Admin อยู่แล้ว
+  if (currentUser.role === 'Admin' && isMobile) {
+    qrBtn.classList.remove('d-none');
+    qrBtn.classList.add('d-inline-flex');
+  } else {
+    qrBtn.classList.add('d-none');
+    qrBtn.classList.remove('d-inline-flex');
+  }
+}
     const container = document.getElementById('userNavContainer');
     if (!container) return;
 
@@ -6559,6 +6608,217 @@ async function refreshApp() {
   }
 
   let isSubmittingTotp = false;
+
+  // ==========================================
+// ⚡ ระบบ QR Code Login สไตล์ LINE PC ผ่าน Firebase Realtime Database
+// ==========================================
+let currentQrSessionId = null;
+let qrSessionListener = null;
+let qrCountdownInterval = null;
+let adminScanStream = null;
+let adminScanActive = false;
+let pendingScannedSessionId = null;
+
+// 1. สลับแท็บโหมด รหัสผ่าน / QR Code
+function switchLoginTab(tab) {
+  const isPC = window.innerWidth >= 769;
+  const btnPass = document.getElementById('tabBtnPassword');
+  const btnQr = document.getElementById('tabBtnQr');
+  const secPass = document.getElementById('loginPasswordSection');
+  const secQr = document.getElementById('loginQrSection');
+
+  if (tab === 'qr') {
+    btnQr.className = "btn btn-sm btn-success rounded-pill px-3 py-1 fw-bold shadow-sm";
+    btnPass.className = "btn btn-sm btn-light rounded-pill px-3 py-1 fw-bold";
+    secPass.style.display = 'none';
+    secQr.style.display = 'block';
+    generateNewAdminQrSession();
+  } else {
+    btnPass.className = "btn btn-sm btn-success rounded-pill px-3 py-1 fw-bold shadow-sm";
+    btnQr.className = "btn btn-sm btn-light rounded-pill px-3 py-1 fw-bold";
+    secPass.style.display = 'block';
+    secQr.style.display = 'none';
+    clearQrSession();
+  }
+}
+
+// 2. ฝั่ง PC: สร้าง QR Code Session และดักฟังผ่าน Firebase
+function generateNewAdminQrSession() {
+  clearQrSession();
+  const box = document.getElementById('loginQrCodeBox');
+  const mask = document.getElementById('loginQrExpiredMask');
+  if (mask) mask.style.setProperty('display', 'none', 'important');
+  box.innerHTML = "";
+
+  // สุ่มรหัส Session เช่น qrsess_x8f9a2b1
+  currentQrSessionId = 'qrsess_' + Math.random().toString(36).substring(2, 10);
+  
+  // สร้าง QR Code บนหน้าจอคอม
+  new QRCode(box, {
+    text: `smart-saraban://admin-login?session=${currentQrSessionId}`,
+    width: 180,
+    height: 180,
+    colorDark: "#004d40",
+    colorLight: "#ffffff",
+    correctLevel: QRCode.CorrectLevel.M
+  });
+
+  // บันทึก Session ชั่วคราวลง Firebase
+  const sessionRef = rtdb.ref('admin_qr_sessions/' + currentQrSessionId);
+  sessionRef.set({
+    status: 'WAITING',
+    created: Date.now()
+  });
+
+  // เปิดตัวดักฟังการกด "อนุมัติ" จากมือถือแบบ Realtime (0.2 วิ)
+  qrSessionListener = sessionRef.on('value', (snapshot) => {
+    const val = snapshot.val();
+    if (val && val.status === 'APPROVED') {
+      clearQrSession();
+      // ล็อกอินเข้าสู่ระบบบนคอมพิวเตอร์ทันที
+      currentUser = {
+        user: val.adminId || "admin",
+        role: "Admin",
+        name: val.adminName || "ผู้ดูแลระบบ"
+      };
+
+      const now = new Date();
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      
+      rtdb.ref('admin_session_date').set(todayStr);
+      localStorage.setItem('sarabanUser', JSON.stringify(currentUser));
+      proceedToMainApp();
+      listenAdminSessionExpiry(todayStr);
+    }
+  });
+
+  // นับถอยหลัง 120 วินาที
+  let remaining = 120;
+  const countEl = document.getElementById('qrExpireCountdown');
+  if (countEl) countEl.innerText = remaining;
+
+  qrCountdownInterval = setInterval(() => {
+    remaining--;
+    if (countEl) countEl.innerText = remaining;
+    if (remaining <= 0) {
+      clearQrSession();
+      if (mask) mask.style.setProperty('display', 'flex', 'important');
+    }
+  }, 1000);
+}
+
+function clearQrSession() {
+  if (qrCountdownInterval) clearInterval(qrCountdownInterval);
+  if (qrSessionListener && currentQrSessionId) {
+    rtdb.ref('admin_qr_sessions/' + currentQrSessionId).off('value', qrSessionListener);
+    rtdb.ref('admin_qr_sessions/' + currentQrSessionId).remove();
+  }
+}
+
+// 3. ฝั่งมือถือ: ควบคุมกล้องสแกน QR Code บนคอม
+let adminScanModalInst = null;
+let adminConfirmModalInst = null;
+
+function openAdminQrScannerModal() {
+  if (!adminScanModalInst) {
+    adminScanModalInst = new bootstrap.Modal(document.getElementById('adminScanCameraModal'));
+  }
+  adminScanModalInst.show();
+  startAdminCamera();
+}
+
+function closeAdminQrScannerModal() {
+  stopAdminCamera();
+  if (adminScanModalInst) adminScanModalInst.hide();
+}
+
+async function startAdminCamera() {
+  const video = document.getElementById('adminScanVideo');
+  const promptEl = document.getElementById('adminScanPrompt');
+  adminScanActive = true;
+
+  try {
+    adminScanStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment" }
+    });
+    video.srcObject = adminScanStream;
+    video.setAttribute("playsinline", true);
+    await video.play();
+    promptEl.innerText = "เล็งกรอบสีเหลืองไปที่ QR Code บนคอมพิวเตอร์";
+    requestAnimationFrame(tickAdminScan);
+  } catch (err) {
+    promptEl.innerText = "❌ ไม่สามารถเข้าถึงกล้องได้: " + err.message;
+  }
+}
+
+function stopAdminCamera() {
+  adminScanActive = false;
+  if (adminScanStream) {
+    adminScanStream.getTracks().forEach(t => t.stop());
+    adminScanStream = null;
+  }
+}
+
+function tickAdminScan() {
+  if (!adminScanActive) return;
+  const video = document.getElementById('adminScanVideo');
+  if (video.readyState === video.HAVE_ENOUGH_DATA && typeof jsQR !== 'undefined') {
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const code = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: "dontInvert" });
+
+    if (code && code.data && code.data.includes("smart-saraban://admin-login?session=")) {
+      stopAdminCamera();
+      if (adminScanModalInst) adminScanModalInst.hide();
+      
+      const sessId = code.data.split("session=")[1];
+      showAdminConfirmModal(sessId);
+      return;
+    }
+  }
+  requestAnimationFrame(tickAdminScan);
+}
+
+// 4. ฝั่งมือถือ: แสดงหน้าต่างยืนยัน และกดส่งสัญญาณ Approved
+function showAdminConfirmModal(sessionId) {
+  pendingScannedSessionId = sessionId;
+  document.getElementById('adminConfirmNameDisplay').innerText = currentUser.name || "Admin ธุรการ";
+  
+  if (!adminConfirmModalInst) {
+    adminConfirmModalInst = new bootstrap.Modal(document.getElementById('adminConfirmLoginModal'));
+  }
+  adminConfirmModalInst.show();
+}
+
+async function approveComputerQrLogin() {
+  if (!pendingScannedSessionId) return;
+  const btn = document.getElementById('btnApproveComputerLogin');
+  btn.disabled = true;
+  btn.innerText = "กำลังเชื่อมต่อ...";
+
+  try {
+    // ส่งสัญญาณ Approved ไปยัง Firebase ทันที
+    await rtdb.ref('admin_qr_sessions/' + pendingScannedSessionId).update({
+      status: 'APPROVED',
+      adminId: currentUser.user || 'admin',
+      adminName: currentUser.name || 'Admin ธุรการ',
+      approvedAt: Date.now()
+    });
+
+    if (adminConfirmModalInst) adminConfirmModalInst.hide();
+    alert("✅ อนุญาตให้คอมพิวเตอร์เข้าสู่ระบบเรียบร้อยแล้ว!");
+  } catch (err) {
+    alert("❌ เกิดข้อผิดพลาด: " + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerText = "อนุญาตทันที";
+    pendingScannedSessionId = null;
+  }
+}
 
   async function submitAdminTotp() {
     if (isSubmittingTotp) return; // ป้องกันการกดยิงซ้ำ
@@ -8933,6 +9193,43 @@ window.addEventListener('load', function() {
       </div>
     </div>
   </div>
+<!-- 📷 Modal สแกน QR Code จากจอมือถือเพื่อสั่งคอมพิวเตอร์ล็อกอิน -->
+<div class="modal fade" id="adminScanCameraModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered" style="max-width: 380px;">
+    <div class="modal-content border-0 shadow-lg text-center" style="border-radius: 16px; overflow: hidden;">
+      <div class="modal-header bg-success text-white py-2 px-3 justify-content-between align-items-center">
+        <h6 class="modal-title fw-bold m-0">📷 ส่องกล้องไปที่ QR Code บนคอม</h6>
+        <button type="button" class="btn-close btn-close-white" onclick="closeAdminQrScannerModal()"></button>
+      </div>
+      <div class="modal-body p-3 bg-dark position-relative">
+        <video id="adminScanVideo" playsinline style="width: 100%; max-height: 280px; object-fit: cover; border-radius: 10px;"></video>
+        <div id="adminScanGuideBox" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 180px; height: 180px; border: 2.5px dashed #ffeb3b; border-radius: 12px; pointer-events: none;"></div>
+        <div id="adminScanPrompt" class="text-white small mt-2">กำลังเปิดกล้อง...</div>
+      </div>
+      <div class="modal-footer bg-light p-2 justify-content-center">
+        <button type="button" class="btn btn-sm btn-secondary px-4 fw-bold" onclick="closeAdminQrScannerModal()">ปิดกล้อง</button>
+      </div>
+    </div>
+  </div>
+</div>
 
+<!-- 🛡️ Modal ยืนยันการอนุญาตสิทธิ์บนมือถือ -->
+<div class="modal fade" id="adminConfirmLoginModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered" style="max-width: 340px;">
+    <div class="modal-content border-0 shadow-lg text-center" style="border-radius: 16px;">
+      <div class="modal-body p-4">
+        <div class="fs-1 mb-2">💻 ➡️ 📱</div>
+        <h6 class="fw-bold text-dark mb-1">ยืนยันการเข้าสู่ระบบบนคอมพิวเตอร์?</h6>
+        <div class="p-2 bg-light rounded border text-muted small mb-3">
+          ในนามผู้ดูแลระบบ: <br><b id="adminConfirmNameDisplay" class="text-success fs-6">Admin</b>
+        </div>
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-secondary flex-fill" data-bs-dismiss="modal">ยกเลิก</button>
+          <button type="button" id="btnApproveComputerLogin" class="btn btn-success flex-fill fw-bold shadow-sm" onclick="approveComputerQrLogin()">อนุญาตทันที</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>

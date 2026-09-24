@@ -3522,13 +3522,34 @@ let currentPersonalStaffName = "";
     const logs = window._currentPersonalLogs || [];
     const search = (document.getElementById('personalSearchInput')?.value || "").toLowerCase().trim();
 
+    // ✂️ ทำความสะอาดชื่อครูที่ล็อกอินอยู่ (ตัดคำนำหน้า และลบช่องว่างส่วนเกินทั้งหมด)
+    const myCleanTarget = stripThaiPrefix(currentPersonalStaffName).replace(/[\s\u00a0\u200b]+/g, '').toLowerCase();
+
     // กรองเฉพาะเล่มที่มีชื่อครูในวงเล็บ [ ... ]
     const filtered = logs.filter(row => {
       if (!row || row[0] === "❌") return false;
-      const fileName = (row[2] || "").toString();
-      const hasMyName = fileName.includes(currentPersonalStaffName);
+      const rawFileName = (row[2] || "").toString();
+
+      // สกัดรายชื่อที่อยู่ในวงเล็บ [ ... ]
+      const nameMatch = rawFileName.match(/\[(.*?)\]/);
+      let hasMyName = false;
+
+      if (nameMatch && nameMatch[1]) {
+        // แยกรายชื่อครูในวงเล็บกรณีมีหลายคน แล้วตัดคำนำหน้า + ตัดช่องว่าง
+        const namesInBracket = nameMatch[1].split(',').map(n => stripThaiPrefix(n).replace(/[\s\u00a0\u200b]+/g, '').toLowerCase());
+        hasMyName = namesInBracket.some(n => n.includes(myCleanTarget) || myCleanTarget.includes(n));
+      } else {
+        // กรณีไม่มีวงเล็บ หรือบันทึกไว้ในข้อความโดยตรง
+        const cleanRaw = stripThaiPrefix(rawFileName).replace(/[\s\u00a0\u200b]+/g, '').toLowerCase();
+        hasMyName = cleanRaw.includes(myCleanTarget);
+      }
+
       if (!hasMyName) return false;
-      if (search) return fileName.toLowerCase().includes(search);
+
+      // กรองคำค้นหาเพิ่มเติมในกล่องพิมพ์ (ถ้ามี)
+      if (search) {
+        return rawFileName.toLowerCase().includes(search);
+      }
       return true;
     });
 
@@ -3551,7 +3572,7 @@ let currentPersonalStaffName = "";
         <tr class="align-middle">
           <td class="text-start text-dark col-title-wrap" style="width: 72%; font-size: 0.84rem;">
             <div class="fw-bold text-success" style="font-size: 0.85rem; margin-bottom: 2px;">${bookNumber ? `[${bookNumber}]` : ''}</div>
-            <div class="fw-bold text-dark" style="line-height: 1.4;">${bookTitle}</div>
+            <div class="fw-bold text-dark clamp-3-lines" style="line-height: 1.4;" title="${bookTitle}">${bookTitle}</div>
           </td>
           <td class="text-center" style="width: 28%;">
             <div class="d-flex justify-content-center gap-1">

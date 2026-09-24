@@ -2105,21 +2105,26 @@
         </div>
       </div>
 
-      <!-- แถบตัวกรองและตัวช่วยเลือกของหน้า Export -->
-      <div class="row g-2 mb-3 align-items-center">
-        <div class="col-6 col-md-2">
+      <!-- แถบตัวกรองและตัวช่วยเลือกของหน้า Export (จัดขนาดกระชับพอดีคำ 1 บรรทัด ไม่ล้นจอ) -->
+      <div class="d-flex flex-wrap align-items-center gap-1 mb-2">
+        <!-- 1. ช่องปี พ.ศ. (กะทัดรัด พอดีคำว่า 'ปี พ.ศ. 2569') -->
+        <div style="width: 125px; flex-shrink: 0;">
           <select id="exportYearSelect" class="form-select form-select-sm border-success shadow-sm" onchange="changeExportYear(this.value)"></select>
         </div>
-        <div class="col-6 col-md-3">
+
+        <!-- 2. ช่องค้นหาเลข หรือ ชื่อหนังสือ (ยืดหดตามพื้นที่ว่างที่เหลือ) -->
+        <div style="min-width: 150px; flex: 1 1 160px;">
           <div class="input-group input-group-sm shadow-sm">
-            <span class="input-group-text bg-white"><svg class="btn-svg-icon me-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span>
+            <span class="input-group-text bg-white py-0"><svg class="btn-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></span>
             <input type="text" id="exportSearchInput" class="form-control" placeholder="ค้นหาเลข หรือ ชื่อหนังสือ..." oninput="filterExportTable()">
           </div>
         </div>
-        <div class="col-12 col-md-3">
+
+        <!-- 3. ช่องเลือกกลุ่มงาน (ขนาดพอดีคำที่ยาวที่สุด 'ฝ่ายบริหารแผนงานและงบประมาณ' ประมาณ 185px) -->
+        <div style="width: 185px; flex-shrink: 0;">
           <select id="exportDeptSelector" class="form-select form-select-sm border-success shadow-sm" onchange="handleExportDeptSelect(this.value)">
-            <option value=""> เลือกติ๊กตามกลุ่มงาน...</option>
-            <option value="all">-- เลือกทุกกลุ่มงาน --</option>
+            <option value="">เลือกกลุ่มงาน...</option>
+            <option value="all">-- ทุกกลุ่มงาน --</option>
             <option value="ฝ่ายบริหารทั่วไป">ฝ่ายบริหารทั่วไป</option>
             <option value="ฝ่ายบริหารงานบุคคล">ฝ่ายบริหารงานบุคคล</option>
             <option value="ฝ่ายบริหารวิชาการ">ฝ่ายบริหารวิชาการ</option>
@@ -2129,17 +2134,24 @@
             <option value="อื่นๆ">อื่นๆ (ระบุรายชื่อ)</option>
           </select>
         </div>
-        <div class="col-12 col-md-2" id="exportStaffSelectorContainer" style="display:none;">
-          <select id="exportStaffSelector" class="form-select form-select-sm border-info shadow-sm" onchange="handleExportStaffSelect(this.value)">
-            <option value="">👤 เลือกรายชื่อบุคคล...</option>
-          </select>
+
+        <!-- 4. ช่องพิมพ์ค้นหาบุคลากร (แสดงเมื่อเลือก 'อื่นๆ') -->
+        <div id="exportStaffSelectorContainer" style="display:none; width: 220px; flex-shrink: 0;">
+          <div class="input-group input-group-sm shadow-sm">
+            <span class="input-group-text bg-white border-info text-info py-0">👤</span>
+            <input type="text" id="exportStaffSelector" list="exportStaffDatalist" class="form-control border-info" placeholder="พิมพ์ชื่อบุคลากร..." oninput="handleExportStaffSelect(this.value)">
+            <button class="btn btn-outline-secondary" type="button" onclick="document.getElementById('exportStaffSelector').value=''; handleExportStaffSelect('');" title="ล้างชื่อ">✕</button>
+          </div>
+          <datalist id="exportStaffDatalist"></datalist>
         </div>
-        <div class="col-auto ms-auto d-flex gap-1">
-          <button type="button" class="btn btn-sm btn-outline-success fw-bold shadow-sm" onclick="selectAllForExport(true)">
-            <svg class="btn-svg-icon me-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg> เลือกทั้งหมด
+
+        <!-- 5. กลุ่มปุ่ม 'เลือกทั้งหมด' และ 'ล้างที่เลือก' (ชิดขวาสุด เรียงต่อท้ายพอดี) -->
+        <div class="d-flex align-items-center gap-1 ms-auto flex-shrink-0">
+          <button type="button" class="btn btn-sm btn-outline-success fw-bold shadow-sm px-2 py-1 text-nowrap" style="font-size: 0.76rem;" onclick="selectAllForExport(true)">
+            <svg class="btn-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg> เลือกทั้งหมด
           </button>
-          <button type="button" class="btn btn-sm btn-outline-secondary fw-bold shadow-sm" onclick="selectAllForExport(false)">
-            <svg class="btn-svg-icon me-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg> ล้างที่เลือก
+          <button type="button" class="btn btn-sm btn-outline-secondary fw-bold shadow-sm px-2 py-1 text-nowrap" style="font-size: 0.76rem;" onclick="selectAllForExport(false)">
+            <svg class="btn-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg> ล้างที่เลือก
           </button>
         </div>
       </div>
@@ -6147,10 +6159,14 @@ async function refreshApp() {
 
   let currentFilteredExportRows = [];
 
+  // 🔍 กรองข้อมูลตารางส่งออกหนังสือ (ตัดคำนำหน้า ค้นหาแม่นยำ ไม่ตกหล่นเล่มเก่า)
   function filterExportTable() {
     const search = document.getElementById('exportSearchInput') ? document.getElementById('exportSearchInput').value.toLowerCase().trim() : "";
     const dept = document.getElementById('exportDeptSelector') ? document.getElementById('exportDeptSelector').value : "";
-    const staff = document.getElementById('exportStaffSelector') ? document.getElementById('exportStaffSelector').value.trim() : "";
+    const rawStaff = document.getElementById('exportStaffSelector') ? document.getElementById('exportStaffSelector').value.trim() : "";
+
+    // ตัดคำนำหน้า (นาย/นาง/นางสาว) และช่องว่างส่วนเกินออก
+    const cleanStaffTarget = stripThaiPrefix(rawStaff).replace(/[\s\u00a0\u200b]+/g, '').toLowerCase();
 
     const deptAliasMap = {
       "ฝ่ายบริหารวิชาการ": ["ฝ่ายบริหารวิชาการ", "บริหารงานวิชาการ"],
@@ -6167,7 +6183,7 @@ async function refreshApp() {
       const rawFileName = (row[2] || "").toString();
       const rowDept = (row[3] || "").toString();
 
-      // 1. กรองคำค้นหา
+      // 1. กรองคำค้นหาเลขหรือชื่อหนังสือ
       let matchSearch = true;
       if (search !== "") {
         matchSearch = rawFileName.toLowerCase().includes(search) || rowDept.toLowerCase().includes(search);
@@ -6177,11 +6193,17 @@ async function refreshApp() {
       let matchDept = true;
       if (dept && dept !== "all") {
         if (dept === "อื่นๆ") {
-          if (staff !== "") {
-            // ถ้าระบุรายชื่อ: ต้องมีชื่อคนนั้นในวงเล็บ [ ... ]
-            matchDept = rawFileName.includes(staff);
+          if (cleanStaffTarget !== "") {
+            // ดึงเฉพาะชื่อที่อยู่ในวงเล็บ [ ... ] มาตรวจสอบ
+            const nameMatch = rawFileName.match(/\[(.*?)\]/);
+            if (nameMatch && nameMatch[1]) {
+              const namesInBracket = nameMatch[1].split(',').map(n => stripThaiPrefix(n).replace(/[\s\u00a0\u200b]+/g, '').toLowerCase());
+              matchDept = namesInBracket.some(n => n.includes(cleanStaffTarget) || cleanStaffTarget.includes(n));
+            } else {
+              matchDept = false;
+            }
           } else {
-            // ถ้าไม่ระบุชื่อ: แสดงของกลุ่มอื่นๆ ทั้งหมด (มีคำว่าอื่นๆ หรือมีรายชื่อในวงเล็บ)
+            // ถ้าเลือก "อื่นๆ" แต่ยังไม่ได้พิมพ์ระบุชื่อคน ให้แสดงทุกเล่มที่มีผู้รับผิดชอบเฉพาะบุคคล
             matchDept = rowDept.includes("อื่นๆ") || /\[(.*?)\]/.test(rawFileName);
           }
         } else {
@@ -6194,6 +6216,21 @@ async function refreshApp() {
     });
 
     renderExportTableRows(currentFilteredExportRows);
+  }
+
+  // 👥 อัปเดตรายชื่อบุคลากรลงใน Datalist สำหรับพิมพ์ค้นหาอัตโนมัติ
+  function populateExportStaffDropdown() {
+    const datalist = document.getElementById('exportStaffDatalist');
+    if (!datalist || fullStaffData.length === 0) return;
+    datalist.innerHTML = fullStaffData.map(s => {
+      const cleanName = stripThaiPrefix(s.name);
+      return `<option value="${s.name}">${cleanName} - ${s.position || ''} (${s.serviceUnit || 'เมือง'})</option>`;
+    }).join('');
+  }
+
+  // ⌨️ ฟังก์ชันเมื่อพิมพ์ค้นหาชื่อบุคลากร
+  function handleExportStaffSelect(staffName) {
+    filterExportTable();
   }
 
   function renderExportTableRows(rows) {
@@ -6318,17 +6355,6 @@ async function refreshApp() {
     // ล้างการเลือกรายชื่อเมื่อเปลี่ยนกลุ่มงาน
     if (staffSelector) staffSelector.value = "";
 
-    filterExportTable();
-  }
-
-  function populateExportStaffDropdown() {
-    const selector = document.getElementById('exportStaffSelector');
-    if (!selector || fullStaffData.length === 0) return;
-    selector.innerHTML = `<option value="">👤 เลือกรายชื่อบุคคล...</option>` +
-      fullStaffData.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
-  }
-
-  function handleExportStaffSelect(staffName) {
     filterExportTable();
   }
 

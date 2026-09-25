@@ -2488,6 +2488,12 @@
                 🔔 ส่งแจ้งเตือน LINE ไปยังกลุ่มงานที่เกี่ยวข้องเพื่อแจ้งยกเลิกหนังสือ
               </label>
             </div>
+            <!-- 🔒 ช่องกรอกรหัสผ่าน Admin ยืนยันการลบ -->
+            <div class="mt-3 p-2 bg-white rounded border border-danger">
+              <label class="form-label fw-bold small text-dark mb-1">🔒 กรุณากรอกรหัสผ่าน Admin เพื่อยืนยันการลบ:</label>
+              <input type="password" id="deleteAdminPassInput" class="form-control form-control-sm" placeholder="กรอกรหัสผ่านของคุณ..." onkeydown="if(event.key==='Enter'){event.preventDefault();executeDelete();}">
+              <div id="deleteModalErr" class="text-danger small mt-1 fw-bold"></div>
+            </div>
           </div>
           <div class="modal-footer bg-light">
             <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">ยกเลิก</button>
@@ -2968,7 +2974,7 @@
  // --- 1. การตั้งค่าสิทธิ์พื้นฐานองค์กร ---
   const GH_OWNER = "specialtrat905";
   const GH_REPO = "smart-saraban";
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz-DnK7eeWV2mP9KpuhGRSPKLHhZNGbYPex8fApCw8WNxviSKArtaAhgPeta8g2E4izQA/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxw1O2FhMrs04W7Zk7XLwXzscpEbyj8EcNOKUx-KcLd67rv5nH_M7ASpiPmhdfDduMx5g/exec";
 // ⚡ กำหนดค่าเชื่อมต่อ Firebase (ตาม Config ของคุณ)
 const firebaseConfig = {
   apiKey: "AIzaSyBL_Jv3x_UxEkzcVnN6lpQpZdWoIaJvMNM",
@@ -4356,11 +4362,58 @@ function updateDbManageButtonUI() {
 
   function filterDbManageTable() {
     const search = document.getElementById('dbManageSearchInput') ? document.getElementById('dbManageSearchInput').value.toLowerCase().trim() : "";
-    const filtered = dbManageLogsData.filter(row => {
+
+    // คำนวณหาเลขหนังสือที่ยังไม่ลงระบบ (Missing Numbers)
+    let missingRows = [];
+    if (search === "") {
+      const existingNumbers = dbManageLogsData.map(row => {
+        if (!row || row.length < 3 || row[0] === "❌") return null;
+        const cleanStr = row[2].toString().replace(/<[^>]*>?/gm, '').replace(/\[.*?\]/g, '').trim();
+        const m = cleanStr.match(/^(\d+)\s*-\s*25\d{2}/);
+        return m ? parseInt(m[1], 10) : null;
+      }).filter(n => n !== null);
+
+      if (existingNumbers.length > 0) {
+        const maxNum = Math.max(...existingNumbers);
+        let minBound = (currentDbManageYear.toString() === "2568") ? 891 : 1;
+
+        for (let i = minBound; i <= maxNum; i++) {
+          if (!existingNumbers.includes(i)) {
+            missingRows.push([
+              "❌",
+              "SYSTEM",
+              `<span class="text-missing">${i}-${currentDbManageYear}</span>`,
+              "ยังไม่ได้ลงระบบ",
+              "#"
+            ]);
+          }
+        }
+      }
+    }
+
+    let filtered = dbManageLogsData.filter(row => {
       if (!row || row[0] === "❌") return false;
       if (search === "") return true;
       return (row[2] && row[2].toLowerCase().includes(search)) || (row[3] && row[3].toLowerCase().includes(search));
     });
+
+    if (search === "") {
+      filtered = filtered.concat(missingRows);
+    }
+
+    filtered.sort((a, b) => {
+      const textA = a[2].toString().replace(/<[^>]*>?/gm, '').trim();
+      const textB = b[2].toString().replace(/<[^>]*>?/gm, '').trim();
+      const matchA = textA.match(/^(\d+)\s*-\s*(\d+)/);
+      const matchB = textB.match(/^(\d+)\s*-\s*(\d+)/);
+      const numA = matchA ? parseInt(matchA[1], 10) : -1;
+      const numB = matchB ? parseInt(matchB[1], 10) : -1;
+      if (numA !== -1 && numB !== -1) return numB - numA;
+      if (numA !== -1) return -1;
+      if (numB !== -1) return 1;
+      return b[0].toString().localeCompare(a[0].toString());
+    });
+
     renderDbManageTableRows(filtered);
   }
 
@@ -4371,17 +4424,27 @@ function updateDbManageButtonUI() {
       return;
     }
 
-    const deptColors = {
-      "ฝ่ายบริหารวิชาการ": "#ffde59", "บริหารงานวิชาการ": "#ffde59",
-      "ฝ่ายบริหารงบประมาณ": "#ff5757", "บริหารแผนงานและงบประมาณ": "#ff5757",
-      "ฝ่ายบริหารงานบุคคล": "#0cc0df", "บริหารงานบุคคล": "#0cc0df",
-      "ฝ่ายบริหารทั่วไป": "#8c52ff", "บริหารงานทั่วไป": "#8c52ff",
-      "ผู้อำนวยการ": "#add8e6", "รองผู้อำนวยการ": "#d2b48c", "อื่นๆ": "#adb5bd"
-    };
-
     let html = "";
     rows.forEach((row) => {
+      const isMissing = (row[0] === "❌");
       const rawFileName = (row[2] || "").trim();
+
+      if (isMissing) {
+        html += `
+          <tr class="row-missing align-middle">
+            <td class="text-start col-title-wrap" style="width: 48%;">
+              <span class="text-danger fw-bold d-inline-flex align-items-center gap-1">❌ ${row[2]}</span>
+            </td>
+            <td class="text-start" style="width: 28%;">
+              <span class="badge bg-secondary bg-opacity-75" style="font-size: 0.72rem;">ยังไม่ได้ลงระบบ</span>
+            </td>
+            <td class="text-center text-muted" style="width: 14%;">-</td>
+            <td class="text-center text-muted" style="width: 10%;">-</td>
+          </tr>
+        `;
+        return;
+      }
+
       const cleanNoExt = rawFileName.replace(/\.pdf$/i, "").trim();
       const numMatch = cleanNoExt.match(/^(\d+[-/]\d+)/);
       const bookNumber = numMatch ? numMatch[1] : (cleanNoExt.split(" ")[0] || "-");
@@ -4391,7 +4454,6 @@ function updateDbManageButtonUI() {
       bookTitle = bookTitle.replace(/\[.*?\]/g, "").trim();
       if (!bookTitle) bookTitle = cleanNoExt;
 
-      // 🔘 ปุ่มจัดการลบ / ย้ายฝ่าย (ทรงมินิมอล)
       const actionHTML = `
         <div class="d-flex flex-column align-items-center justify-content-center gap-1">
           <button class="btn btn-sm btn-outline-warning text-dark py-0 px-1 fw-bold shadow-sm d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 26px; border-radius: 6px;" onclick="openEditBookDeptFromDbManage('${encodeURIComponent(row[2])}')" title="แก้ไขกลุ่มงาน/ผู้รับ">
@@ -4403,24 +4465,9 @@ function updateDbManageButtonUI() {
         </div>
       `;
 
-      // 🎨 กลุ่มงาน: ตัดคำว่า "ฝ่าย" ออก และกว้างเต็มช่อง 100%
-      const rawDeptStr = row[3] || "";
-      const deptBadges = rawDeptStr ? rawDeptStr.split(',').map(d => {
-        const dTrim = d.trim();
-        const shortDept = stripDeptPrefix(dTrim); // ตัดคำว่า "ฝ่าย"
-        const color = deptColors[dTrim] || "#adb5bd";
-        return `<div class="mb-1 w-100"><small class="badge border w-100 text-truncate text-center" style="font-size: 0.68rem; font-weight: 500; background-color: ${color}; color: #fff; padding: 2px 4px;">${shortDept}</small></div>`;
-      }).join('') : "";
+      // 🏷️ ใช้ฟังก์ชันจัดป้ายแบบกระชับ (เหมือนหน้าแรกตามภาพที่ 3 เป๊ะ)
+      const deptBadges = renderUnifiedDeptBadges(row[3], rawFileName, bookTitle, false);
 
-      // 👤 ชื่อบุคลากร: ตัดไอคอน และตัดคำนำหน้า (นาย/นาง/นางสาว) ออก
-      let staffBadge = "";
-      const nameMatch = rawFileName.match(/\[(.*?)\]/);
-      if (nameMatch && nameMatch[1]) {
-        const cleanStaffName = stripThaiPrefix(nameMatch[1].trim());
-        staffBadge = `<div class="mb-1 w-100"><small class="badge border text-dark bg-light shadow-sm w-100 text-truncate text-start" style="font-size: 0.68rem; font-weight: 500; padding: 2px 4px;" title="${cleanStaffName}">${cleanStaffName}</small></div>`;
-      }
-
-      // 🏷️ แสดงสถานะเลขหนังสือจริง (ไอคอนมินิมอลวงกลม)
       const officialNo = (row[5] || "").toString().trim();
       let officialNoHTML = "";
       const encFileName = encodeURIComponent(row[2]);
@@ -4451,10 +4498,9 @@ function updateDbManageButtonUI() {
             <div class="fw-bold text-success" style="font-size: 0.85rem; margin-bottom: 2px;">[${bookNumber}]</div>
             <div class="fw-bold text-dark clamp-3-lines" title="${bookTitle}">${bookTitle}</div>
           </td>
-          <td class="text-start" style="width: 28%; vertical-align: top; padding: 6px 3px;">
-            <div class="d-flex flex-column align-items-start w-100 overflow-hidden">
+          <td class="text-start" style="width: 28%; vertical-align: middle; padding: 6px 8px;">
+            <div class="d-flex flex-wrap align-items-center gap-1">
               ${deptBadges}
-              ${staffBadge}
             </div>
           </td>
           <td class="text-center" style="width: 14%; vertical-align: middle; padding: 4px 2px;">
@@ -6228,13 +6274,12 @@ async function refreshApp() {
 
   let currentFilteredExportRows = [];
 
-  // 🔍 กรองข้อมูลตารางส่งออกหนังสือ (ตัดคำนำหน้า ค้นหาแม่นยำ ไม่ตกหล่นเล่มเก่า)
+  // 🔍 กรองข้อมูลตารางส่งออกหนังสือ (คำนวณเลขที่ยังไม่ลงรับ ❌ มาร่วมแสดงด้วย)
   function filterExportTable() {
     const search = document.getElementById('exportSearchInput') ? document.getElementById('exportSearchInput').value.toLowerCase().trim() : "";
     const dept = document.getElementById('exportDeptSelector') ? document.getElementById('exportDeptSelector').value : "";
     const rawStaff = document.getElementById('exportStaffSelector') ? document.getElementById('exportStaffSelector').value.trim() : "";
 
-    // ตัดคำนำหน้า (นาย/นาง/นางสาว) และช่องว่างส่วนเกินออก
     const cleanStaffTarget = stripThaiPrefix(rawStaff).replace(/[\s\u00a0\u200b]+/g, '').toLowerCase();
 
     const deptAliasMap = {
@@ -6246,24 +6291,49 @@ async function refreshApp() {
       "ผู้อำนวยการ": ["ผู้อำนวยการ"]
     };
 
+    // คำนวณหาเลขหนังสือที่ยังไม่ลงระบบ (Missing Numbers)
+    let missingRows = [];
+    if ((!dept || dept === "all") && search === "") {
+      const existingNumbers = exportLogsData.map(row => {
+        if (!row || row.length < 3 || row[0] === "❌") return null;
+        const cleanStr = row[2].toString().replace(/<[^>]*>?/gm, '').replace(/\[.*?\]/g, '').trim();
+        const m = cleanStr.match(/^(\d+)\s*-\s*25\d{2}/);
+        return m ? parseInt(m[1], 10) : null;
+      }).filter(n => n !== null);
+
+      if (existingNumbers.length > 0) {
+        const maxNum = Math.max(...existingNumbers);
+        let minBound = (currentExportYear.toString() === "2568") ? 891 : 1;
+
+        for (let i = minBound; i <= maxNum; i++) {
+          if (!existingNumbers.includes(i)) {
+            missingRows.push([
+              "❌",
+              "SYSTEM",
+              `<span class="text-missing">${i}-${currentExportYear}</span>`,
+              "ยังไม่ได้ลงระบบ",
+              "#"
+            ]);
+          }
+        }
+      }
+    }
+
     currentFilteredExportRows = exportLogsData.filter(row => {
       if (!row || row[0] === "❌") return false;
 
       const rawFileName = (row[2] || "").toString();
       const rowDept = (row[3] || "").toString();
 
-      // 1. กรองคำค้นหาเลขหรือชื่อหนังสือ
       let matchSearch = true;
       if (search !== "") {
         matchSearch = rawFileName.toLowerCase().includes(search) || rowDept.toLowerCase().includes(search);
       }
 
-      // 2. กรองกลุ่มงาน / รายชื่อบุคคล
       let matchDept = true;
       if (dept && dept !== "all") {
         if (dept === "อื่นๆ") {
           if (cleanStaffTarget !== "") {
-            // ดึงเฉพาะชื่อที่อยู่ในวงเล็บ [ ... ] มาตรวจสอบ
             const nameMatch = rawFileName.match(/\[(.*?)\]/);
             if (nameMatch && nameMatch[1]) {
               const namesInBracket = nameMatch[1].split(',').map(n => stripThaiPrefix(n).replace(/[\s\u00a0\u200b]+/g, '').toLowerCase());
@@ -6272,7 +6342,6 @@ async function refreshApp() {
               matchDept = false;
             }
           } else {
-            // ถ้าเลือก "อื่นๆ" แต่ยังไม่ได้พิมพ์ระบุชื่อคน ให้แสดงทุกเล่มที่มีผู้รับผิดชอบเฉพาะบุคคล
             matchDept = rowDept.includes("อื่นๆ") || /\[(.*?)\]/.test(rawFileName);
           }
         } else {
@@ -6282,6 +6351,24 @@ async function refreshApp() {
       }
 
       return matchSearch && matchDept;
+    });
+
+    if ((!dept || dept === "all") && search === "") {
+      currentFilteredExportRows = currentFilteredExportRows.concat(missingRows);
+    }
+
+    // เรียงลำดับจากเลขมากไปหาน้อย
+    currentFilteredExportRows.sort((a, b) => {
+      const textA = a[2].toString().replace(/<[^>]*>?/gm, '').trim();
+      const textB = b[2].toString().replace(/<[^>]*>?/gm, '').trim();
+      const matchA = textA.match(/^(\d+)\s*-\s*(\d+)/);
+      const matchB = textB.match(/^(\d+)\s*-\s*(\d+)/);
+      const numA = matchA ? parseInt(matchA[1], 10) : -1;
+      const numB = matchB ? parseInt(matchB[1], 10) : -1;
+      if (numA !== -1 && numB !== -1) return numB - numA;
+      if (numA !== -1) return -1;
+      if (numB !== -1) return 1;
+      return b[0].toString().localeCompare(a[0].toString());
     });
 
     renderExportTableRows(currentFilteredExportRows);
@@ -6304,45 +6391,35 @@ async function refreshApp() {
 
   function renderExportTableRows(rows) {
     const tbody = document.getElementById('exportViewTableBody');
-    const totalElem = document.getElementById('exportViewTotalCount');
-    if (totalElem) totalElem.innerText = rows.length;
-
     if (rows.length === 0) {
       tbody.innerHTML = `<tr><td colspan="3" class="text-center p-4 text-muted">ไม่พบข้อมูลหนังสือ</td></tr>`;
       updateExportSelectedCount();
       return;
     }
 
-    const deptColors = {
-      "ฝ่ายบริหารวิชาการ": "#ffde59", "บริหารงานวิชาการ": "#ffde59",
-      "ฝ่ายบริหารงบประมาณ": "#ff5757", "บริหารแผนงานและงบประมาณ": "#ff5757",
-      "ฝ่ายบริหารงานบุคคล": "#0cc0df", "บริหารงานบุคคล": "#0cc0df",
-      "ฝ่ายบริหารทั่วไป": "#8c52ff", "บริหารงานทั่วไป": "#8c52ff",
-      "ผู้อำนวยการ": "#add8e6", "รองผู้อำนวยการ": "#d2b48c", "อื่นๆ": "#adb5bd"
-    };
-
     let html = "";
     rows.forEach((row) => {
+      const isMissing = (row[0] === "❌");
       const rawFileName = (row[2] || "").toString().trim();
+
+      if (isMissing) {
+        html += `
+          <tr class="row-missing align-middle">
+            <td class="text-center text-danger fw-bold" style="font-size: 1.1rem; width: 11%;">❌</td>
+            <td class="text-start col-title-wrap" style="width: 61%;">
+              <span class="text-danger fw-bold">${row[2]}</span>
+            </td>
+            <td class="text-start" style="width: 28%;">
+              <span class="badge bg-secondary bg-opacity-75" style="font-size: 0.72rem;">ยังไม่ได้ลงระบบ</span>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
       const details = extractBookExportDetails(row);
       const isChecked = selectedExportFileNames.has(row[2]);
-
-      // 🎨 กลุ่มงาน: ตัดคำว่า "ฝ่าย" ออก และแสดงเต็มช่อง
-      const rawDeptStr = row[3] || "";
-      const deptBadges = rawDeptStr ? rawDeptStr.split(',').map(d => {
-        const dTrim = d.trim();
-        const shortDept = stripDeptPrefix(dTrim); // ตัดคำว่า "ฝ่าย"
-        const color = deptColors[dTrim] || "#adb5bd";
-        return `<div class="mb-1 w-100"><small class="badge border w-100 text-truncate text-center" style="font-size: 0.68rem; font-weight: 500; background-color: ${color}; color: #fff; padding: 2px 4px;">${shortDept}</small></div>`;
-      }).join('') : "";
-
-      // 👤 ชื่อบุคลากร: ตัด นาย/นาง/นางสาว และไอคอนออก
-      let staffBadge = "";
-      const nameMatch = rawFileName.match(/\[(.*?)\]/);
-      if (nameMatch && nameMatch[1]) {
-        const cleanStaffName = stripThaiPrefix(nameMatch[1].trim());
-        staffBadge = `<div class="mb-1 w-100"><small class="badge border text-dark bg-light shadow-sm w-100 text-truncate text-start" style="font-size: 0.68rem; font-weight: 500; padding: 2px 4px;" title="${cleanStaffName}">${cleanStaffName}</small></div>`;
-      }
+      const deptBadges = renderUnifiedDeptBadges(row[3], rawFileName, details.title, false);
 
       html += `
         <tr class="align-middle">
@@ -6354,10 +6431,9 @@ async function refreshApp() {
             <div class="fw-bold text-success" style="font-size: 0.85rem; margin-bottom: 2px;">[${details.bookNumber}]</div>
             <div class="fw-bold text-dark clamp-3-lines" title="${details.title}">${details.title}</div>
           </td>
-          <td class="text-start" style="width: 28%; vertical-align: top; padding: 6px 3px;">
-            <div class="d-flex flex-column align-items-start w-100 overflow-hidden">
+          <td class="text-start" style="width: 28%; vertical-align: middle; padding: 6px 8px;">
+            <div class="d-flex flex-wrap align-items-center gap-1">
               ${deptBadges}
-              ${staffBadge}
             </div>
           </td>
         </tr>
@@ -7381,10 +7457,17 @@ async function approveComputerQrLogin() {
       </li>
     `).join('');
 
+    // เคลียร์ช่องใส่รหัสผ่านและข้อความแจ้งเตือนทุกครั้งที่เปิด Modal
+    const passInput = document.getElementById('deleteAdminPassInput');
+    const errDiv = document.getElementById('deleteModalErr');
+    if (passInput) passInput.value = "";
+    if (errDiv) errDiv.innerText = "";
+
     if (!deleteModalInstance) {
       deleteModalInstance = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
     }
     deleteModalInstance.show();
+    setTimeout(() => { if (passInput) passInput.focus(); }, 400);
   }
 
   // --- 11. ระบบ In-App PDF Viewer (เปิดดูเอกสารในหน้าเว็บ) ---
@@ -8075,57 +8158,63 @@ let currentPdfFileName = ''; // เพิ่มตัวแปรเก็บช
     openDeleteConfirmModal();
   }
 
+  // 🗑️ ดำเนินการลบหนังสือพร้อมตรวจสอบรหัสผ่าน Admin
   async function executeDelete() {
+    const passInput = document.getElementById('deleteAdminPassInput');
+    const errDiv = document.getElementById('deleteModalErr');
+    const pass = passInput ? passInput.value.trim() : "";
+
+    if (!pass) {
+      if (errDiv) errDiv.innerText = "กรุณากรอกรหัสผ่าน Admin เพื่อยืนยัน";
+      if (passInput) passInput.focus();
+      return;
+    }
+
     const confirmBtn = document.getElementById('confirmDeleteBtn');
     confirmBtn.disabled = true;
-    confirmBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> กำลังลบ...`;
-
-    const isDbManage = (document.getElementById('dbManageView') && document.getElementById('dbManageView').style.display === 'block');
-    let targetYear;
-    if (isDbManage) {
-      targetYear = currentDbManageYear.toString();
-    } else {
-      const selectedYear = document.getElementById('yearSelect').value;
-      targetYear = (selectedYear === "all") ? currentScrollYear.toString() : selectedYear;
-    }
-    const notifyLine = document.getElementById('deleteNotifyLineCheck').checked;
+    confirmBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> กำลังตรวจสอบและลบ...`;
+    if (errDiv) errDiv.innerText = "";
 
     try {
-      const response = await fetch(SCRIPT_URL, {
+      const notifyLine = document.getElementById('deleteNotifyLineCheck').checked;
+      const targetYear = (typeof currentDbManageYear !== "undefined") ? currentDbManageYear : currentYearBE;
+
+      const res = await fetch(SCRIPT_URL, {
         method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
           action: "deleteBooks",
-          year: targetYear,
+          adminUser: currentUser.user || "admin",
+          adminPass: pass,
           books: selectedBooksToDelete,
+          year: targetYear.toString(),
           notifyLine: notifyLine,
-          deleter: currentUser.name
+          deleter: currentUser.name || "งานธุรการกลาง"
         })
       });
-      const result = await response.json();
+
+      const result = await res.json();
 
       if (result.success) {
-        alert(`✅ ลบหนังสือสำเร็จทั้งหมด ${result.deletedCount} รายการ`);
+        if (deleteModalInstance) deleteModalInstance.hide();
+        alert(`✅ ลบหนังสือสำเร็จ ${result.deletedCount || selectedBooksToDelete.length} รายการ เรียบร้อยแล้ว`);
+        selectedBooksToDelete = [];
+        updateEditDbButtonUI();
+        updateDbManageDeleteUI();
+        loadDbManageDataForYear(targetYear);
+        resetAndReloadLogs();
       } else {
-        alert("⚠️ เกิดข้อผิดพลาด: " + (result.message || "ไม่สามารถลบข้อมูลได้"));
+        if (errDiv) errDiv.innerText = result.message || "รหัสผ่านไม่ถูกต้อง หรือไม่สามารถลบข้อมูลได้";
+        if (passInput) {
+          passInput.value = "";
+          passInput.focus();
+        }
       }
-    } catch (err) {
-      console.error(err);
-      alert("❌ เชื่อมต่อเซิร์ฟเวอร์ล้มเหลว กรุณาลองใหม่อีกครั้ง");
+    } catch (e) {
+      if (errDiv) errDiv.innerText = "เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์";
     } finally {
-      if (deleteModalInstance) deleteModalInstance.hide();
       confirmBtn.disabled = false;
       confirmBtn.innerHTML = `<svg class="btn-svg-icon" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg> ยืนยันการลบถาวร`;
-      
-      currentDbMode = null;
-      selectedBooksToDelete = [];
-      updateEditDbButtonUI();
-      dataCache = {};
-
-      if (isDbManage) {
-        loadDbManageDataForYear(currentDbManageYear);
-      } else {
-        resetAndReloadLogs();
-      }
     }
   }
 

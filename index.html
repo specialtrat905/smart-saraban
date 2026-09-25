@@ -4466,7 +4466,7 @@ function updateDbManageButtonUI() {
       `;
 
       // 🏷️ ใช้ฟังก์ชันจัดป้ายแบบกระชับ (เหมือนหน้าแรกตามภาพที่ 3 เป๊ะ)
-      const deptBadges = renderUnifiedDeptBadges(row[3], rawFileName, bookTitle, false);
+      const deptBadges = renderUnifiedDeptBadges(row[3], rawFileName, bookTitle, false, true);
 
       const officialNo = (row[5] || "").toString().trim();
       let officialNoHTML = "";
@@ -5754,8 +5754,8 @@ async function refreshApp() {
     return deptName.toString().trim().replace(/^ฝ่าย/g, "").trim();
   }
 
-  // 🏷️ ฟังก์ชันจัดเลย์เอาต์ป้ายฝ่ายงานและรายชื่อบุคลากร (แยกตาม PC และ มือถือ)
-  function renderUnifiedDeptBadges(rawDeptStr, fullFileName, cleanFileName, isMobile) {
+  // 🏷️ ฟังก์ชันจัดเลย์เอาต์ป้ายฝ่ายงานและรายชื่อบุคลากร (แยก PC แถวเดี่ยว / PC ตาราง 3 แถว / มือถือ)
+  function renderUnifiedDeptBadges(rawDeptStr, fullFileName, cleanFileName, isMobile, isTableColumn = false) {
     if (!rawDeptStr && !fullFileName) return "";
     
     const depts = (rawDeptStr || "").split(',').map(d => d.trim()).filter(Boolean);
@@ -5763,7 +5763,70 @@ async function refreshApp() {
     const rawStaffList = nameMatch && nameMatch[1] ? nameMatch[1].split(',').map(s => s.trim()).filter(Boolean) : [];
     const encodedTitle = encodeURIComponent(cleanFileName);
 
-    // 💻 ฝั่ง PC: เรียงต่อกันใน 1 บรรทัด (Flex Wrap)
+    // 🔘 สไตล์ปุ่มดูทั้งหมด: ทรงมินิมอล ขอบเทาอ่อน ไร้ขอบเขียว 100% ทั้งบน PC และมือถือ
+    const renderViewAllBtn = (encNames, totalCount) => `
+      <button type="button" 
+              class="btn btn-sm py-0 px-2 fw-bold shadow-sm d-inline-flex align-items-center justify-content-center text-nowrap" 
+              style="font-size: 0.68rem; border-radius: 12px !important; background: #ffffff !important; border: 1px solid #cbd5e1 !important; color: #475569 !important; height: 21px; padding-top: 0 !important; padding-bottom: 0 !important; box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;" 
+              onclick="openBookStaffListModal('${encNames}', '${encodedTitle}')">
+        👤 ดูทั้งหมด (${totalCount})
+      </button>
+    `;
+
+    // -------------------------------------------------------------
+    // 💻 ฝั่ง PC กรณีเป็นคอลัมน์ในหน้า "ส่งออกรายการ" และ "แก้ไขฐานข้อมูล" (isTableColumn = true)
+    // จัด 3 แถว: [อื่นๆ] -> [คน 1, คน 2] -> [คน 3 + ปุ่มดูทั้งหมด]
+    // -------------------------------------------------------------
+    if (!isMobile && isTableColumn) {
+      let html = `<div class="d-flex flex-column gap-1 w-100">`;
+      const standardDepts = depts.filter(d => d !== "อื่นๆ");
+
+      if (standardDepts.length > 0) {
+        html += `<div class="d-flex flex-wrap align-items-center gap-1">`;
+        standardDepts.forEach(d => {
+          const color = globalDeptColors[d] || "#adb5bd";
+          html += `<span class="badge border py-1 px-2" style="font-size: 0.70rem; font-weight: 500; background-color: ${color}; color: #fff; width: fit-content;">${d}</span>`;
+        });
+        html += `</div>`;
+      }
+
+      if (depts.includes("อื่นๆ") || rawStaffList.length > 0) {
+        if (rawStaffList.length === 0) {
+          html += `<div><span class="badge border py-1 px-2" style="font-size: 0.70rem; font-weight: 500; background-color: #adb5bd; color: #fff; width: fit-content;">อื่นๆ</span></div>`;
+        } else {
+          const cleanNames = rawStaffList.map(stripThaiPrefix);
+
+          // 📌 แถวที่ 1: ป้าย "อื่นๆ" เดี่ยวๆ
+          html += `<div><span class="badge border py-1 px-2" style="font-size: 0.70rem; font-weight: 500; background-color: #adb5bd; color: #fff; width: fit-content;">อื่นๆ</span></div>`;
+
+          // 📌 แถวที่ 2: คนที่ 1 และ คนที่ 2 (แถวละ 2 คน พอดีคำ)
+          html += `<div class="d-flex flex-wrap align-items-center gap-1">`;
+          html += `<span class="badge border py-1 px-2 text-dark bg-light shadow-sm text-truncate" style="font-size: 0.70rem; font-weight: 500; max-width: 135px;" title="${cleanNames[0]}">👤 ${cleanNames[0]}</span>`;
+          if (cleanNames.length > 1) {
+            html += `<span class="badge border py-1 px-2 text-dark bg-light shadow-sm text-truncate" style="font-size: 0.70rem; font-weight: 500; max-width: 135px;" title="${cleanNames[1]}">👤 ${cleanNames[1]}</span>`;
+          }
+          html += `</div>`;
+
+          // 📌 แถวที่ 3: คนที่ 3 + ปุ่มดูทั้งหมด
+          if (cleanNames.length >= 3) {
+            const encNames = encodeURIComponent(nameMatch[1]);
+            html += `<div class="d-flex flex-wrap align-items-center gap-1">`;
+            html += `<span class="badge border py-1 px-2 text-dark bg-light shadow-sm text-truncate" style="font-size: 0.70rem; font-weight: 500; max-width: 135px;" title="${cleanNames[2]}">👤 ${cleanNames[2]}</span>`;
+            if (cleanNames.length > 3) {
+              html += renderViewAllBtn(encNames, rawStaffList.length);
+            }
+            html += `</div>`;
+          }
+        }
+      }
+
+      html += `</div>`;
+      return html;
+    }
+
+    // -------------------------------------------------------------
+    // 💻 ฝั่ง PC สำหรับ "หน้ารายการหนังสือรับทั่วไป" (เรียงยาวแถวเดียวตามเดิม ไม่กระทบของเดิม)
+    // -------------------------------------------------------------
     if (!isMobile) {
       let html = `<div class="d-flex flex-wrap align-items-center gap-1 mt-1">`;
       
@@ -5778,7 +5841,7 @@ async function refreshApp() {
             });
             if (rawStaffList.length > 3) {
               const encNames = encodeURIComponent(nameMatch[1]);
-              html += `<button type="button" class="btn btn-sm btn-outline-secondary py-0 px-2 fw-bold shadow-sm d-inline-flex align-items-center" style="font-size: 0.68rem; border-radius: 12px; background: #fff; height: 20px;" onclick="openBookStaffListModal('${encNames}', '${encodedTitle}')">👤 ดูทั้งหมด (${rawStaffList.length} คน)</button>`;
+              html += renderViewAllBtn(encNames, rawStaffList.length);
             }
           }
         } else {
@@ -5790,11 +5853,12 @@ async function refreshApp() {
       return html;
     }
 
-    // 📱 ฝั่งมือถือ: ปรับใหม่ตามรูปแบบที่กำหนด
+    // -------------------------------------------------------------
+    // 📱 ฝั่งมือถือ (Mobile): แบ่งแถวละ 2 ฝ่าย / 2 คน ละเอียดเหมือนเดิม
+    // -------------------------------------------------------------
     let html = `<div class="d-flex flex-column gap-1 mt-1 w-100">`;
     const standardDepts = depts.filter(d => d !== "อื่นๆ");
     
-    // ฝ่ายงานทั่วไป: 2 ฝ่ายต่อบรรทัด
     for (let i = 0; i < standardDepts.length; i += 2) {
       html += `<div class="row g-1 m-0 w-100">`;
       const d1 = standardDepts[i];
@@ -5809,17 +5873,14 @@ async function refreshApp() {
       html += `</div>`;
     }
 
-    // จัดการกลุ่ม "อื่นๆ"
     if (depts.includes("อื่นๆ") || rawStaffList.length > 0) {
       if (rawStaffList.length === 0) {
         html += `<div class="w-100"><span class="badge border py-1 px-2" style="font-size: 0.68rem; font-weight: 500; background-color: #adb5bd; color: #fff;">อื่นๆ</span></div>`;
       } else {
         const cleanNames = rawStaffList.map(stripThaiPrefix);
 
-        // 📌 แถวที่ 1: ป้าย "อื่นๆ" เดี่ยวๆ
         html += `<div><span class="badge border py-1 px-2" style="font-size: 0.68rem; font-weight: 500; background-color: #adb5bd; color: #fff;">อื่นๆ</span></div>`;
 
-        // 📌 แถวที่ 2: คนที่ 1 และ คนที่ 2 (แบ่งครึ่งคนละ 50%)
         html += `<div class="row g-1 m-0 w-100">`;
         html += `<div class="col-6 p-0 pe-1"><span class="badge border w-100 text-truncate text-start py-1 px-2 text-dark bg-light shadow-sm" style="font-size: 0.68rem; font-weight: 500;" title="${cleanNames[0]}">👤 ${cleanNames[0]}</span></div>`;
         if (cleanNames.length > 1) {
@@ -5827,15 +5888,13 @@ async function refreshApp() {
         }
         html += `</div>`;
 
-        // 📌 แถวที่ 3: คนที่ 3 + ปุ่ม "ดูทั้งหมด" (ถ้ามี)
         if (cleanNames.length >= 3) {
           const encNames = encodeURIComponent(nameMatch[1]);
           html += `<div class="row g-1 m-0 w-100">`;
           if (cleanNames.length > 3) {
             html += `<div class="col-6 p-0 pe-1"><span class="badge border w-100 text-truncate text-start py-1 px-2 text-dark bg-light shadow-sm" style="font-size: 0.68rem; font-weight: 500;" title="${cleanNames[2]}">👤 ${cleanNames[2]}</span></div>`;
-            html += `<div class="col-6 p-0 ps-1"><button type="button" class="btn btn-sm btn-outline-secondary w-100 text-truncate py-1 px-1 fw-bold shadow-sm d-flex align-items-center justify-content-center" style="font-size: 0.66rem; border-radius: 6px; background: #fff; height: 23px;" onclick="openBookStaffListModal('${encNames}', '${encodedTitle}')">👤 ดูทั้งหมด (${rawStaffList.length})</button></div>`;
+            html += `<div class="col-6 p-0 ps-1">${renderViewAllBtn(encNames, rawStaffList.length)}</div>`;
           } else {
-            // กรณีมีพอดี 3 คน
             html += `<div class="col-6 p-0 pe-1"><span class="badge border w-100 text-truncate text-start py-1 px-2 text-dark bg-light shadow-sm" style="font-size: 0.68rem; font-weight: 500;" title="${cleanNames[2]}">👤 ${cleanNames[2]}</span></div>`;
           }
           html += `</div>`;
@@ -6419,7 +6478,7 @@ async function refreshApp() {
 
       const details = extractBookExportDetails(row);
       const isChecked = selectedExportFileNames.has(row[2]);
-      const deptBadges = renderUnifiedDeptBadges(row[3], rawFileName, details.title, false);
+      const deptBadges = renderUnifiedDeptBadges(row[3], rawFileName, details.title, false, true);
 
       html += `
         <tr class="align-middle">

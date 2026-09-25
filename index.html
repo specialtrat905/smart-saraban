@@ -2974,7 +2974,7 @@
  // --- 1. การตั้งค่าสิทธิ์พื้นฐานองค์กร ---
   const GH_OWNER = "specialtrat905";
   const GH_REPO = "smart-saraban";
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyyMKwkfUoLcEdygcreI-kczB3agCnhufS9AY0Sjpmlu96-GXvtTuudgTCl9t4Yjyw-9g/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxaC4LqRePMWiWb-UoVJ0SJJguj8crOcI74Y1OEi40eDCmkxaxro6e2J7PD-rXMNre_Gg/exec";
 // ⚡ กำหนดค่าเชื่อมต่อ Firebase (ตาม Config ของคุณ)
 const firebaseConfig = {
   apiKey: "AIzaSyBL_Jv3x_UxEkzcVnN6lpQpZdWoIaJvMNM",
@@ -5247,7 +5247,7 @@ window.addEventListener('popstate', () => {
 
             // ถ้ายังเป็นวันเดียวกัน ให้เข้าใช้งานได้ปกติ
             currentUser = parsedUser;
-            initAdminUI();
+            renderUserNavbar();
             listenAdminSessionExpiry(todayStr); // เฝ้าระวังกรณีเปิดหน้าจอข้ามเที่ยงคืน
           });
           return;
@@ -7302,7 +7302,6 @@ async function approveComputerQrLogin() {
       const file = item.file;
       const currentFileNum = currentIndex + 1;
 
-      // 📊 คำนวณความคืบหน้าบน Progress Bar
       const basePct = Math.round(((currentFileNum - 1) / totalFilesCount) * 85);
       progressBar.style.width = `${basePct}%`;
       percentText.innerText = `${basePct}%`;
@@ -7311,11 +7310,9 @@ async function approveComputerQrLogin() {
       let isSuccess = false;
       let attempt = 0;
 
-      // 🔄 ระบบลองส่งซ้ำอัตโนมัติ 2 รอบกรณีสัญญาณขาดช่วง
       while (!isSuccess && attempt < 2) {
         attempt++;
         try {
-          // 1. อ่านไฟล์หนังสือหลัก (PDF)
           const fileData = await new Promise((res, rej) => {
             const r = new FileReader();
             r.onload = e => res(e.target.result);
@@ -7328,7 +7325,6 @@ async function approveComputerQrLogin() {
               ? originalName.slice(0, -4) + (selectedDepartments.includes("อื่นๆ") ? receiverSuffix : "") + ".pdf" 
               : originalName + (selectedDepartments.includes("อื่นๆ") ? receiverSuffix : "");
 
-          // 2. อ่านไฟล์สิ่งที่ส่งมาด้วยเฉพาะเล่มนี้ (ถ้ามี)
           let attachPayloads = [];
           if (item.attachments && item.attachments.length > 0) {
             for (let attFile of item.attachments) {
@@ -7342,7 +7338,6 @@ async function approveComputerQrLogin() {
             }
           }
 
-          // 3. ส่งคำขอไปยัง Google Apps Script
           const res = await fetch(SCRIPT_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -7356,15 +7351,26 @@ async function approveComputerQrLogin() {
           });
 
           const result = await res.json();
-          if (result.success && result.results) {
-            result.results.forEach(r => {
-              if (!uploadedResultsByDept[r.dept]) uploadedResultsByDept[r.dept] = [];
-              uploadedResultsByDept[r.dept].push({
-                name: r.name,
-                url: r.url,
-                attachUrl: r.attachUrl || ""
+          if (result.success) {
+            if (result.results && Array.isArray(result.results)) {
+              result.results.forEach(r => {
+                if (!uploadedResultsByDept[r.dept]) uploadedResultsByDept[r.dept] = [];
+                uploadedResultsByDept[r.dept].push({
+                  name: r.name,
+                  url: r.url,
+                  attachUrl: r.attachUrl || ""
+                });
               });
-            });
+            } else {
+              selectedDepartments.forEach(dept => {
+                if (!uploadedResultsByDept[dept]) uploadedResultsByDept[dept] = [];
+                uploadedResultsByDept[dept].push({
+                  name: result.fileName || finalFileName,
+                  url: result.url,
+                  attachUrl: result.attachUrl || ""
+                });
+              });
+            }
             isSuccess = true;
             successCount++;
           }
@@ -7374,7 +7380,6 @@ async function approveComputerQrLogin() {
         }
       }
 
-      // ⚠️ กรณีส่ง 2 ครั้งแล้วยังไม่ผ่าน เปิดหน้าต่างถามผู้ใช้ทันที
       if (!isSuccess) {
         const choice = confirm(
           `⚠️ เล่มที่ ${currentFileNum} (${file.name}) ส่งไม่สำเร็จเนื่องจากการเชื่อมต่อ\n\n` +
@@ -7392,7 +7397,7 @@ async function approveComputerQrLogin() {
       currentIndex++;
     }
 
-    // 📢 4. ส่งสรุปแจ้งเตือน LINE Flex Message การ์ดเดียวต่อกลุ่มงาน
+    // 📢 ส่งสรุปแจ้งเตือน LINE
     const deptsSent = Object.keys(uploadedResultsByDept);
     if (deptsSent.length > 0) {
       statusText.innerText = "กำลังส่งสรุปแจ้งเตือนทาง LINE...";
@@ -7403,13 +7408,11 @@ async function approveComputerQrLogin() {
         try {
           const fileList = uploadedResultsByDept[dept];
           if (dept === "อื่นๆ" && otherStaffNames.length > 0) {
-            // เพิ่มเลข Badge ใน Firebase
             otherStaffNames.forEach(staffName => {
               const cleanKey = encodeURIComponent(staffName.trim());
               rtdb.ref('user_badges/' + cleanKey).transaction(count => (count || 0) + fileList.length);
             });
 
-            // ส่ง LINE รายบุคคลแบบรวมชุด
             await fetch(SCRIPT_URL, {
               method: 'POST',
               headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -7421,7 +7424,6 @@ async function approveComputerQrLogin() {
               })
             });
           } else if (dept !== "อื่นๆ") {
-            // ส่ง LINE สรุปการ์ดเดียวเข้ากลุ่มฝ่ายงาน
             await fetch(SCRIPT_URL, {
               method: 'POST',
               headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -7447,7 +7449,7 @@ async function approveComputerQrLogin() {
     if (uploadModalInstance) uploadModalInstance.hide();
     alert(`🎉 ดำเนินการเสร็จสิ้น! ส่งหนังสือสำเร็จรวม ${successCount} ฉบับ เรียบร้อยแล้ว`);
 
-    // 🧹 ล้างค่าฟอร์มและรีเฟรชตารางหน้าจอ
+    // ล้างฟอร์ม
     selectedFilesArray = [];
     renderFileList();
     selectedDepartments = [];

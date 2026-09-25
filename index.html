@@ -7320,7 +7320,7 @@ async function approveComputerQrLogin() {
     cancelBtn.style.display = 'none';
     confirmBtn.disabled = true;
     confirmBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> กำลังส่ง...`;
-    closeX.style.display = 'none';
+    if (closeX) closeX.style.display = 'none';
     progressSection.style.display = 'block';
 
     const totalFilesCount = selectedFilesArray.length;
@@ -7335,6 +7335,7 @@ async function approveComputerQrLogin() {
       const file = item.file;
       const currentFileNum = currentIndex + 1;
 
+      // คำนวณความคืบหน้าระหว่างส่ง
       const basePct = Math.round(((currentFileNum - 1) / totalFilesCount) * 85);
       progressBar.style.width = `${basePct}%`;
       percentText.innerText = `${basePct}%`;
@@ -7346,6 +7347,7 @@ async function approveComputerQrLogin() {
       while (!isSuccess && attempt < 2) {
         attempt++;
         try {
+          // 1. อ่านไฟล์หนังสือหลัก (PDF)
           const fileData = await new Promise((res, rej) => {
             const r = new FileReader();
             r.onload = e => res(e.target.result);
@@ -7358,6 +7360,7 @@ async function approveComputerQrLogin() {
               ? originalName.slice(0, -4) + (selectedDepartments.includes("อื่นๆ") ? receiverSuffix : "") + ".pdf" 
               : originalName + (selectedDepartments.includes("อื่นๆ") ? receiverSuffix : "");
 
+          // 2. อ่านไฟล์สิ่งที่ส่งมาด้วยเฉพาะเล่มนี้ (ถ้ามี)
           let attachPayloads = [];
           if (item.attachments && item.attachments.length > 0) {
             for (let attFile of item.attachments) {
@@ -7371,6 +7374,7 @@ async function approveComputerQrLogin() {
             }
           }
 
+          // 3. ส่งคำขอไปยัง Google Apps Script
           const res = await fetch(SCRIPT_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -7432,7 +7436,7 @@ async function approveComputerQrLogin() {
       currentIndex++;
     }
 
-    // 📢 ส่งสรุปแจ้งเตือน LINE การ์ดเดียวต่อกลุ่มงาน
+    // 📢 4. ส่งสรุปแจ้งเตือน LINE การ์ดเดียวต่อกลุ่มงาน
     const deptsSent = Object.keys(uploadedResultsByDept);
     if (deptsSent.length > 0) {
       statusText.innerText = "กำลังส่งสรุปแจ้งเตือนทาง LINE...";
@@ -7484,7 +7488,7 @@ async function approveComputerQrLogin() {
     if (uploadModalInstance) uploadModalInstance.hide();
     alert(`🎉 ดำเนินการเสร็จสิ้น! ส่งหนังสือสำเร็จรวม ${successCount} ฉบับ เรียบร้อยแล้ว`);
 
-    // ล้างฟอร์ม
+    // ล้างข้อมูลฟอร์ม
     selectedFilesArray = [];
     renderFileList();
     selectedDepartments = [];
@@ -7500,7 +7504,7 @@ async function approveComputerQrLogin() {
     confirmBtn.disabled = false;
     confirmBtn.innerHTML = `✅ ยืนยันการส่ง`;
     cancelBtn.style.display = 'inline-block';
-    closeX.style.display = 'block';
+    if (closeX) closeX.style.display = 'block';
     progressSection.style.display = 'none';
   }
 

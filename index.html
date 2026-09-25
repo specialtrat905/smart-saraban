@@ -5229,7 +5229,7 @@ window.addEventListener('popstate', () => {
         const parsedUser = JSON.parse(savedUser);
         const isPC = window.innerWidth >= 769;
 
-        // 🛡️ ถ้าเป็น Admin บน PC: บังคับตรวจเซสชันรายวัน (รีเซ็ตทุกเที่ยงคืน)
+        // 🛡️ ถ้าเป็น Admin บน PC: ตรวจเซสชันรายวัน (รีเซ็ตทุกเที่ยงคืน)
         if (parsedUser.role === 'Admin' && isPC) {
           const now = new Date();
           const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -5245,15 +5245,28 @@ window.addEventListener('popstate', () => {
               return;
             }
 
-            // ถ้ายังเป็นวันเดียวกัน ให้เข้าใช้งานได้ปกติ
+            // ✅ ถ้ายังเป็นวันเดียวกัน: เข้าหน้าแอปหลักทันที ไม่ต้องล็อกอินใหม่
             currentUser = parsedUser;
+            document.getElementById('loginPage').style.display = 'none';
+            document.getElementById('mainApp').style.display = 'block';
             renderUserNavbar();
-            listenAdminSessionExpiry(todayStr); // เฝ้าระวังกรณีเปิดหน้าจอข้ามเที่ยงคืน
+
+            document.getElementById('logoutBtn').style.display = 'block';
+            setupExitButton();
+
+            document.getElementById('adminView').style.display = 'block';
+            document.getElementById('deptFilterContainer').style.display = 'block';
+
+            updateNavForView('saraban');
+            updateYearOptions();
+            resetAndReloadLogs();
+
+            listenAdminSessionExpiry(todayStr); // เฝ้าระวังกรณีเปิดหน้าจอค้างข้ามเที่ยงคืน
           });
           return;
         }
 
-        // 📱 ถ้าเป็น Admin บนมือถือ หรือ User กลุ่มงานทั่วไป: จำสิทธิ์ตลอดไป ไม่ตัดเซสชัน
+        // 📱 ถ้าเป็น Admin บนมือถือ หรือ User กลุ่มงานทั่วไป: จำสิทธิ์ตลอดไป
         currentUser = parsedUser;
         document.getElementById('loginPage').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';

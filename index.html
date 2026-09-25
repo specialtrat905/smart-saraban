@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
+  <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://www.gstatic.com https://script.google.com https://script.googleusercontent.com;">
   <link rel="icon" href="./logo2.png">
   <link rel="apple-touch-icon" href="./logo.png?v=3">
   <link rel="manifest" href="manifest.json">
@@ -6686,7 +6687,7 @@ async function refreshApp() {
             th { background-color: #f2f2f2; text-align: center; }
           </style>
         </head>
-        <body onload="window.print(); window.close();">
+        <body>
           <h3>สรุปรายการหนังสือรับ ศูนย์การศึกษาพิเศษประจำจังหวัดตราด</h3>
           <p>ประจำปี พ.ศ. ${currentExportYear} (รวมทั้งหมด ${selectedRows.length} รายการ)</p>
           <table>
@@ -6700,10 +6701,15 @@ async function refreshApp() {
             </thead>
             <tbody>${rowsHtml}</tbody>
           </table>
-        <\/body>
-      <\/html>
+        </body>
+      </html>
     `);
     printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 500);
   }
 
 // --- 7. ระบบตรวจสอบสิทธิ์ล็อกอินผ่าน Google ชีตปิด (แก้ปัญหาตัวแดง 429) ---

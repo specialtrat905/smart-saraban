@@ -2974,7 +2974,7 @@
  // --- 1. การตั้งค่าสิทธิ์พื้นฐานองค์กร ---
   const GH_OWNER = "specialtrat905";
   const GH_REPO = "smart-saraban";
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxw1O2FhMrs04W7Zk7XLwXzscpEbyj8EcNOKUx-KcLd67rv5nH_M7ASpiPmhdfDduMx5g/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxSf-eDGz-gZc4Cf1yc7dWyntxlUq5nEqf_Y626SiPTb1F2iPKlizynMLrs1f3xNJHGKg/exec";
 // ⚡ กำหนดค่าเชื่อมต่อ Firebase (ตาม Config ของคุณ)
 const firebaseConfig = {
   apiKey: "AIzaSyBL_Jv3x_UxEkzcVnN6lpQpZdWoIaJvMNM",
@@ -7274,6 +7274,7 @@ async function approveComputerQrLogin() {
     uploadModalInstance.show();
   }
 
+  // 🚀 ระบบส่งหนังสือแบบ Sequential Queue (อัปโหลดแยกฝ่าย + สิ่งที่ส่งมาด้วยจุดเดียว + สรุป LINE การ์ดเดียว)
   async function executeUpload() {
     const cancelBtn = document.getElementById('uploadCancelBtn');
     const confirmBtn = document.getElementById('uploadConfirmBtn');
@@ -7290,170 +7291,180 @@ async function approveComputerQrLogin() {
     progressSection.style.display = 'block';
 
     const totalFilesCount = selectedFilesArray.length;
-    const totalDeptsCount = selectedDepartments.length;
+    let uploadedResultsByDept = {}; 
+    let currentIndex = 0;
+    let successCount = 0;
 
-    try {
-      const receiverSuffix = otherStaffNames.length > 0 ? ` [${otherStaffNames.join(', ')}]` : "";
-      const totalSteps = (selectedDepartments.length * selectedFilesArray.length) + selectedDepartments.length;
-      let completedSteps = 0;
+    const receiverSuffix = otherStaffNames.length > 0 ? ` [${otherStaffNames.join(', ')}]` : "";
 
-      function updateProgress(msg) {
-        completedSteps++;
-        const pct = Math.min(Math.round((completedSteps / totalSteps) * 100), 100);
-        progressBar.style.width = `${pct}%`;
-        percentText.innerText = `${pct}%`;
-        statusText.innerText = msg;
+    while (currentIndex < totalFilesCount) {
+      const item = selectedFilesArray[currentIndex];
+      const file = item.file;
+      const currentFileNum = currentIndex + 1;
+
+      // 📊 คำนวณความคืบหน้าบน Progress Bar
+      const basePct = Math.round(((currentFileNum - 1) / totalFilesCount) * 85);
+      progressBar.style.width = `${basePct}%`;
+      percentText.innerText = `${basePct}%`;
+      statusText.innerText = `กำลังส่งเล่มที่ ${currentFileNum}/${totalFilesCount}: ${file.name.substring(0, 20)}...`;
+
+      let isSuccess = false;
+      let attempt = 0;
+
+      // 🔄 ระบบลองส่งซ้ำอัตโนมัติ 2 รอบกรณีสัญญาณขาดช่วง
+      while (!isSuccess && attempt < 2) {
+        attempt++;
+        try {
+          // 1. อ่านไฟล์หนังสือหลัก (PDF)
+          const fileData = await new Promise((res, rej) => {
+            const r = new FileReader();
+            r.onload = e => res(e.target.result);
+            r.onerror = rej;
+            r.readAsDataURL(file);
+          });
+
+          let originalName = file.name;
+          let finalFileName = originalName.toLowerCase().endsWith(".pdf") 
+              ? originalName.slice(0, -4) + (selectedDepartments.includes("อื่นๆ") ? receiverSuffix : "") + ".pdf" 
+              : originalName + (selectedDepartments.includes("อื่นๆ") ? receiverSuffix : "");
+
+          // 2. อ่านไฟล์สิ่งที่ส่งมาด้วยเฉพาะเล่มนี้ (ถ้ามี)
+          let attachPayloads = [];
+          if (item.attachments && item.attachments.length > 0) {
+            for (let attFile of item.attachments) {
+              const attData = await new Promise((resA, rejA) => {
+                const r = new FileReader();
+                r.onload = ev => resA(ev.target.result);
+                r.onerror = rejA;
+                r.readAsDataURL(attFile);
+              });
+              attachPayloads.push({ name: attFile.name, data: attData });
+            }
+          }
+
+          // 3. ส่งคำขอไปยัง Google Apps Script
+          const res = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+              departments: selectedDepartments,
+              sender: currentUser.name || "งานธุรการกลาง",
+              fileName: finalFileName,
+              fileData: fileData,
+              attachments: attachPayloads
+            })
+          });
+
+          const result = await res.json();
+          if (result.success && result.results) {
+            result.results.forEach(r => {
+              if (!uploadedResultsByDept[r.dept]) uploadedResultsByDept[r.dept] = [];
+              uploadedResultsByDept[r.dept].push({
+                name: r.name,
+                url: r.url,
+                attachUrl: r.attachUrl || ""
+              });
+            });
+            isSuccess = true;
+            successCount++;
+          }
+        } catch (errLoop) {
+          console.warn(`ส่งเล่มที่ ${currentFileNum} ครั้งที่ ${attempt} ล้มเหลว:`, errLoop);
+          await new Promise(r => setTimeout(r, 1500));
+        }
       }
 
-      for (let dept of selectedDepartments) {
-        let uploadedFiles = [];
-        const currentSuffix = (dept === "อื่นๆ") ? receiverSuffix : "";
+      // ⚠️ กรณีส่ง 2 ครั้งแล้วยังไม่ผ่าน เปิดหน้าต่างถามผู้ใช้ทันที
+      if (!isSuccess) {
+        const choice = confirm(
+          `⚠️ เล่มที่ ${currentFileNum} (${file.name}) ส่งไม่สำเร็จเนื่องจากการเชื่อมต่อ\n\n` +
+          `- กด [ตกลง (OK)] เพื่อลองส่งเล่มนี้และเล่มที่เหลืออีกครั้ง\n` +
+          `- กด [ยกเลิก (Cancel)] เพื่อหยุดส่ง และบันทึกเฉพาะเล่มที่ผ่านแล้ว (${successCount} ฉบับ)`
+        );
 
-        for (let item of selectedFilesArray) {
-          const file = item.file;
-          updateProgress(`กำลังส่งฝ่าย [${dept}]: ${file.name.substring(0, 15)}...`);
-          let isSuccess = false;
-          let retryCount = 0;
-
-          while (!isSuccess && retryCount < 2) {
-            try {
-              // 1. อ่านไฟล์หนังสือหลัก (PDF)
-              const fileData = await new Promise((resolve, reject) => { 
-                const r = new FileReader(); 
-                r.onload = e => resolve(e.target.result); 
-                r.onerror = err => reject(err);
-                r.readAsDataURL(file); 
-              });
-
-              let originalName = file.name;
-              let newFileName = originalName.toLowerCase().endsWith(".pdf") 
-                  ? originalName.slice(0, -4) + currentSuffix + ".pdf" 
-                  : originalName + currentSuffix;
-
-              // 2. แปลงไฟล์แนบเฉพาะของเล่มนี้เท่านั้น (item.attachments)
-              let attachPayloads = [];
-              if (item.attachments && item.attachments.length > 0) {
-                for (let attFile of item.attachments) {
-                  const attData = await new Promise((resAtt, rejAtt) => {
-                    const r = new FileReader();
-                    r.onload = ev => resAtt(ev.target.result);
-                    r.onerror = err => rejAtt(err);
-                    r.readAsDataURL(attFile);
-                  });
-                  attachPayloads.push({ name: attFile.name, data: attData });
-                }
-              }
-
-              // 3. ส่งข้อมูลหนังสือพร้อมไฟล์แนบของเล่มนั้น
-              const res = await fetch(SCRIPT_URL, { 
-                  method: 'POST', 
-                  body: JSON.stringify({ 
-                      department: dept, 
-                      sender: currentUser.name, 
-                      fileName: newFileName, 
-                      fileData: fileData,
-                      attachments: attachPayloads // ส่งเฉพาะไฟล์แนบของเล่มนี้!
-                  }) 
-              });
-              const result = await res.json();
-              if (result.success) {
-      uploadedFiles.push({ 
-        name: result.fileName, 
-        url: result.url,
-        attachUrl: result.attachUrl || "" 
-      });
-      isSuccess = true;
-    } else {
-                retryCount++;
-                if (retryCount < 2) await new Promise(res => setTimeout(res, 1000));
-              }
-            } catch (err) { 
-              console.error(err);
-              retryCount++;
-              if (retryCount < 2) await new Promise(res => setTimeout(res, 1000));
-            }
-          }
-        }
-
-        // 📢 ยิงแจ้งเตือน LINE แยกกรณี "อื่นๆ (รายบุคคล)" และ "กลุ่มงาน"
-        if (uploadedFiles.length > 0) {
-          updateProgress(`กำลังแจ้งเตือน LINE ไปยัง [${dept}]...`);
-          try {
-            if (dept === "อื่นๆ" && otherStaffNames.length > 0) {
-           // 🟢 1. สั่งเพิ่มตัวเลข Badge แจ้งเตือนขึ้น Firebase ของครูแต่ละคนทันที (ฟรี ไม่จำกัด)
-           otherStaffNames.forEach(staffName => {
-             const cleanKey = encodeURIComponent(staffName.trim());
-             rtdb.ref('user_badges/' + cleanKey).transaction(currentCount => {
-               return (currentCount || 0) + uploadedFiles.length;
-             });
-           });
-
-              // 🟢 ส่งแจ้งเตือนรายบุคคลแบบรวมชุด (Batch) ครบทุกฉบับในข้อความเดียว
-              await fetch(SCRIPT_URL, {
-                method: 'POST',
-                body: JSON.stringify({
-                  action: "sendDirectBatchNotification",
-                  staffNames: otherStaffNames,
-                  sender: currentUser.name,
-                  fileList: uploadedFiles
-                })
-              });
-            } else if (dept !== "อื่นๆ") {
-              // 🏢 ส่งแจ้งเตือนกลุ่มงานแบบรวมชุดตามปกติ
-              await fetch(SCRIPT_URL, {
-                method: 'POST',
-                body: JSON.stringify({
-                  action: "sendBatchNotification",
-                  department: dept,
-                  sender: currentUser.name,
-                  fileList: uploadedFiles
-                })
-              });
-            }
-          } catch (err) {
-            console.error("ส่ง LINE แจ้งเตือนไม่สำเร็จ:", err);
-          }
+        if (choice) {
+          continue;
         } else {
-          updateProgress(`เสร็จสิ้นกลุ่มงาน [${dept}]`);
+          break;
         }
       }
 
-      progressBar.style.width = '100%';
-      percentText.innerText = '100%';
-      statusText.innerText = '✅ ส่งหนังสือและแจ้งเตือน LINE เรียบร้อยแล้ว!';
-
-      await new Promise(r => setTimeout(r, 600));
-
-      if (uploadModalInstance) uploadModalInstance.hide();
-      alert(`สำเร็จ! ส่งหนังสือ ${totalFilesCount} ฉบับ ให้กับ ${totalDeptsCount} กลุ่มงาน เรียบร้อยแล้ว`);
-      
-      // 1. ล้างไฟล์หนังสือนำ (PDF) ของเดิม
-      selectedFilesArray = []; 
-      renderFileList(); 
-
-      // 3. ล้างกลุ่มงานที่เลือกไว้ (ของเดิม)
-      selectedDepartments = [];
-      otherStaffNames = [];
-      document.querySelectorAll('.dept-checkbox').forEach(cb => cb.checked = false);
-      toggleOtherSection();
-      renderStaffTags();
-      saveDeptSelection();
-
-      dataCache = {}; 
-      resetAndReloadLogs();
-
-    } catch (err) {
-      console.error("Upload Error:", err);
-      alert("⚠️ เกิดข้อผิดพลาดในระหว่างการส่งหนังสือ กรุณาลองใหม่อีกครั้ง");
-    } finally {
-      confirmBtn.disabled = false;
-      confirmBtn.innerHTML = `✅ ยืนยันการส่ง`;
-      cancelBtn.style.display = 'inline-block';
-      closeX.style.display = 'block';
-      progressSection.style.display = 'none';
-      progressBar.style.width = '0%';
-      percentText.innerText = '0%';
+      currentIndex++;
     }
+
+    // 📢 4. ส่งสรุปแจ้งเตือน LINE Flex Message การ์ดเดียวต่อกลุ่มงาน
+    const deptsSent = Object.keys(uploadedResultsByDept);
+    if (deptsSent.length > 0) {
+      statusText.innerText = "กำลังส่งสรุปแจ้งเตือนทาง LINE...";
+      progressBar.style.width = "92%";
+      percentText.innerText = "92%";
+
+      for (let dept of deptsSent) {
+        try {
+          const fileList = uploadedResultsByDept[dept];
+          if (dept === "อื่นๆ" && otherStaffNames.length > 0) {
+            // เพิ่มเลข Badge ใน Firebase
+            otherStaffNames.forEach(staffName => {
+              const cleanKey = encodeURIComponent(staffName.trim());
+              rtdb.ref('user_badges/' + cleanKey).transaction(count => (count || 0) + fileList.length);
+            });
+
+            // ส่ง LINE รายบุคคลแบบรวมชุด
+            await fetch(SCRIPT_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify({
+                action: "sendDirectBatchNotification",
+                staffNames: otherStaffNames,
+                sender: currentUser.name || "งานธุรการกลาง",
+                fileList: fileList
+              })
+            });
+          } else if (dept !== "อื่นๆ") {
+            // ส่ง LINE สรุปการ์ดเดียวเข้ากลุ่มฝ่ายงาน
+            await fetch(SCRIPT_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify({
+                action: "sendBatchNotification",
+                department: dept,
+                sender: currentUser.name || "งานธุรการกลาง",
+                fileList: fileList
+              })
+            });
+          }
+        } catch (eLine) {
+          console.warn("ส่ง LINE สรุปล้มเหลว:", eLine);
+        }
+      }
+    }
+
+    progressBar.style.width = '100%';
+    percentText.innerText = '100%';
+    statusText.innerText = '✅ ส่งหนังสือและแจ้งเตือน LINE เรียบร้อยแล้ว!';
+    await new Promise(r => setTimeout(r, 600));
+
+    if (uploadModalInstance) uploadModalInstance.hide();
+    alert(`🎉 ดำเนินการเสร็จสิ้น! ส่งหนังสือสำเร็จรวม ${successCount} ฉบับ เรียบร้อยแล้ว`);
+
+    // 🧹 ล้างค่าฟอร์มและรีเฟรชตารางหน้าจอ
+    selectedFilesArray = [];
+    renderFileList();
+    selectedDepartments = [];
+    otherStaffNames = [];
+    document.querySelectorAll('.dept-checkbox').forEach(cb => cb.checked = false);
+    toggleOtherSection();
+    renderStaffTags();
+    saveDeptSelection();
+
+    dataCache = {};
+    resetAndReloadLogs();
+
+    confirmBtn.disabled = false;
+    confirmBtn.innerHTML = `✅ ยืนยันการส่ง`;
+    cancelBtn.style.display = 'inline-block';
+    closeX.style.display = 'block';
+    progressSection.style.display = 'none';
   }
 
   // --- 10. ระบบจัดการแก้ไขฐานข้อมูล (เลือกลบ หรือ แก้ไขกลุ่มงาน) ---

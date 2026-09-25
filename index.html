@@ -2974,7 +2974,7 @@
  // --- 1. การตั้งค่าสิทธิ์พื้นฐานองค์กร ---
   const GH_OWNER = "specialtrat905";
   const GH_REPO = "smart-saraban";
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxaC4LqRePMWiWb-UoVJ0SJJguj8crOcI74Y1OEi40eDCmkxaxro6e2J7PD-rXMNre_Gg/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby9ce8kSHkbAprKfx8sU1FCxL5tNkO-SrBhGQ3KqO1bQVBvX558YYRne-cojvzHyPVqDw/exec";
 // ⚡ กำหนดค่าเชื่อมต่อ Firebase (ตาม Config ของคุณ)
 const firebaseConfig = {
   apiKey: "AIzaSyBL_Jv3x_UxEkzcVnN6lpQpZdWoIaJvMNM",
@@ -7274,7 +7274,7 @@ async function approveComputerQrLogin() {
     uploadModalInstance.show();
   }
 
-  // 🚀 ระบบส่งหนังสือแบบ Sequential Queue (อัปโหลดแยกฝ่าย + สิ่งที่ส่งมาด้วยจุดเดียว + สรุป LINE การ์ดเดียว)
+  // 🚀 ระบบส่งหนังสือแบบ Sequential Queue (อัปโหลดแยกฝ่าย + คลังกลาง + สรุป LINE การ์ดเดียว)
   async function executeUpload() {
     const cancelBtn = document.getElementById('uploadCancelBtn');
     const confirmBtn = document.getElementById('uploadConfirmBtn');
@@ -7373,6 +7373,8 @@ async function approveComputerQrLogin() {
             }
             isSuccess = true;
             successCount++;
+          } else {
+            console.warn("เซิร์ฟเวอร์ตอบกลับว่าไม่สำเร็จ:", result.message);
           }
         } catch (errLoop) {
           console.warn(`ส่งเล่มที่ ${currentFileNum} ครั้งที่ ${attempt} ล้มเหลว:`, errLoop);
@@ -7397,7 +7399,7 @@ async function approveComputerQrLogin() {
       currentIndex++;
     }
 
-    // 📢 ส่งสรุปแจ้งเตือน LINE
+    // 📢 ส่งสรุปแจ้งเตือน LINE การ์ดเดียวต่อกลุ่มงาน
     const deptsSent = Object.keys(uploadedResultsByDept);
     if (deptsSent.length > 0) {
       statusText.innerText = "กำลังส่งสรุปแจ้งเตือนทาง LINE...";

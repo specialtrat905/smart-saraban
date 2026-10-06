@@ -7228,7 +7228,7 @@ async function approveComputerQrLogin() {
     selectedFilesArray.forEach(item => {
       const fileName = item.file.name;
       // รูปแบบ: ขึ้นต้นด้วย ตัวเลข + เครื่องหมายขีด (-) หรือทับ (/) + ตัวเลขปี 4 หลัก (25xx)
-      const formatRegex = /^\d+[-/](25\d{2})\s+/;
+      const formatRegex = /^\d+[-/](25\d{2})\s*/;
       if (!formatRegex.test(fileName)) {
         invalidFormatFiles.push(fileName);
       }

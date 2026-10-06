@@ -1480,8 +1480,17 @@
 #exportView .table-responsive,
 #dbManageView .table-responsive {
   width: 100% !important;
-  overflow-x: hidden !important; /* ปิดการเลื่อนแนวนอนเด็ดขาด */
-  overflow-y: auto !important;   /* เลื่อนเฉพาะแนวตั้ง */
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  contain: layout paint;           /* ⚡ แยกการเรนเดอร์ไม่ให้กระตุกตาม Sidebar */
+  content-visibility: auto;       /* ⚡ ให้คำนวณเฉพาะแถวที่อยู่บนหน้าจอ */
+}
+
+/* ⚡ ล็อคความสูงและคำนวณเฉพาะแถวที่แสดงผล ช่วยให้เลื่อนและพับเมนูลื่นขึ้นทันที */
+#exportResultTable tbody tr,
+#dbManageView table tbody tr {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 60px; /* จองพื้นที่ล่วงหน้าแถวละ 60px ไม่ให้หน้าจอกระตุก */
 }
 
 #exportResultTable,
@@ -1492,6 +1501,8 @@
   max-width: 100% !important;
   margin-bottom: 0 !important;
 }
+
+
 
 #exportResultTable th, #exportResultTable td,
 #dbManageView table th, #dbManageView table td {
@@ -1550,11 +1561,6 @@
     width: 14px !important;
     height: 14px !important;
   }
-}
-#exportResultTable tbody tr,
-#dbManageView table tbody tr {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 55px;
 }
   </style>
   <!-- ⚡ Firebase App & Realtime Database SDK (Compat Version) -->

@@ -6042,6 +6042,13 @@ async function refreshApp() {
       if (numMatch) {
         bookTitle = bookTitle.substring(numMatch[1].length).trim();
       }
+      const currentSearch = (document.getElementById('searchInput')?.value || document.getElementById('searchInputMobile')?.value || "").trim();
+      let highlightedTitle = bookTitle || cleanFileName;
+      if (currentSearch) {
+        const escapedSearch = currentSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regHighlight = new RegExp(`(${escapedSearch})`, 'gi');
+        highlightedTitle = highlightedTitle.replace(regHighlight, `<span style="background-color: #fff59d; padding: 2px; border-radius: 3px; font-weight: bold; color: #000;">$1</span>`);
+      }
 
       // 2. เรียกใช้ตัวสร้างป้ายสำหรับมือถือ (isMobile = true)
       const deptBadgesContainer = isMissing ? "" : renderUnifiedDeptBadges(col[3], fullFileName, bookTitle || cleanFileName, true);
@@ -6108,7 +6115,7 @@ async function refreshApp() {
           ${isMissing ? 
             `<span class="text-danger fw-bold d-block mb-1" style="font-size: 0.85rem;">${cleanFileName}</span>` : 
             `${headerLine}
-             <div class="fw-bold text-dark mb-1" style="font-size: 0.84rem; line-height: 1.4;">${bookTitle || cleanFileName}</div>`
+             <div class="fw-bold text-dark mb-1" style="font-size: 0.84rem; line-height: 1.4;">${highlightedTitle}</div>`
           }
           ${deptBadgesContainer}
         </td>
@@ -6208,6 +6215,13 @@ async function refreshApp() {
       if (numMatch) {
         bookTitle = bookTitle.substring(numMatch[1].length).trim();
       }
+      const currentSearchPC = (document.getElementById('searchInput')?.value || "").trim();
+      let highlightedTitlePC = bookTitle || cleanFileName;
+      if (currentSearchPC) {
+        const escapedSearchPC = currentSearchPC.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regHighlightPC = new RegExp(`(${escapedSearchPC})`, 'gi');
+        highlightedTitlePC = highlightedTitlePC.replace(regHighlightPC, `<span style="background-color: #fff59d; padding: 2px; border-radius: 3px; font-weight: bold; color: #000;">$1</span>`);
+      }
 
       // 2. เรียกใช้ตัวสร้างป้ายสำหรับ PC (isMobile = false)
       const deptBadgesContainer = isMissing ? "" : renderUnifiedDeptBadges(col[3], fullFileName, bookTitle || cleanFileName, false);
@@ -6278,7 +6292,7 @@ async function refreshApp() {
           ${isMissing ? 
             `<span class="text-danger fw-bold d-block mb-1" style="font-size: 0.85rem;">${cleanFileName}</span>` : 
             `${headerLine}
-             <div class="fw-bold text-dark mb-1" style="font-size: 0.84rem; line-height: 1.4;">${bookTitle || cleanFileName}</div>`
+             <div class="fw-bold text-dark mb-1" style="font-size: 0.84rem; line-height: 1.4;">${highlightedTitlePC}</div>`
           }
           ${deptBadgesContainer}
         </td>
@@ -7210,6 +7224,30 @@ async function approveComputerQrLogin() {
   function handleUpload() {
     if (selectedDepartments.length === 0) return alert("กรุณาเลือกกลุ่มงานปลายทางอย่างน้อย 1 กลุ่มงาน");
     if (selectedFilesArray.length === 0) return alert("กรุณาเลือกไฟล์หนังสือที่จะส่ง");
+    // 🛡️ ตรวจสอบรูปแบบชื่อไฟล์: ต้องมี "เลขหนังสือ-ปี เรื่อง ....." เช่น "800-2569 เรื่อง..."
+    const invalidFormatFiles = [];
+    selectedFilesArray.forEach(item => {
+      const fileName = item.file.name;
+      // รูปแบบ: ขึ้นต้นด้วย ตัวเลข + เครื่องหมายขีด (-) หรือทับ (/) + ตัวเลขปี 4 หลัก (25xx)
+      const formatRegex = /^\d+[-/](25\d{2})\s+/;
+      if (!formatRegex.test(fileName)) {
+        invalidFormatFiles.push(fileName);
+      }
+    });
+
+    if (invalidFormatFiles.length > 0) {
+      alert(
+        "⚠️ รูปแบบชื่อไฟล์ไม่ถูกต้อง!\n\n" +
+        "กรุณาตั้งชื่อไฟล์ตามโครงสร้าง:\n" +
+        "👉 [เลขหนังสือ]-[ปี พ.ศ.] เรื่อง [ชื่อเรื่อง]\n\n" +
+        "ตัวอย่างที่ถูกต้อง:\n" +
+        "• 800-2569 เรื่อง ขอความอนุเคราะห์...\n" +
+        "• 12/2569 เรื่อง แจ้งกำหนดการ...\n\n" +
+        "ไฟล์ที่รูปแบบไม่ถูกต้อง:\n" +
+        invalidFormatFiles.map(f => "- " + f).join("\n")
+      );
+      return;
+    }
 
     const deptColors = {
       "ฝ่ายบริหารวิชาการ": "#ffde59", "บริหารงานวิชาการ": "#ffde59",

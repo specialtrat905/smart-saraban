@@ -3013,8 +3013,9 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const rtdb = firebase.database();
 
-// ⚡ โหลดข้อมูลทั้งปีจาก Firebase ครั้งเดียว (ดึงครบ 100% ไม่ต้องแบ่งทีละ 200)
+// ⚡ โหลดข้อมูลทั้งปีจาก Firebase ครั้งเดียว พร้อมป้องกันการเรนเดอร์ซ้ำตอนสลับแท็บ
 let currentFirebaseYear = null;
+let lastFirebaseDataLength = 0;
 
 function loadLogsFromFirebase(year) {
   currentFirebaseYear = year;
@@ -3024,11 +3025,15 @@ function loadLogsFromFirebase(year) {
     const dataList = rawData ? (Array.isArray(rawData) ? rawData : Object.values(rawData)) : [];
     
     if (dataList.length > 0) {
-      console.log(`🔥 [Firebase SUCCESS] ซิงก์ข้อมูลปี ${year} ครบทั้งปี (${dataList.length} รายการ)`);
+      // 🛡️ หากข้อมูลความยาวเท่าเดิมและมีข้อมูลอยู่แล้ว ไม่ต้องสั่งวาดตารางใหม่ให้กระพริบ
+      const isSameData = (allLogs.length === dataList.length && currentFirebaseYear === year);
       allLogs = dataList;
-      applyClientSideFilter(); // กรองข้อมูลบนเครื่องทันที 0ms
+
+      if (!isSameData || allLogs.length === 0) {
+        console.log(`🔥 [Firebase SUCCESS] อัปเดตข้อมูลปี ${year} (${dataList.length} รายการ)`);
+        applyClientSideFilter();
+      }
     } else {
-      // ⚡ Fallback: ดึงข้อมูลสดจาก Apps Script ทันทีเมื่อ Firebase ยังไม่มีข้อมูล
       fetch(`${SCRIPT_URL}?year=${year}&dept=all&search=&offset=0&limit=500&t=${new Date().getTime()}`)
         .then(res => res.json())
         .then(data => {

@@ -3305,29 +3305,26 @@ let currentPersonalStaffName = "";
       return;
     }
 
-    errDiv.innerText = "กำลังตรวจสอบชื่อในระบบ...";
+    // ⚡ 1. ตรวจสอบชื่อจากแคชในเครื่องทันที 0ms ไม่ต้องรอเซิร์ฟเวอร์
+    const staffMatch = fullStaffData.find(s => (s.name || "").trim() === cleanName);
+    if (!staffMatch) {
+      errDiv.innerText = "⚠️ ไม่พบรายชื่อนี้ในฐานข้อมูลบุคลากร";
+      return;
+    }
 
+    errDiv.innerText = "";
+    currentPersonalStaffName = cleanName;
+    document.getElementById('displaySelectedStaffName').innerText = cleanName;
+
+    // ⚡ 2. ตรวจสอบสถานะ PIN ผ่าน Firebase Realtime Database (เร็ว 0.1 วิ)
     try {
-      const res = await fetch(SCRIPT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: "checkStaffPin", name: cleanName })
-      });
-      const data = await res.json();
-
-      if (!data.success || !data.found) {
-        errDiv.innerText = "⚠️ ไม่พบรายชื่อนี้ในฐานข้อมูลบุคลากร";
-        return;
-      }
-
-      errDiv.innerText = "";
-      currentPersonalStaffName = cleanName;
-      document.getElementById('displaySelectedStaffName').innerText = cleanName;
+      const pinSnap = await rtdb.ref('staff_pins/' + encodeURIComponent(cleanName)).once('value');
+      const savedPin = pinSnap.val();
       
+      isSettingUpFirstPin = !savedPin;
+
       document.getElementById('stepNameSection').style.display = 'none';
       document.getElementById('stepPinSection').style.display = 'block';
-      
-      isSettingUpFirstPin = !data.hasPin;
 
       if (isSettingUpFirstPin) {
         document.getElementById('pinPromptLabel').innerText = "✨ กำหนด PIN 6 หลักเพื่อใช้งานครั้งแรก:";
@@ -3338,11 +3335,13 @@ let currentPersonalStaffName = "";
         document.getElementById('pinConfirmDiv').style.display = 'none';
         document.getElementById('personalAuthSubmitBtn').innerText = "ยืนยันเข้าสู่ระบบ";
       }
+
       document.getElementById('personalAuthPinInput').value = "";
       document.getElementById('personalAuthPinConfirmInput').value = "";
       document.getElementById('personalAuthPinInput').focus();
-    } catch (e) {
-      errDiv.innerText = "เชื่อมต่อเซิร์ฟเวอร์ล้มเหลว";
+    } catch(e) {
+      // Fallback: หาก Firebase ดึงไม่ได้ ให้ตรวจสอบผ่าน Apps Script แบบเดิม
+      checkPinViaScript(cleanName);
     }
   }
 
@@ -3357,60 +3356,66 @@ let currentPersonalStaffName = "";
       return;
     }
 
+    btn.disabled = true;
+
+    // 🌟 กรณีตั้งค่า PIN ครั้งแรก
     if (isSettingUpFirstPin) {
       if (pin !== pinConfirm) {
         errDiv.innerText = "รหัส PIN ยืนยันไม่ตรงกัน";
+        btn.disabled = false;
         return;
       }
 
-      btn.disabled = true;
       btn.innerText = "กำลังบันทึก...";
 
       try {
-        const res = await fetch(SCRIPT_URL, {
+        // ⚡ 1. บันทึกลง Firebase ก่อนทันที (เร็ว 0.1 วิ)
+        await rtdb.ref('staff_pins/' + encodeURIComponent(currentPersonalStaffName)).set(pin);
+
+        // ⚡ 2. ส่งไปซิงก์ลง Google Sheet เบื้องหลัง (Background Sync) ไม่ต้องรอให้เสร็จ
+        fetch(SCRIPT_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ action: "setupStaffPin", name: currentPersonalStaffName, pin: pin })
-        });
-        const result = await res.json();
-        // เมื่อ PIN ถูกต้อง และบันทึกเข้าเครื่องสำเร็จ
-    if (result.success) {
-      localStorage.setItem('personal_staff_auth', currentPersonalStaffName);
-      personalAuthModalInstance.hide();
-      openPersonalDocView();
-      
-      // 🔔 ขอสิทธิ์แจ้งเตือนบนมือถือ (Notification Permission)
-      requestNotificationPermission();
-      
-      // 📡 เริ่มเปิดตัวดักฟังตัวเลขแจ้งเตือนจาก Firebase
-      initPersonalNotificationListener(currentPersonalStaffName);
-    } else {
-          errDiv.innerText = result.message;
-        }
-      } catch (e) { errDiv.innerText = "เชื่อมต่อล้มเหลว"; }
-      finally { btn.disabled = false; btn.innerText = "บันทึกรหัสผ่าน"; }
+        }).catch(err => console.warn("Background sync sheet error:", err));
+
+        // ✅ สำเร็จ เข้าสู่หน้าหนังสือส่วนตัวทันที
+        localStorage.setItem('personal_staff_auth', currentPersonalStaffName);
+        if (personalAuthModalInstance) personalAuthModalInstance.hide();
+        openPersonalDocView();
+        requestNotificationPermission();
+        initPersonalNotificationListener(currentPersonalStaffName);
+      } catch (err) {
+        errDiv.innerText = "เกิดข้อผิดพลาดในการบันทึก";
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "บันทึกรหัสผ่าน";
+      }
       return;
     }
 
-    // กรณียืนยัน PIN เดิม
-    btn.disabled = true;
+    // 🌟 กรณียืนยัน PIN เดิม
     btn.innerText = "กำลังตรวจสอบ...";
     try {
-      const res = await fetch(SCRIPT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: "verifyStaffPin", name: currentPersonalStaffName, pin: pin })
-      });
-      const result = await res.json();
-      if (result.success) {
+      // ⚡ 1. ตรวจสอบผ่าน Firebase ตรงๆ (0.1 วิ)
+      const pinSnap = await rtdb.ref('staff_pins/' + encodeURIComponent(currentPersonalStaffName)).once('value');
+      const savedPin = pinSnap.val();
+
+      if (savedPin && savedPin.toString().trim() === pin) {
         localStorage.setItem('personal_staff_auth', currentPersonalStaffName);
-        personalAuthModalInstance.hide();
+        if (personalAuthModalInstance) personalAuthModalInstance.hide();
         openPersonalDocView();
+        requestNotificationPermission();
+        initPersonalNotificationListener(currentPersonalStaffName);
       } else {
-        errDiv.innerText = result.message || "รหัสผ่านผิด *ลืมรหัสผ่านกรุณาติดต่อ Admin";
+        errDiv.innerText = "รหัสผ่านไม่ถูกต้อง *ลืมรหัสผ่านกรุณาติดต่อ Admin";
       }
-    } catch (e) { errDiv.innerText = "เชื่อมต่อล้มเหลว"; }
-    finally { btn.disabled = false; btn.innerText = "ยืนยันเข้าสู่ระบบ"; }
+    } catch(err) {
+      errDiv.innerText = "การเชื่อมต่อขัดข้อง";
+    } finally {
+      btn.disabled = false;
+      btn.innerText = "ยืนยันเข้าสู่ระบบ";
+    }
   }
 
   // 🔑 VAPID Public Key จาก Firebase Cloud Messaging

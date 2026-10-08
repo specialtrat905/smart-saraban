@@ -5520,9 +5520,10 @@ if (qrBtn) {
       // ตรวจสอบชื่อไฟล์ไม่ให้ซ้ำกัน ถ้ายังไม่มีให้สร้าง Object เก็บ { file, attachments: [] }
       if (!selectedFilesArray.some(item => item.file.name === file.name)) {
         selectedFilesArray.push({
-          file: file,
-          attachments: [] // อาร์เรย์สำหรับเก็บไฟล์สิ่งที่ส่งมาด้วยของเล่มนี้โดยเฉพาะ
-        });
+  file: file,
+  attachments: [], // อาร์เรย์สำหรับเก็บไฟล์สิ่งที่ส่งมาด้วยของเล่มนี้โดยเฉพาะ
+  officialNo: ""   // 🏷️ เลขที่หนังสือจริง (ต้นทาง)
+});
       }
     });
     renderFileList();
@@ -5538,6 +5539,18 @@ if (qrBtn) {
       input.click();
     }
   }
+
+  // 🏷️ ฟังก์ชันเปิดกรอก/แก้ไขเลขที่หนังสือจริงสำหรับเล่มนั้นๆ
+function promptOfficialNoForBook(index) {
+  if (!selectedFilesArray[index]) return;
+  const currentVal = selectedFilesArray[index].officialNo || "";
+  const inputVal = prompt("ระบุเลขที่หนังสือจริง (ต้นทาง)\nเช่น ศธ 04007.01/5225 (เว้นว่างได้หากยังไม่มี):", currentVal);
+
+  if (inputVal !== null) {
+    selectedFilesArray[index].officialNo = inputVal.trim();
+    renderFileList(); // รีเฟรชแถบแสดงรายการไฟล์
+  }
+}
 
   // 📥 นำไฟล์แนบที่เลือกไปใส่ในหนังสือเล่มที่กำลังทำรายการ
   function handleItemAttachSelected(inputElem) {
@@ -5604,16 +5617,26 @@ if (qrBtn) {
             </div>
             
             <div class="d-flex align-items-center gap-1 flex-shrink-0">
-              <!-- 📎 ปุ่มกดแนบไฟล์เฉพาะเล่มนี้ -->
-              <button type="button" class="btn btn-sm ${attCount > 0 ? 'btn-attach text-white' : 'btn-outline-secondary'} py-0 px-2 fw-bold d-inline-flex align-items-center gap-1" style="font-size: 0.70rem; height: 24px; border-radius: 6px;" onclick="triggerAttachForBook(${bIdx})" title="แนบสิ่งที่ส่งมาด้วยสำหรับฉบับนี้">
-                <span>📎 แนบไฟล์</span>
-                <span class="badge ${attCount > 0 ? 'bg-white text-dark' : 'bg-secondary text-white'}" style="font-size: 0.62rem;">${attCount}</span>
-              </button>
+              <!-- 🏷️ ปุ่มกดใส่เลขที่หนังสือจริงเฉพาะเล่มนี้ -->
+           <button type="button" class="btn btn-sm ${item.officialNo ? 'btn-primary text-white' : 'btn-outline-secondary'} py-0 px-2 fw-bold d-inline-flex align-items-center gap-1" style="font-size: 0.70rem; height: 24px; border-radius: 6px;" onclick="promptOfficialNoForBook(${bIdx})" title="ใส่เลขที่หนังสือจริง (ต้นทาง)">
+             <span>🏷️ ${item.officialNo ? 'มีเลขจริง' : 'ใส่เลขจริง'}</span>
+           </button>
+
+           <!-- 📎 ปุ่มกดแนบไฟล์เฉพาะเล่มนี้ -->
+           <button type="button" class="btn btn-sm ${attCount > 0 ? 'btn-attach text-white' : 'btn-outline-secondary'} py-0 px-2 fw-bold d-inline-flex align-items-center gap-1" style="font-size: 0.70rem; height: 24px; border-radius: 6px;" onclick="triggerAttachForBook(${bIdx})" title="แนบสิ่งที่ส่งมาด้วยสำหรับฉบับนี้">
+             <span>📎 แนบไฟล์</span>
+             <span class="badge ${attCount > 0 ? 'bg-white text-dark' : 'bg-secondary text-white'}" style="font-size: 0.62rem;">${attCount}</span>
+           </button>
 
               <!-- ✕ ลบหนังสือเล่มนี้ -->
               <span role="button" class="text-danger fw-bold cursor-pointer ps-1" onclick="removeFile(${bIdx})" title="ลบเล่มนี้">✕</span>
             </div>
           </div>
+          </div>
+       </div>
+       ${item.officialNo ? `<div class="mt-1 ps-3 small text-primary fw-bold" style="font-size:0.72rem;">🏷️ เลขที่หนังสือจริง: ${item.officialNo}</div>` : ''}
+       ${attachChipsHTML}
+     </div>
           ${attachChipsHTML}
         </div>
       `;
@@ -7432,17 +7455,18 @@ async function approveComputerQrLogin() {
           }
 
           // 3. ส่งคำขอไปยัง Google Apps Script
-          const res = await fetch(SCRIPT_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({
-              departments: selectedDepartments,
-              sender: currentUser.name || "งานธุรการกลาง",
-              fileName: finalFileName,
-              fileData: fileData,
-              attachments: attachPayloads
-            })
-          });
+       const res = await fetch(SCRIPT_URL, {
+         method: 'POST',
+         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+         body: JSON.stringify({
+           departments: selectedDepartments,
+           sender: currentUser.name || "งานธุรการกลาง",
+           fileName: finalFileName,
+           fileData: fileData,
+           attachments: attachPayloads,
+           officialNo: item.officialNo || "" // 🏷️ ส่งเลขที่หนังสือจริงไปด้วย
+         })
+       });
 
           const result = await res.json();
           if (result.success) {

@@ -7146,16 +7146,20 @@ async function approveComputerQrLogin() {
   const targetYear = (selectedYear === "all") ? currentYearBE.toString() : selectedYear;
   const tbody = document.getElementById('bookData');
 
-  tbody.innerHTML = `<tr><td colspan="3" class="text-center p-4"><div class="spinner-border spinner-border-sm text-success me-2"></div> กำลังดึงข้อมูลจากชีตทดสอบ...</td></tr>`;
+  if (tbody) {
+    tbody.innerHTML = `<tr><td colspan="3" class="text-center p-4"><div class="spinner-border spinner-border-sm text-success me-2"></div> กำลังดึงข้อมูลจากชีตสำเนาทดสอบ...</td></tr>`;
+  }
 
-  // ดึงข้อมูลตรงจาก Apps Script ของชีตสำเนาใหม่ทันที
-  fetch(`${SCRIPT_URL}?year=${targetYear}&t=${new Date().getTime()}`)
+  // เติม no-cache เพื่อบังคับให้ดึงสดใหม่จาก Apps Script เสมอ
+  fetch(`${SCRIPT_URL}?year=${targetYear}&nocache=${new Date().getTime()}`)
     .then(res => res.json())
     .then(data => {
+      console.log("📥 ข้อมูลที่ได้จากชีตสำเนา:", data);
       allLogs = Array.isArray(data) ? data : [];
       applyClientSideFilter();
     })
     .catch(err => {
+      console.error("❌ โหลดชีตไม่สำเร็จ:", err);
       allLogs = [];
       displayTable([]);
     });

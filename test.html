@@ -2329,23 +2329,34 @@
       </div>
     </div> <!-- ปิด personalDocView -->
 
-    <!-- 🏢 Modal เลือกกลุ่มงานส่งหนังสือ -->
+    <!-- 🏢 Modal เลือกกลุ่มงานส่งหนังสือ (Sandbox Version) -->
     <div class="modal fade" id="deptSelectModal" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg">
           <div class="modal-header bg-success text-white">
-            <h5 class="modal-title fw-bold"><svg class="btn-svg-icon me-1" viewBox="0 0 24 24"><path d="M3 21h18M3 7v14M21 7v14M6 11h4M6 15h4M14 11h4M14 15h4M9 21v-4h6v4M7 3h10v4H7z"></path></svg> เลือกกลุ่มงานปลายทาง</h5>
+            <h5 class="modal-title fw-bold">
+              <svg class="btn-svg-icon me-1" viewBox="0 0 24 24"><path d="M3 21h18M3 7v14M21 7v14M6 11h4M6 15h4M14 11h4M14 15h4M9 21v-4h6v4M7 3h10v4H7z"></path></svg> 
+              เลือกกลุ่มงานปลายทาง
+            </h5>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body p-4">
-  <p class="text-muted small mb-2">โหมดทดสอบระบบ (Sandbox):</p>
-  <div class="d-flex flex-column gap-2 mb-3">
-    <label class="list-group-item d-flex gap-2 align-items-center p-2 rounded border cursor-pointer bg-light">
-      <input class="form-check-input flex-shrink-0 dept-checkbox" type="checkbox" value="ทดสอบระบบ" checked disabled>
-      <span class="fw-bold text-success">🧪 ทดสอบระบบ</span>
-    </label>
-  </div>
-</div>
+            <p class="text-muted small mb-2">โหมดทดสอบระบบ (Sandbox):</p>
+            <div class="d-flex flex-column gap-2 mb-3">
+              <label class="list-group-item d-flex gap-2 align-items-center p-2 rounded border cursor-pointer bg-light">
+                <input class="form-check-input flex-shrink-0 dept-checkbox" type="checkbox" value="ทดสอบระบบ" checked>
+                <span class="fw-bold text-success">🧪 ทดสอบระบบ</span>
+              </label>
+            </div>
+          </div>
+          <div class="modal-footer bg-light">
+            <button type="button" class="btn btn-success px-4 fw-bold w-100" data-bs-dismiss="modal" onclick="saveDeptSelection()">
+              บันทึกกลุ่มงานที่เลือก
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- 🟢 Modal 1: ยืนยันการอัปโหลดหนังสือ (พร้อม Progress Bar และกรอบไม่ล้นจอ) -->
     <div class="modal fade" id="uploadConfirmModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
@@ -5143,12 +5154,20 @@ window.addEventListener('popstate', () => {
   const display = document.getElementById('selectedDeptsDisplay');
   if (badge) {
     badge.className = "badge bg-success text-white fw-bold";
-    badge.innerText = "ทดสอบระบบ";
+    badge.innerText = "1 กลุ่มงาน";
   }
   if (display) {
-    display.innerHTML = `<span class="badge bg-success p-2 w-100 text-center">🧪 ทดสอบระบบ</span>`;
+    display.innerHTML = `
+      <div class="badge bg-success text-white p-2 w-100 text-center shadow-sm">
+        🧪 ทดสอบระบบ
+      </div>`;
   }
 }
+
+// ⚡ บังคับเลือก "ทดสอบระบบ" ให้อัตโนมัติตั้งแต่เปิดเว็บ
+selectedDepartments = ["ทดสอบระบบ"];
+setTimeout(saveDeptSelection, 300);
+
   // --- 3. ระบบรักษาความปลอดภัยและจัดการสิทธิ์การเข้าใช้งาน ---
   function checkSession() {
     const savedUser = localStorage.getItem('sarabanUser');

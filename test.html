@@ -2955,7 +2955,7 @@
  // --- 1. การตั้งค่าสิทธิ์พื้นฐานองค์กร ---
   const GH_OWNER = "specialtrat905";
   const GH_REPO = "smart-saraban";
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxrFw7l5SAvWyU7NRqjoFuDgA4JTKxx9D7zT6dJhmlq33ElSEx_Fu0Vy73Wf4YLV-fbYA/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwUPAF-FRkSK5CuuSO9tqvFoMVVsJAIiWUaumQcMrnfOthM_C6bnbmpL0hkpvg6cSyDzQ/exec";
 // ⚡ กำหนดค่าเชื่อมต่อ Firebase (ตาม Config ของคุณ)
 const firebaseConfig = {
   apiKey: "AIzaSyBL_Jv3x_UxEkzcVnN6lpQpZdWoIaJvMNM",
@@ -2978,38 +2978,27 @@ let lastFirebaseDataLength = 0;
 
 function loadLogsFromFirebase(year) {
   currentFirebaseYear = year;
-  
-  rtdb.ref('logs_' + year).on('value', (snapshot) => {
-    const rawData = snapshot.val();
-    const dataList = rawData ? (Array.isArray(rawData) ? rawData : Object.values(rawData)) : [];
-    
-    if (dataList.length > 0) {
-      // 🛡️ หากข้อมูลความยาวเท่าเดิมและมีข้อมูลอยู่แล้ว ไม่ต้องสั่งวาดตารางใหม่ให้กระพริบ
-      const isSameData = (allLogs.length === dataList.length && currentFirebaseYear === year);
-      allLogs = dataList;
+  const tbody = document.getElementById('bookData');
+  if (tbody) {
+    tbody.innerHTML = `<tr><td colspan="3" class="text-center p-4"><div class="spinner-border spinner-border-sm text-success me-2"></div> กำลังโหลดข้อมูลจากชีตทดสอบ...</td></tr>`;
+  }
 
-      if (!isSameData || allLogs.length === 0) {
-        console.log(`🔥 [Firebase SUCCESS] อัปเดตข้อมูลปี ${year} (${dataList.length} รายการ)`);
-        applyClientSideFilter();
+  // ⚡ ดึงตรงจากชีตสำเนา 1zpTeuOAE... ผ่าน Apps Script ตัวใหม่
+  fetch(`${SCRIPT_URL}?year=${year}&t=${new Date().getTime()}`)
+    .then(res => res.json())
+    .then(data => {
+      if (Array.isArray(data)) {
+        allLogs = data;
+      } else {
+        allLogs = [];
       }
-    } else {
-      fetch(`${SCRIPT_URL}?year=${year}&dept=all&search=&offset=0&limit=500&t=${new Date().getTime()}`)
-        .then(res => res.json())
-        .then(data => {
-          if (Array.isArray(data) && data.length > 0) {
-            allLogs = data;
-            applyClientSideFilter();
-            try { rtdb.ref('logs_' + year).set(data); } catch(e){}
-          } else {
-            allLogs = [];
-            displayTable([]);
-          }
-        }).catch(() => {
-          allLogs = [];
-          displayTable([]);
-        });
-    }
-  });
+      applyClientSideFilter();
+    })
+    .catch(err => {
+      console.warn("โหลดชีตทดสอบล้มเหลว:", err);
+      allLogs = [];
+      displayTable([]);
+    });
 }
   let currentUser = {};
   let allLogs = [];

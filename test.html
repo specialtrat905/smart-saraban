@@ -7328,207 +7328,199 @@ async function approveComputerQrLogin() {
     uploadModalInstance.show();
   }
 
-  // 🚀 ระบบส่งหนังสือแบบ Sequential Queue (อัปโหลดแยกฝ่าย + คลังกลาง + สรุป LINE การ์ดเดียว)
-  async function executeUpload() {
-    const cancelBtn = document.getElementById('uploadCancelBtn');
-    const confirmBtn = document.getElementById('uploadConfirmBtn');
-    const closeX = document.getElementById('uploadModalCloseX');
-    const progressSection = document.getElementById('uploadProgressSection');
-    const progressBar = document.getElementById('uploadProgressBar');
-    const statusText = document.getElementById('uploadStatusText');
-    const percentText = document.getElementById('uploadPercentText');
+  // ====================================================================
+// 🗂️ BACKGROUND UPLOAD QUEUE ENGINE (กล่องคิวลอยมุมขวาล่างสไตล์ Google Drive)
+// ====================================================================
+let uploadQueue = [];
+let isQueueRunning = false;
 
-    cancelBtn.style.display = 'none';
-    confirmBtn.disabled = true;
-    confirmBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> กำลังส่ง...`;
-    if (closeX) closeX.style.display = 'none';
-    progressSection.style.display = 'block';
-
-    const totalFilesCount = selectedFilesArray.length;
-    let uploadedResultsByDept = {}; 
-    let currentIndex = 0;
-    let successCount = 0;
-
-    const receiverSuffix = otherStaffNames.length > 0 ? ` [${otherStaffNames.join(', ')}]` : "";
-
-    while (currentIndex < totalFilesCount) {
-      const item = selectedFilesArray[currentIndex];
-      const file = item.file;
-      const currentFileNum = currentIndex + 1;
-
-      // คำนวณความคืบหน้าระหว่างส่ง
-      const basePct = Math.round(((currentFileNum - 1) / totalFilesCount) * 85);
-      progressBar.style.width = `${basePct}%`;
-      percentText.innerText = `${basePct}%`;
-      statusText.innerText = `กำลังส่งเล่มที่ ${currentFileNum}/${totalFilesCount}: ${file.name.substring(0, 20)}...`;
-
-      let isSuccess = false;
-      let attempt = 0;
-
-      while (!isSuccess && attempt < 2) {
-        attempt++;
-        try {
-          // 1. อ่านไฟล์หนังสือหลัก (PDF)
-          const fileData = await new Promise((res, rej) => {
-            const r = new FileReader();
-            r.onload = e => res(e.target.result);
-            r.onerror = rej;
-            r.readAsDataURL(file);
-          });
-
-          let originalName = file.name;
-          let finalFileName = originalName.toLowerCase().endsWith(".pdf") 
-              ? originalName.slice(0, -4) + (selectedDepartments.includes("อื่นๆ") ? receiverSuffix : "") + ".pdf" 
-              : originalName + (selectedDepartments.includes("อื่นๆ") ? receiverSuffix : "");
-
-          // 2. อ่านไฟล์สิ่งที่ส่งมาด้วยเฉพาะเล่มนี้ (ถ้ามี)
-          let attachPayloads = [];
-          if (item.attachments && item.attachments.length > 0) {
-            for (let attFile of item.attachments) {
-              const attData = await new Promise((resA, rejA) => {
-                const r = new FileReader();
-                r.onload = ev => resA(ev.target.result);
-                r.onerror = rejA;
-                r.readAsDataURL(attFile);
-              });
-              attachPayloads.push({ name: attFile.name, data: attData });
-            }
-          }
-
-          // 3. ส่งคำขอไปยัง Google Apps Script
-       const res = await fetch(SCRIPT_URL, {
-         method: 'POST',
-         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-         body: JSON.stringify({
-           departments: selectedDepartments,
-           sender: currentUser.name || "งานธุรการกลาง",
-           fileName: finalFileName,
-           fileData: fileData,
-           attachments: attachPayloads,
-           officialNo: item.officialNo || "" // 🏷️ ส่งเลขที่หนังสือจริงไปด้วย
-         })
-       });
-
-          const result = await res.json();
-          if (result.success) {
-            if (result.results && Array.isArray(result.results)) {
-              result.results.forEach(r => {
-                if (!uploadedResultsByDept[r.dept]) uploadedResultsByDept[r.dept] = [];
-                uploadedResultsByDept[r.dept].push({
-                  name: r.name,
-                  url: r.url,
-                  attachUrl: r.attachUrl || ""
-                });
-              });
-            } else {
-              selectedDepartments.forEach(dept => {
-                if (!uploadedResultsByDept[dept]) uploadedResultsByDept[dept] = [];
-                uploadedResultsByDept[dept].push({
-                  name: result.fileName || finalFileName,
-                  url: result.url,
-                  attachUrl: result.attachUrl || ""
-                });
-              });
-            }
-            isSuccess = true;
-            successCount++;
-          } else {
-            console.warn("เซิร์ฟเวอร์ตอบกลับว่าไม่สำเร็จ:", result.message);
-          }
-        } catch (errLoop) {
-          console.warn(`ส่งเล่มที่ ${currentFileNum} ครั้งที่ ${attempt} ล้มเหลว:`, errLoop);
-          await new Promise(r => setTimeout(r, 1500));
-        }
-      }
-
-      if (!isSuccess) {
-        const choice = confirm(
-          `⚠️ เล่มที่ ${currentFileNum} (${file.name}) ส่งไม่สำเร็จเนื่องจากการเชื่อมต่อ\n\n` +
-          `- กด [ตกลง (OK)] เพื่อลองส่งเล่มนี้และเล่มที่เหลืออีกครั้ง\n` +
-          `- กด [ยกเลิก (Cancel)] เพื่อหยุดส่ง และบันทึกเฉพาะเล่มที่ผ่านแล้ว (${successCount} ฉบับ)`
-        );
-
-        if (choice) {
-          continue;
-        } else {
-          break;
-        }
-      }
-
-      currentIndex++;
-    }
-
-    // 📢 4. ส่งสรุปแจ้งเตือน LINE การ์ดเดียวต่อกลุ่มงาน
-    const deptsSent = Object.keys(uploadedResultsByDept);
-    if (deptsSent.length > 0) {
-      statusText.innerText = "กำลังส่งสรุปแจ้งเตือนทาง LINE...";
-      progressBar.style.width = "92%";
-      percentText.innerText = "92%";
-
-      for (let dept of deptsSent) {
-        try {
-          const fileList = uploadedResultsByDept[dept];
-          if (dept === "อื่นๆ" && otherStaffNames.length > 0) {
-            otherStaffNames.forEach(staffName => {
-              const cleanKey = encodeURIComponent(staffName.trim());
-              rtdb.ref('user_badges/' + cleanKey).transaction(count => (count || 0) + fileList.length);
-            });
-
-            await fetch(SCRIPT_URL, {
-              method: 'POST',
-              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-              body: JSON.stringify({
-                action: "sendDirectBatchNotification",
-                staffNames: otherStaffNames,
-                sender: currentUser.name || "งานธุรการกลาง",
-                fileList: fileList
-              })
-            });
-          } else if (dept !== "อื่นๆ") {
-            await fetch(SCRIPT_URL, {
-              method: 'POST',
-              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-              body: JSON.stringify({
-                action: "sendBatchNotification",
-                department: dept,
-                sender: currentUser.name || "งานธุรการกลาง",
-                fileList: fileList
-              })
-            });
-          }
-        } catch (eLine) {
-          console.warn("ส่ง LINE สรุปล้มเหลว:", eLine);
-        }
-      }
-    }
-
-    progressBar.style.width = '100%';
-    percentText.innerText = '100%';
-    statusText.innerText = '✅ ส่งหนังสือและแจ้งเตือน LINE เรียบร้อยแล้ว!';
-    await new Promise(r => setTimeout(r, 600));
-
-    if (uploadModalInstance) uploadModalInstance.hide();
-    alert(`🎉 ดำเนินการเสร็จสิ้น! ส่งหนังสือสำเร็จรวม ${successCount} ฉบับ เรียบร้อยแล้ว`);
-
-    // ล้างข้อมูลฟอร์ม
-    selectedFilesArray = [];
-    renderFileList();
-    selectedDepartments = [];
-    otherStaffNames = [];
-    document.querySelectorAll('.dept-checkbox').forEach(cb => cb.checked = false);
-    toggleOtherSection();
-    renderStaffTags();
-    saveDeptSelection();
-
-    dataCache = {};
-    resetAndReloadLogs();
-
-    confirmBtn.disabled = false;
-    confirmBtn.innerHTML = `✅ ยืนยันการส่ง`;
-    cancelBtn.style.display = 'inline-block';
-    if (closeX) closeX.style.display = 'block';
-    progressSection.style.display = 'none';
+// 1. นำหนังสือทุกฉบับเข้าคิว ปิด Modal ทันที และล้างฟอร์มด้านบน
+async function executeUpload() {
+  if (uploadModalInstance) {
+    uploadModalInstance.hide();
   }
+
+  // โคลนรายการหนังสือทั้งหมดเข้าคิวเบื้องหลัง
+  selectedFilesArray.forEach(item => {
+    uploadQueue.push({
+      id: 'task_' + Math.random().toString(36).substring(2, 9),
+      file: item.file,
+      attachments: [...item.attachments],
+      officialNo: item.officialNo || "",
+      departments: [...selectedDepartments],
+      status: 'pending' // pending | uploading | success | failed
+    });
+  });
+
+  // ⚡ รีเซ็ตฟอร์มเลือกไฟล์ด้านบนทันที แอดมินพร้อมทำงานต่อได้เลย
+  selectedFilesArray = [];
+  renderFileList();
+
+  // เปิดกล่องลอยมุมขวาล่างและเริ่มส่งทีละเล่ม
+  showUploadDrawer();
+  updateDrawerUI();
+  runQueueEngine();
+}
+
+// 2. กลไกประมวลผลคิวทีละฉบับ (Sequential FIFO Chaining - ประหยัดแรม)
+async function runQueueEngine() {
+  if (isQueueRunning) return;
+  const currentTask = uploadQueue.find(t => t.status === 'pending');
+  if (!currentTask) {
+    isQueueRunning = false;
+    updateDrawerUI();
+    return;
+  }
+
+  isQueueRunning = true;
+  currentTask.status = 'uploading';
+  updateDrawerUI();
+
+  try {
+    // อ่าน Base64 เฉพาะไฟล์ที่ถึงคิวส่ง
+    const fileData = await new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = e => res(e.target.result);
+      r.onerror = rej;
+      r.readAsDataURL(currentTask.file);
+    });
+
+    const attachPayloads = [];
+    for (let attFile of currentTask.attachments) {
+      const attData = await new Promise((resA, rejA) => {
+        const r = new FileReader();
+        r.onload = ev => resA(ev.target.result);
+        r.onerror = rejA;
+        r.readAsDataURL(attFile);
+      });
+      attachPayloads.push({ name: attFile.name, data: attData });
+    }
+
+    // ส่งคำขอไปยัง Google Apps Script
+    const res = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: "uploadBook",
+        departments: currentTask.departments,
+        sender: currentUser.name || "Admin ทดสอบ",
+        fileName: currentTask.file.name,
+        fileData: fileData,
+        attachments: attachPayloads,
+        officialNo: currentTask.officialNo
+      })
+    });
+
+    const result = await res.json();
+    if (result.success) {
+      currentTask.status = 'success';
+
+      // สั่งส่งข้อความ Flex Message แจ้งเตือนเข้า LINE กลุ่มทดสอบ
+      fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: "sendBatchNotification",
+          department: "ทดสอบระบบ",
+          sender: currentUser.name || "Admin ทดสอบ",
+          fileList: [{
+            name: currentTask.file.name,
+            url: result.results ? result.results[0].url : result.url,
+            attachUrl: result.results ? result.results[0].attachUrl : result.attachUrl
+          }]
+        })
+      }).catch(errLine => console.warn("LINE Notify Warn:", errLine));
+
+      // รีเฟรชตารางหน้าเว็บให้เห็นหนังสือเล่มใหม่ทันที
+      loadLogs();
+    } else {
+      currentTask.status = 'failed';
+    }
+  } catch (errUpload) {
+    console.error("Upload error:", errUpload);
+    currentTask.status = 'failed';
+  } finally {
+    isQueueRunning = false;
+    updateDrawerUI();
+    runQueueEngine(); // ขยับไปทำเล่มถัดไปในคิวอัตโนมัติ
+  }
+}
+
+// 3. ฟังก์ชันควบคุมการแสดงผลและสถานะกล่องมุมขวาล่าง
+function showUploadDrawer() {
+  const drawer = document.getElementById('uploadDrawerWidget');
+  if (drawer) drawer.style.display = 'block';
+}
+
+function updateDrawerUI() {
+  const body = document.getElementById('uploadDrawerBody');
+  const title = document.getElementById('drawerTitleText');
+  if (!body || !title) return;
+
+  const inProgress = uploadQueue.filter(t => t.status === 'uploading' || t.status === 'pending').length;
+  title.innerText = inProgress > 0 ? `กำลังส่งหนังสือ (รออีก ${inProgress} เล่ม)...` : `ส่งเสร็จสิ้นครบทุกรายการแล้ว`;
+
+  body.innerHTML = uploadQueue.map(t => {
+    let statusBadge = `<span class="badge bg-secondary">⏳ รอคิว</span>`;
+    if (t.status === 'uploading') statusBadge = `<span class="badge bg-primary">🔄 กำลังส่ง...</span>`;
+    if (t.status === 'success') statusBadge = `<span class="badge bg-success">🟢 สำเร็จ</span>`;
+    if (t.status === 'failed') {
+      statusBadge = `
+        <span class="badge bg-danger">🔴 ล้มเหลว</span>
+        <button class="btn btn-sm btn-outline-danger py-0 px-1 ms-1" style="font-size:0.7rem;" onclick="retrySpecificTask('${t.id}')">ลองใหม่</button>
+      `;
+    }
+
+    return `
+      <div class="drawer-queue-item d-flex justify-content-between align-items-center">
+        <div class="text-truncate me-2" style="max-width: 65%;">
+          <div class="fw-bold text-dark text-truncate">${t.file.name}</div>
+          ${t.officialNo ? `<div class="text-muted" style="font-size:0.7rem;">🏷️ เลขจริง: ${t.officialNo}</div>` : ''}
+          ${t.attachments.length > 0 ? `<div class="text-muted" style="font-size:0.7rem;">📎 แนบ ${t.attachments.length} ไฟล์</div>` : ''}
+        </div>
+        <div class="d-flex align-items-center flex-shrink-0">
+          ${statusBadge}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function retrySpecificTask(taskId) {
+  const task = uploadQueue.find(t => t.id === taskId);
+  if (task) {
+    task.status = 'pending';
+    updateDrawerUI();
+    runQueueEngine();
+  }
+}
+
+function toggleUploadDrawer() {
+  const body = document.getElementById('uploadDrawerBody');
+  const icon = document.getElementById('drawerToggleIcon');
+  if (!body || !icon) return;
+  if (body.style.display === 'none') {
+    body.style.display = 'block';
+    icon.innerText = '▾';
+  } else {
+    body.style.display = 'none';
+    icon.innerText = '▴';
+  }
+}
+
+function closeUploadDrawer(e) {
+  if (e) e.stopPropagation();
+  const drawer = document.getElementById('uploadDrawerWidget');
+  if (drawer) drawer.style.display = 'none';
+}
+
+// 🛡️ ป้องกันการปิดแท็บก่อนคิวส่งเสร็จ
+window.addEventListener('beforeunload', function(e) {
+  if (uploadQueue.some(t => t.status === 'uploading' || t.status === 'pending')) {
+    e.preventDefault();
+    e.returnValue = 'มีหนังสือที่กำลังส่งอยู่เบื้องหลัง หากปิดหน้านี้การส่งจะถูกยกเลิก!';
+  }
+});
 
   // --- 10. ระบบจัดการแก้ไขฐานข้อมูล (เลือกลบ หรือ แก้ไขกลุ่มงาน) ---
   let currentDbMode = null;

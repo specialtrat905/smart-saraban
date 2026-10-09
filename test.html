@@ -5105,22 +5105,37 @@ window.addEventListener('popstate', () => {
     }
   }
 
-  // --- ระบบควบคุม Modal เลือกกลุ่มงานและแท็กผู้รับ ---
+  // --- ระบบควบคุม Modal เลือกกลุ่มงานและแท็กผู้รับ (Sandbox Version) ---
   function openDeptModal() {
     if (!deptModalInstance) {
-      deptModalInstance = new bootstrap.Modal(document.getElementById('deptSelectModal'));
+      const modalEl = document.getElementById('deptSelectModal');
+      if (modalEl) deptModalInstance = new bootstrap.Modal(modalEl);
     }
     document.querySelectorAll('.dept-checkbox').forEach(cb => {
       cb.checked = selectedDepartments.includes(cb.value);
     });
     toggleOtherSection();
     renderStaffTags();
-    deptModalInstance.show();
+    if (deptModalInstance) deptModalInstance.show();
   }
 
   function toggleOtherSection() {
-    const isOtherChecked = document.getElementById('deptOtherCheck').checked;
-    document.getElementById('otherStaffSection').style.display = isOtherChecked ? 'block' : 'none';
+    const otherCheck = document.getElementById('deptOtherCheck');
+    const otherSection = document.getElementById('otherStaffSection');
+    if (otherCheck && otherSection) {
+      otherSection.style.display = otherCheck.checked ? 'block' : 'none';
+    }
+  }
+
+  function renderStaffTags() {
+    const container = document.getElementById('staffTagsContainer');
+    if (!container) return;
+    container.innerHTML = otherStaffNames.map(name => `
+      <span class="badge bg-secondary p-2 d-flex align-items-center gap-1" style="font-size: 0.75rem;">
+        ${name}
+        <span role="button" class="text-white ms-1 fw-bold cursor-pointer" onclick="removeOtherStaffName('${name}')">✕</span>
+      </span>
+    `).join('');
   }
 
   function addOtherStaffName() {

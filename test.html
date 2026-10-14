@@ -7341,6 +7341,9 @@ async function executeUpload() {
     uploadModalInstance.hide();
   }
 
+  // 🧹 [ข้อ 2 - แนวทาง A] ล้างเฉพาะรายการที่ "สำเร็จ" ของชุดก่อนหน้าทิ้ง แต่เก็บเล่มที่ล้มเหลว (failed) ไว้ให้เห็น
+  uploadQueue = uploadQueue.filter(t => t.status !== 'success');
+
   // สร้าง Batch ID ประจำรอบการกดส่งครั้งนี้
   const batchId = 'batch_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
 

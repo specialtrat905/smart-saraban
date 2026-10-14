@@ -7387,23 +7387,26 @@ async function approveComputerQrLogin() {
     uploadModalInstance.show();
   }
 
-  // ====================================================================
-// 🗂️ BACKGROUND UPLOAD QUEUE ENGINE (ระบบส่งหนังสือเบื้องหลัง + รวมแจ้งเตือน LINE)
+// ====================================================================
+// 🗂️ BACKGROUND UPLOAD QUEUE ENGINE (ระบบคิวเบื้องหลัง + รวมแจ้งเตือน LINE)
 // ====================================================================
 let uploadQueue = [];
-let uploadBatches = {}; // ตัวเก็บและรวมเล่มหนังสือเพื่อส่ง LINE ครั้งเดียว
+let uploadBatches = {}; // ตัวเก็บรวบรวมหนังสือเพื่อส่ง LINE รวมรอบเดียวกัน
 let isQueueRunning = false;
 
-// 1. นำงานเข้าคิว ปิด Modal ทันที และสร้าง Batch ID สำหรับรอบการส่งนี้
+// 1. นำงานเข้าคิว ปิด Modal ล้างฟอร์ม และเริ่มส่งเบื้องหลัง
 async function executeUpload() {
   if (uploadModalInstance) {
     uploadModalInstance.hide();
   }
 
+  // 🧹 [ข้อ 2 - แนวทาง A] ล้างเฉพาะรายการที่ "สำเร็จ" ของชุดก่อนหน้าทิ้ง แต่เก็บเล่มที่ล้มเหลว (failed) ไว้ให้เห็น
+  uploadQueue = uploadQueue.filter(t => t.status !== 'success');
+
   const receiverSuffix = otherStaffNames.length > 0 ? ` [${otherStaffNames.join(', ')}]` : "";
   const batchId = 'batch_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
 
-  // สร้างถังเก็บผลลัพธ์ของรอบนี้เพื่อรอส่ง LINE รวมกัน
+  // สร้างถังเก็บผลลัพธ์ของรอบนี้เพื่อรอส่ง LINE รวมกันเมื่อครบทุกเล่ม
   uploadBatches[batchId] = {
     total: selectedFilesArray.length,
     remaining: selectedFilesArray.length,
@@ -7432,16 +7435,53 @@ async function executeUpload() {
     });
   });
 
-  // ⚡ รีเซ็ตหน้าต่างด้านบนทันที แอดมินพร้อมทำงานต่อได้เลย
+  // ⚡ รีเซ็ตรายการไฟล์ที่เลือกด้านบน
   selectedFilesArray = [];
   renderFileList();
+
+  // ⚡ [ข้อ 1] รีเซ็ตกลุ่มงานปลายทางทั้งหมดให้ว่างเปล่า พร้อมสำหรับรอบถัดไป
+  resetDeptSelection();
 
   showUploadDrawer();
   updateDrawerUI();
   runQueueEngine();
 }
 
-// 2. กลไกส่งทีละฉบับ (Sequential FIFO Chaining)
+// 2. ฟังก์ชันรีเซ็ตกลุ่มงานปลายทาง (ข้อ 1)
+function resetDeptSelection() {
+  selectedDepartments = [];
+  otherStaffNames = [];
+
+  // รีเซ็ตป้ายตัวนับกลุ่มงาน
+  const badge = document.getElementById('deptCountBadge');
+  if (badge) {
+    badge.className = "badge bg-light text-dark";
+    badge.innerText = "ยังไม่เลือก";
+  }
+
+  // ล้างการแสดงผลป้ายสีกลุ่มงาน
+  const display = document.getElementById('selectedDeptsDisplay');
+  if (display) {
+    display.innerHTML = "";
+  }
+
+  // ปลดติ๊กถูก Checkbox ใน Modal ทั้งหมด
+  document.querySelectorAll('.dept-checkbox').forEach(cb => {
+    cb.checked = false;
+  });
+
+  // ซ่อนและล้างช่อง "อื่นๆ" (ถ้ามี)
+  const otherCheck = document.getElementById('deptOtherCheck');
+  if (otherCheck) otherCheck.checked = false;
+  const otherSection = document.getElementById('otherStaffSection');
+  if (otherSection) otherSection.style.display = 'none';
+  const staffInput = document.getElementById('staffInput');
+  if (staffInput) staffInput.value = '';
+  const staffTagsContainer = document.getElementById('staffTagsContainer');
+  if (staffTagsContainer) staffTagsContainer.innerHTML = '';
+}
+
+// 3. กลไกส่งทีละฉบับ (Sequential FIFO Chaining)
 async function runQueueEngine() {
   if (isQueueRunning) return;
   const currentTask = uploadQueue.find(t => t.status === 'pending');
@@ -7496,7 +7536,7 @@ async function runQueueEngine() {
     if (result.success) {
       currentTask.status = 'success';
 
-      // 4. บันทึกผลลัพธ์ลงถังรวมของ Batch
+      // บันทึกเล่มที่สำเร็จลงถังรวมของ Batch
       const batch = uploadBatches[currentTask.batchId];
       if (batch) {
         if (result.results && Array.isArray(result.results)) {
@@ -7526,7 +7566,7 @@ async function runQueueEngine() {
     console.error("Upload error:", errUpload);
     currentTask.status = 'failed';
   } finally {
-    // 5. ตรวจสอบว่ารอบนี้ส่งครบทุกเล่มหรือยัง ถ้าครบแล้วจึงยิง LINE แจ้งเตือนรวม
+    // ตรวจสอบว่าในรอบนี้ทำครบทุกเล่มหรือยัง (ทั้งสำเร็จและล้มเหลว)
     const batch = uploadBatches[currentTask.batchId];
     if (batch) {
       batch.remaining--;
@@ -7538,11 +7578,11 @@ async function runQueueEngine() {
 
     isQueueRunning = false;
     updateDrawerUI();
-    runQueueEngine(); // ประมวลผลเล่มถัดไปในคิว
+    runQueueEngine(); // ขยับไปทำเล่มถัดไปในคิว
   }
 }
 
-// 3. ฟังก์ชันส่งแจ้งเตือน LINE แบบรวบยอดรวมทุกเล่ม
+// 4. ส่งแจ้งเตือน LINE รวมชุดเพียงครั้งเดียว
 function sendCombinedLineNotification(batch) {
   for (let dept in batch.resultsByDept) {
     const fileList = batch.resultsByDept[dept];
@@ -7576,7 +7616,7 @@ function sendCombinedLineNotification(batch) {
   }
 }
 
-// 4. ฟังก์ชันควบคุม UI กล่องลอย
+// 5. ควบคุมการแสดงผล UI ของกล่องลอย
 function showUploadDrawer() {
   const drawer = document.getElementById('uploadDrawerWidget');
   if (drawer) drawer.style.display = 'block';
@@ -7588,7 +7628,15 @@ function updateDrawerUI() {
   if (!body || !title) return;
 
   const inProgress = uploadQueue.filter(t => t.status === 'uploading' || t.status === 'pending').length;
-  title.innerText = inProgress > 0 ? `กำลังส่งหนังสือ (รออีก ${inProgress} เล่ม)...` : `ส่งเสร็จสิ้นครบทุกรายการแล้ว`;
+  const failedCount = uploadQueue.filter(t => t.status === 'failed').length;
+
+  if (inProgress > 0) {
+    title.innerText = `กำลังส่งหนังสือ (รออีก ${inProgress} เล่ม)...`;
+  } else if (failedCount > 0) {
+    title.innerText = `ส่งเสร็จแล้ว (พบข้อผิดพลาด ${failedCount} เล่ม)`;
+  } else {
+    title.innerText = `ส่งเสร็จสิ้นครบทุกรายการแล้ว`;
+  }
 
   body.innerHTML = uploadQueue.map(t => {
     let statusBadge = `<span class="badge bg-secondary">⏳ รอคิว</span>`;
@@ -7606,7 +7654,7 @@ function updateDrawerUI() {
         <div class="text-truncate me-2" style="max-width: 65%;">
           <div class="fw-bold text-dark text-truncate">${t.finalFileName || t.file.name}</div>
           ${t.officialNo ? `<div class="text-muted" style="font-size:0.7rem;">🏷️ เลขจริง: ${t.officialNo}</div>` : ''}
-          ${t.attachments.length > 0 ? `<div class="text-muted" style="font-size:0.7rem;">📎 แนบ ${t.attachments.length} ไฟล์</div>` : ''}
+          ${t.attachments && t.attachments.length > 0 ? `<div class="text-muted" style="font-size:0.7rem;">📎 แนบ ${t.attachments.length} ไฟล์</div>` : ''}
         </div>
         <div class="d-flex align-items-center flex-shrink-0">
           ${statusBadge}
@@ -7616,9 +7664,19 @@ function updateDrawerUI() {
   }).join('');
 }
 
+// 6. กดลองส่งใหม่เฉพาะเล่มที่ล้มเหลว (พร้อมสร้าง Batch ใหม่สำหรับส่ง LINE เมื่อผ่าน)
 function retrySpecificTask(taskId) {
   const task = uploadQueue.find(t => t.id === taskId);
   if (task) {
+    const retryBatchId = 'batch_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+    task.batchId = retryBatchId;
+    uploadBatches[retryBatchId] = {
+      total: 1,
+      remaining: 1,
+      sender: currentUser.name || "งานธุรการกลาง",
+      resultsByDept: {},
+      otherStaffNames: [...(task.otherStaffNames || [])]
+    };
     task.status = 'pending';
     updateDrawerUI();
     runQueueEngine();

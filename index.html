@@ -7388,20 +7388,31 @@ async function approveComputerQrLogin() {
   }
 
   // ====================================================================
-// 🗂️ BACKGROUND UPLOAD QUEUE ENGINE (ระบบส่งหนังสือเบื้องหลัง)
+// 🗂️ BACKGROUND UPLOAD QUEUE ENGINE (ระบบส่งหนังสือเบื้องหลัง + รวมแจ้งเตือน LINE)
 // ====================================================================
 let uploadQueue = [];
+let uploadBatches = {}; // ตัวเก็บและรวมเล่มหนังสือเพื่อส่ง LINE ครั้งเดียว
 let isQueueRunning = false;
 
-// 1. นำงานเข้าคิว ปิด Modal ทันที และล้างฟอร์มด้านบน (แอดมินส่งต่อได้ใน 0.1 วิ)
+// 1. นำงานเข้าคิว ปิด Modal ทันที และสร้าง Batch ID สำหรับรอบการส่งนี้
 async function executeUpload() {
   if (uploadModalInstance) {
     uploadModalInstance.hide();
   }
 
   const receiverSuffix = otherStaffNames.length > 0 ? ` [${otherStaffNames.join(', ')}]` : "";
+  const batchId = 'batch_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
 
-  // โคลนหนังสือทุกฉบับเข้าคิวเบื้องหลัง
+  // สร้างถังเก็บผลลัพธ์ของรอบนี้เพื่อรอส่ง LINE รวมกัน
+  uploadBatches[batchId] = {
+    total: selectedFilesArray.length,
+    remaining: selectedFilesArray.length,
+    sender: currentUser.name || "งานธุรการกลาง",
+    resultsByDept: {},
+    otherStaffNames: [...otherStaffNames]
+  };
+
+  // โคลนหนังสือทุกฉบับเข้าคิวเบื้องหลังพร้อมผูก batchId เดียวกัน
   selectedFilesArray.forEach(item => {
     let originalName = item.file.name;
     let finalFileName = originalName.toLowerCase().endsWith(".pdf") 
@@ -7410,6 +7421,7 @@ async function executeUpload() {
 
     uploadQueue.push({
       id: 'task_' + Math.random().toString(36).substring(2, 9),
+      batchId: batchId,
       file: item.file,
       finalFileName: finalFileName,
       attachments: [...item.attachments],
@@ -7420,7 +7432,7 @@ async function executeUpload() {
     });
   });
 
-  // ⚡ รีเซ็ตฟอร์มเลือกไฟล์ด้านบนทันที แอดมินพร้อมพิมพ์เล่มถัดไปได้ทันที
+  // ⚡ รีเซ็ตหน้าต่างด้านบนทันที แอดมินพร้อมทำงานต่อได้เลย
   selectedFilesArray = [];
   renderFileList();
 
@@ -7429,7 +7441,7 @@ async function executeUpload() {
   runQueueEngine();
 }
 
-// 2. กลไกส่งทีละฉบับ (Sequential FIFO Chaining - ประหยัดแรม ไม่บล็อกหน้าจอ)
+// 2. กลไกส่งทีละฉบับ (Sequential FIFO Chaining)
 async function runQueueEngine() {
   if (isQueueRunning) return;
   const currentTask = uploadQueue.find(t => t.status === 'pending');
@@ -7444,7 +7456,7 @@ async function runQueueEngine() {
   updateDrawerUI();
 
   try {
-    // 1. อ่านไฟล์หนังสือหลัก (PDF)
+    // 1. แปลงไฟล์ PDF เป็น Base64
     const fileData = await new Promise((res, rej) => {
       const r = new FileReader();
       r.onload = e => res(e.target.result);
@@ -7452,7 +7464,7 @@ async function runQueueEngine() {
       r.readAsDataURL(currentTask.file);
     });
 
-    // 2. อ่านสิ่งที่ส่งมาด้วยเฉพาะเล่มนี้ (ถ้ามี)
+    // 2. แปลงไฟล์แนบ (ถ้ามี)
     let attachPayloads = [];
     if (currentTask.attachments && currentTask.attachments.length > 0) {
       for (let attFile of currentTask.attachments) {
@@ -7466,7 +7478,7 @@ async function runQueueEngine() {
       }
     }
 
-    // 3. ส่งข้อมูลขึ้น Apps Script ตัวจริง
+    // 3. ส่งข้อมูลขึ้น Apps Script
     const res = await fetch(SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -7484,53 +7496,27 @@ async function runQueueEngine() {
     if (result.success) {
       currentTask.status = 'success';
 
-      // 4. แจ้งเตือนเข้ากลุ่ม LINE แยกตามกลุ่มงานปลายทาง
-      let uploadedResultsByDept = {};
-      if (result.results && Array.isArray(result.results)) {
-        result.results.forEach(r => {
-          if (!uploadedResultsByDept[r.dept]) uploadedResultsByDept[r.dept] = [];
-          uploadedResultsByDept[r.dept].push({
-            name: r.name,
-            url: r.url,
-            attachUrl: r.attachUrl || ""
+      // 4. บันทึกผลลัพธ์ลงถังรวมของ Batch
+      const batch = uploadBatches[currentTask.batchId];
+      if (batch) {
+        if (result.results && Array.isArray(result.results)) {
+          result.results.forEach(r => {
+            if (!batch.resultsByDept[r.dept]) batch.resultsByDept[r.dept] = [];
+            batch.resultsByDept[r.dept].push({
+              name: r.name,
+              url: r.url,
+              attachUrl: r.attachUrl || ""
+            });
           });
-        });
-      } else {
-        currentTask.departments.forEach(dept => {
-          if (!uploadedResultsByDept[dept]) uploadedResultsByDept[dept] = [];
-          uploadedResultsByDept[dept].push({
-            name: currentTask.finalFileName,
-            url: result.url,
-            attachUrl: result.attachUrl || ""
-          });
-        });
-      }
-
-      for (let dept in uploadedResultsByDept) {
-        if (dept === "อื่นๆ") {
-          if (currentTask.otherStaffNames && currentTask.otherStaffNames.length > 0) {
-            fetch(SCRIPT_URL, {
-              method: 'POST',
-              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-              body: JSON.stringify({
-                action: "sendDirectBatchNotification",
-                sender: currentUser.name || "งานธุรการกลาง",
-                staffNames: currentTask.otherStaffNames,
-                fileList: uploadedResultsByDept[dept]
-              })
-            }).catch(e => console.warn(e));
-          }
         } else {
-          fetch(SCRIPT_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({
-              action: "sendBatchNotification",
-              department: dept,
-              sender: currentUser.name || "งานธุรการกลาง",
-              fileList: uploadedResultsByDept[dept]
-            })
-          }).catch(e => console.warn(e));
+          currentTask.departments.forEach(dept => {
+            if (!batch.resultsByDept[dept]) batch.resultsByDept[dept] = [];
+            batch.resultsByDept[dept].push({
+              name: currentTask.finalFileName,
+              url: result.url,
+              attachUrl: result.attachUrl || ""
+            });
+          });
         }
       }
     } else {
@@ -7540,13 +7526,57 @@ async function runQueueEngine() {
     console.error("Upload error:", errUpload);
     currentTask.status = 'failed';
   } finally {
+    // 5. ตรวจสอบว่ารอบนี้ส่งครบทุกเล่มหรือยัง ถ้าครบแล้วจึงยิง LINE แจ้งเตือนรวม
+    const batch = uploadBatches[currentTask.batchId];
+    if (batch) {
+      batch.remaining--;
+      if (batch.remaining <= 0) {
+        sendCombinedLineNotification(batch);
+        delete uploadBatches[currentTask.batchId];
+      }
+    }
+
     isQueueRunning = false;
     updateDrawerUI();
-    runQueueEngine(); // ทำเล่มถัดไปในคิวทันที
+    runQueueEngine(); // ประมวลผลเล่มถัดไปในคิว
   }
 }
 
-// 3. ฟังก์ชันควบคุมการเปิด/ปิด และ UI ของกล่องลอย
+// 3. ฟังก์ชันส่งแจ้งเตือน LINE แบบรวบยอดรวมทุกเล่ม
+function sendCombinedLineNotification(batch) {
+  for (let dept in batch.resultsByDept) {
+    const fileList = batch.resultsByDept[dept];
+    if (!fileList || fileList.length === 0) continue;
+
+    if (dept === "อื่นๆ") {
+      if (batch.otherStaffNames && batch.otherStaffNames.length > 0) {
+        fetch(SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: "sendDirectBatchNotification",
+            sender: batch.sender,
+            staffNames: batch.otherStaffNames,
+            fileList: fileList
+          })
+        }).catch(e => console.warn(e));
+      }
+    } else {
+      fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: "sendBatchNotification",
+          department: dept,
+          sender: batch.sender,
+          fileList: fileList
+        })
+      }).catch(e => console.warn(e));
+    }
+  }
+}
+
+// 4. ฟังก์ชันควบคุม UI กล่องลอย
 function showUploadDrawer() {
   const drawer = document.getElementById('uploadDrawerWidget');
   if (drawer) drawer.style.display = 'block';
@@ -7614,7 +7644,6 @@ function closeUploadDrawer(e) {
   if (drawer) drawer.style.display = 'none';
 }
 
-// 🛡️ ป้องกันปิดแท็บระหว่างคิวกำลังทำงาน
 window.addEventListener('beforeunload', function(e) {
   if (uploadQueue.some(t => t.status === 'uploading' || t.status === 'pending')) {
     e.preventDefault();

@@ -3009,7 +3009,7 @@
  // --- 1. การตั้งค่าสิทธิ์พื้นฐานองค์กร ---
   const GH_OWNER = "specialtrat905";
   const GH_REPO = "smart-saraban";
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw2gRlmFgnN66zVw349c3cDxoMUlWxYn11j6Izu6tfAtGjsgC8EqbyV8S26tY8yXqCz/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbywZN4HFzC5LLM7i-zCM4fZ842bngnl1ilDPNffTqrjSfAPHFBc1a7cPC7BFKJTKbxLJQ/exec";
 // ⚡ กำหนดค่าเชื่อมต่อ Firebase (ตาม Config ของคุณ)
 const firebaseConfig = {
   apiKey: "AIzaSyBL_Jv3x_UxEkzcVnN6lpQpZdWoIaJvMNM",
@@ -3038,11 +3038,11 @@ function loadLogsFromFirebase(year) {
     const dataList = rawData ? (Array.isArray(rawData) ? rawData : Object.values(rawData)) : [];
     
     if (dataList.length > 0) {
-      // 🛡️ หากข้อมูลความยาวเท่าเดิมและมีข้อมูลอยู่แล้ว ไม่ต้องสั่งวาดตารางใหม่ให้กระพริบ
-      const isSameData = (allLogs.length === dataList.length && currentFirebaseYear === year);
+      // ⚡ ตรวจสอบว่าเนื้อหาข้อมูลเปลี่ยนแปลงจริงหรือไม่ (ตรวจทั้งจำนวนเล่ม และข้อมูลฝ่าย/เลขที่อัปเดต)
+      const isContentChanged = (allLogs.length !== dataList.length) || (JSON.stringify(allLogs) !== JSON.stringify(dataList));
       allLogs = dataList;
 
-      if (!isSameData || allLogs.length === 0) {
+      if (isContentChanged || allLogs.length === 0) {
         console.log(`🔥 [Firebase SUCCESS] อัปเดตข้อมูลปี ${year} (${dataList.length} รายการ)`);
         applyClientSideFilter();
       }
@@ -5600,17 +5600,32 @@ if (qrBtn) {
   // --- 4. ระบบจัดการไฟล์นำเข้าเอกสารสารบรรณ (ผูกไฟล์แนบแยกรายเล่ม) ---
   let currentAttachTargetIndex = null; // จดจำว่ากำลังเลือกไฟล์แนบให้หนังสือแถวไหน
 
-  // 📄 เมื่อเลือกไฟล์หนังสือนำ (PDF)
+  // 📄 เมื่อเลือกไฟล์หนังสือนำ (PDF) พร้อมระบบดึงเลขจริงเดิมอัตโนมัติหากเคยส่งแล้ว
   document.getElementById('fileInput').addEventListener('change', function(e) {
     const files = Array.from(e.target.files);
     files.forEach(file => {
-      // ตรวจสอบชื่อไฟล์ไม่ให้ซ้ำกัน ถ้ายังไม่มีให้สร้าง Object เก็บ { file, attachments: [] }
       if (!selectedFilesArray.some(item => item.file.name === file.name)) {
+        
+        // 🔍 ค้นหาว่าหนังสือชื่อนี้ เคยมีบันทึกเลขที่หนังสือจริงไว้ในระบบแล้วหรือไม่
+        let existingOfficialNo = "";
+        const cleanTarget = file.name.replace(/\s*\[.*?\]/, "").replace(/\.pdf$/i, "").trim();
+        
+        if (allLogs && allLogs.length > 0) {
+          const match = allLogs.find(row => {
+            if (!row || row[0] === "❌") return false;
+            const rowClean = (row[2] || "").toString().replace(/\s*\[.*?\]/, "").replace(/\.pdf$/i, "").trim();
+            return rowClean === cleanTarget;
+          });
+          if (match && match[5]) {
+            existingOfficialNo = match[5].toString().trim();
+          }
+        }
+
         selectedFilesArray.push({
-  file: file,
-  attachments: [], // อาร์เรย์สำหรับเก็บไฟล์สิ่งที่ส่งมาด้วยของเล่มนี้โดยเฉพาะ
-  officialNo: ""   // 🏷️ เลขที่หนังสือจริง (ต้นทาง)
-});
+          file: file,
+          attachments: [],
+          officialNo: existingOfficialNo // 🏷️ ดึงเลขจริงเดิมมาใส่ให้ทันที ไม่ต้องพิมพ์ซ้ำ
+        });
       }
     });
     renderFileList();

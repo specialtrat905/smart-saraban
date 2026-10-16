@@ -2249,7 +2249,7 @@
         </div>
       </div>
 
-      <!-- แถบตัวกรองปีและค้นหา -->
+      <!-- แถบตัวกรองปี ค้นหา และปุ่มลบหลายฉบับด้านขวา -->
       <div class="row g-2 mb-3 align-items-center">
         <div class="col-6 col-md-2">
           <select id="dbManageYearSelect" class="form-select form-select-sm border-success shadow-sm" onchange="changeDbManageYear(this.value)"></select>
@@ -2260,19 +2260,32 @@
             <input type="text" id="dbManageSearchInput" class="form-control" placeholder="พิมพ์ค้นหาเลข หรือ ชื่อหนังสือ..." oninput="filterDbManageTable()">
           </div>
         </div>
+        <!-- 🗑️ ปุ่มลบหลายฉบับ / แถบยืนยันลบชุดที่เลือก (ขวาสุด) -->
+        <div class="col-12 col-md-6 d-flex justify-content-md-end align-items-center gap-2 mt-2 mt-md-0">
+          <button type="button" id="btnToggleDbBatchDelete" class="btn btn-sm btn-outline-danger fw-bold shadow-sm px-3" onclick="toggleDbBatchDeleteMode(true)">
+            🗑️ ลบหลายฉบับ
+          </button>
+          <div id="dbBatchActiveControls" style="display:none;" class="d-flex align-items-center gap-1">
+            <button type="button" id="btnExecuteBatchDelete" class="btn btn-sm btn-danger fw-bold shadow-sm px-3" onclick="confirmBatchDeleteDb()" disabled>
+              🗑️ ลบหนังสือที่เลือก (0)
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary fw-bold px-2" onclick="toggleDbBatchDeleteMode(false)">
+              ❌ ยกเลิก
+            </button>
+          </div>
+        </div>
       </div>
 
-      <!-- ตารางจัดการฐานข้อมูล (เหลือ 3 คอลัมน์ตามต้องการ) -->
+      <!-- ตารางจัดการฐานข้อมูล (ปรับเหลือ 3 คอลัมน์หลักตามข้อ 3) -->
       <div class="table-responsive border rounded shadow-sm bg-white" style="max-height: 68vh;">
         <table class="table table-hover table-bordered align-middle mb-0" style="font-size: 0.88rem;">
           <thead class="table-light text-center sticky-top shadow-sm" style="z-index: 5;">
-         <tr>
-           <th style="width: 48%;">ชื่อหนังสือ / ฝ่าย</th>
-           <th style="width: 28%;">ผู้รับผิดชอบ</th>
-           <th style="width: 14%; min-width: 40px;">เลขจริง</th>
-           <th style="width: 10%; min-width: 38px;">จัดการ</th>
-         </tr>
-       </thead>
+            <tr>
+              <th style="width: 68%;">เลขหนังสือ / ชื่อเรื่อง</th>
+              <th style="width: 18%; min-width: 45px;">เลขจริง</th>
+              <th id="dbManageActionColHeader" style="width: 14%; min-width: 40px;">จัดการ</th>
+            </tr>
+          </thead>
           <tbody id="dbManageTableBody"></tbody>
         </table>
       </div>
@@ -4313,9 +4326,9 @@ let currentPersonalStaffName = "";
   // ==========================================
   let dbManageLogsData = [];
   let currentDbManageYear = currentYearBE;
-  let currentDbManageSubMode = null; // null | 'delete' | 'editDept'
+  let isDbBatchDeleteMode = false; // ตัวแปรสถานะโหมดลบหลายฉบับ
+  let currentTargetFileUrlForOfficialNo = ""; // ลิงก์ไฟล์สำหรับกดเปิดดูในแท็บใหม่
 
-  // ⚙️ เริ่มต้นหน้าจัดการฐานข้อมูล
   function initDbManageView() {
     const ySelect = document.getElementById('dbManageYearSelect');
     if (ySelect) {
@@ -4325,54 +4338,103 @@ let currentPersonalStaffName = "";
       }
       ySelect.innerHTML = opts;
     }
-    selectedBooksToDelete = [];
+    toggleDbBatchDeleteMode(false);
     loadDbManageDataForYear(currentDbManageYear);
   }
 
   function changeDbManageYear(val) {
     currentDbManageYear = parseInt(val);
-    selectedBooksToDelete = [];
+    toggleDbBatchDeleteMode(false);
     loadDbManageDataForYear(currentDbManageYear);
   }
 
-  function switchDbManageSubMode(mode) {
-    // กดปุ่มเดิมซ้ำเพื่อยกเลิกโหมด
-    if (currentDbManageSubMode === mode) {
-      currentDbManageSubMode = null;
-    } else {
-      currentDbManageSubMode = mode;
-    }
+  // 🗑️ เปิด/ปิด โหมดเลือกติ๊กลบหลายฉบับ
+  function toggleDbBatchDeleteMode(enabled) {
+    isDbBatchDeleteMode = enabled;
     selectedBooksToDelete = [];
-    updateDbManageButtonUI();
+
+    const btnStart = document.getElementById('btnToggleDbBatchDelete');
+    const controls = document.getElementById('dbBatchActiveControls');
+    const headerCol = document.getElementById('dbManageActionColHeader');
+
+    if (enabled) {
+      if (btnStart) btnStart.style.display = 'none';
+      if (controls) controls.style.display = 'inline-flex';
+      if (headerCol) {
+        headerCol.innerHTML = `
+          <div class="d-flex justify-content-center align-items-center">
+            <input class="form-check-input border-danger" type="checkbox" id="masterDbDeleteCheck" onchange="toggleMasterDbDeleteCheck(this.checked)" title="เลือกทั้งหมด" style="cursor: pointer; width: 1.25rem; height: 1.25rem;">
+          </div>
+        `;
+      }
+    } else {
+      if (btnStart) btnStart.style.display = 'inline-block';
+      if (controls) controls.style.display = 'none';
+      if (headerCol) headerCol.innerText = "จัดการ";
+    }
+
+    updateDbBatchDeleteButtonUI();
     filterDbManageTable();
   }
 
-function updateDbManageButtonUI() {
-  const btnDel = document.getElementById('btnModeDelete');
-  const btnEdit = document.getElementById('btnModeEditDept');
-  const titleCol = document.getElementById('dbManageActionColTitle');
+  // อัปเดตตัวเลขและสถานะปุ่ม "ลบหนังสือที่เลือก (X)"
+  function updateDbBatchDeleteButtonUI() {
+    const btnExecute = document.getElementById('btnExecuteBatchDelete');
+    if (!btnExecute) return;
 
-  if (!btnDel || !btnEdit) return; // 👈 เพิ่มบรรทัดนี้เพื่อไม่ให้ระบบค้างถ้าไม่มีปุ่ม
-
-  if (currentDbManageSubMode === 'delete') {
-    btnDel.className = "btn btn-sm btn-danger text-white fw-bold shadow-sm";
-    btnEdit.className = "btn btn-sm btn-outline-warning text-dark fw-bold shadow-sm bg-white";
-    if (titleCol) titleCol.innerText = "เลือกลบ";
-  } else if (currentDbManageSubMode === 'editDept') {
-    btnDel.className = "btn btn-sm btn-outline-danger fw-bold shadow-sm bg-white";
-    btnEdit.className = "btn btn-sm btn-warning text-dark fw-bold shadow-sm";
-    if (titleCol) titleCol.innerText = "แก้ไข";
-  } else {
-    btnDel.className = "btn btn-sm btn-outline-danger fw-bold shadow-sm bg-white";
-    btnEdit.className = "btn btn-sm btn-outline-warning text-dark fw-bold shadow-sm bg-white";
-    if (titleCol) titleCol.innerText = "จัดการ";
+    const count = selectedBooksToDelete.length;
+    btnExecute.innerText = `🗑️ ลบหนังสือที่เลือก (${count})`;
+    btnExecute.disabled = (count === 0);
   }
-  updateDbManageDeleteUI();
-}
+
+  // ติ๊กเลือก/ไม่เลือก เล่มเดี่ยว
+  function toggleSelectBookForDelete(encodedFileName, isChecked) {
+    const fileName = decodeURIComponent(encodedFileName);
+    if (isChecked) {
+      if (!selectedBooksToDelete.some(b => b.fileName === fileName)) {
+        selectedBooksToDelete.push({ fileName: fileName });
+      }
+    } else {
+      selectedBooksToDelete = selectedBooksToDelete.filter(b => b.fileName !== fileName);
+    }
+    updateDbBatchDeleteButtonUI();
+
+    const master = document.getElementById('masterDbDeleteCheck');
+    if (master) {
+      const visibleCheckboxes = document.querySelectorAll('.db-manage-row-check');
+      master.checked = visibleCheckboxes.length > 0 && selectedBooksToDelete.length === visibleCheckboxes.length;
+    }
+  }
+
+  // ติ๊กเลือกทั้งหมด (Master Checkbox)
+  function toggleMasterDbDeleteCheck(masterChecked) {
+    document.querySelectorAll('.db-manage-row-check').forEach(cb => {
+      cb.checked = masterChecked;
+    });
+
+    if (masterChecked) {
+      selectedBooksToDelete = [];
+      const currentRows = window._currentFilteredDbManageRows || [];
+      currentRows.forEach(row => {
+        if (row && row[0] !== "❌" && row[2]) {
+          selectedBooksToDelete.push({ fileName: row[2].trim() });
+        }
+      });
+    } else {
+      selectedBooksToDelete = [];
+    }
+    updateDbBatchDeleteButtonUI();
+  }
+
+  // กดยืนยันเพื่อเปิดหน้าต่างกรอกรหัสผ่านลบแบบกลุ่ม
+  function confirmBatchDeleteDb() {
+    if (selectedBooksToDelete.length === 0) return alert("⚠️ กรุณาติ๊กเลือกหนังสือที่ต้องการลบอย่างน้อย 1 ฉบับ");
+    openDeleteConfirmModal();
+  }
 
   function loadDbManageDataForYear(year) {
     const tbody = document.getElementById('dbManageTableBody');
-    tbody.innerHTML = `<tr><td colspan="6" class="text-center p-4"><div class="spinner-border spinner-border-sm text-success me-2"></div> กำลังโหลดข้อมูลปี ${year}...</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="3" class="text-center p-4"><div class="spinner-border spinner-border-sm text-success me-2"></div> กำลังโหลดข้อมูลปี ${year}...</td></tr>`;
 
     rtdb.ref('logs_' + year).once('value', (snapshot) => {
       const rawData = snapshot.val();
@@ -4386,7 +4448,7 @@ function updateDbManageButtonUI() {
             dbManageLogsData = data;
             filterDbManageTable();
           }).catch(() => {
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center p-4 text-danger">⚠️ โหลดข้อมูลไม่สำเร็จ</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="3" class="text-center p-4 text-danger">⚠️ โหลดข้อมูลไม่สำเร็จ</td></tr>`;
           });
       }
     });
@@ -4395,7 +4457,6 @@ function updateDbManageButtonUI() {
   function filterDbManageTable() {
     const search = document.getElementById('dbManageSearchInput') ? document.getElementById('dbManageSearchInput').value.toLowerCase().trim() : "";
 
-    // คำนวณหาเลขหนังสือที่ยังไม่ลงระบบ (Missing Numbers)
     let missingRows = [];
     if (search === "") {
       const existingNumbers = dbManageLogsData.map(row => {
@@ -4446,13 +4507,15 @@ function updateDbManageButtonUI() {
       return b[0].toString().localeCompare(a[0].toString());
     });
 
+    window._currentFilteredDbManageRows = filtered;
     renderDbManageTableRows(filtered);
   }
 
+  // แสดงผลตาราง 3 คอลัมน์ (ข้อ 1: คลิกชื่อเปิดแท็บใหม่, ข้อ 2: สลับ Checkbox ในโหมดลบ, ข้อ 3: กลุ่มงานอยู่ใต้ชื่อเรื่อง)
   function renderDbManageTableRows(rows) {
     const tbody = document.getElementById('dbManageTableBody');
     if (rows.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="4" class="text-center p-4 text-muted fw-bold">ไม่พบข้อมูลหนังสือ</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="3" class="text-center p-4 text-muted fw-bold">ไม่พบข้อมูลหนังสือ</td></tr>`;
       return;
     }
 
@@ -4464,14 +4527,12 @@ function updateDbManageButtonUI() {
       if (isMissing) {
         html += `
           <tr class="row-missing align-middle">
-            <td class="text-start col-title-wrap" style="width: 48%;">
+            <td class="text-start col-title-wrap" style="width: 68%;">
               <span class="text-danger fw-bold d-inline-flex align-items-center gap-1">❌ ${row[2]}</span>
+              <div class="mt-1"><span class="badge bg-secondary bg-opacity-75" style="font-size: 0.70rem;">ยังไม่ได้ลงระบบ</span></div>
             </td>
-            <td class="text-start" style="width: 28%;">
-              <span class="badge bg-secondary bg-opacity-75" style="font-size: 0.72rem;">ยังไม่ได้ลงระบบ</span>
-            </td>
+            <td class="text-center text-muted" style="width: 18%;">-</td>
             <td class="text-center text-muted" style="width: 14%;">-</td>
-            <td class="text-center text-muted" style="width: 10%;">-</td>
           </tr>
         `;
         return;
@@ -4486,30 +4547,60 @@ function updateDbManageButtonUI() {
       bookTitle = bookTitle.replace(/\[.*?\]/g, "").trim();
       if (!bookTitle) bookTitle = cleanNoExt;
 
-      const actionHTML = `
-        <div class="d-flex flex-column align-items-center justify-content-center gap-1">
-          <button class="btn btn-sm btn-outline-warning text-dark py-0 px-1 fw-bold shadow-sm d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 26px; border-radius: 6px;" onclick="openEditBookDeptFromDbManage('${encodeURIComponent(row[2])}')" title="แก้ไขกลุ่มงาน/ผู้รับ">
-            <svg class="btn-svg-icon" style="width:13px; height:13px;" viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
-          </button>
-          <button class="btn btn-sm btn-outline-danger py-0 px-1 fw-bold shadow-sm d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 26px; border-radius: 6px;" onclick="deleteBookFromDbManage('${encodeURIComponent(row[2])}')" title="ลบหนังสือ">
-            <svg class="btn-svg-icon" style="width:13px; height:13px;" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-          </button>
-        </div>
-      `;
+      const fileUrl = row[4] || "";
 
-      // 🏷️ ใช้ฟังก์ชันจัดป้ายแบบกระชับ (เหมือนหน้าแรกตามภาพที่ 3 เป๊ะ)
-      const deptBadges = renderUnifiedDeptBadges(row[3], rawFileName, bookTitle, false, true);
+      // 🔗 ข้อที่ 1: ชื่อหนังสือคลิกแล้วเปิดดูเอกสารในแท็บใหม่ทันที
+      let titleLinkHTML = "";
+      if (fileUrl && fileUrl !== "#") {
+        titleLinkHTML = `
+          <a href="${fileUrl}" target="_blank" rel="noopener noreferrer" class="text-dark fw-bold text-decoration-none clamp-3-lines" style="line-height: 1.4;" title="คลิกเพื่อเปิดดูในแท็บใหม่">
+            ${bookTitle}
+            <span class="text-primary small ms-1" style="font-size: 0.72rem;">↗</span>
+          </a>
+        `;
+      } else {
+        titleLinkHTML = `<div class="fw-bold text-dark clamp-3-lines" title="${bookTitle}">${bookTitle}</div>`;
+      }
 
+      // 🏷️ ข้อที่ 3: ดึงป้ายกลุ่มงานและรายชื่อผู้รับ มาแสดงไว้ใต้ชื่อเรื่อง
+      const deptBadges = renderUnifiedDeptBadges(row[3], rawFileName, bookTitle, false, false);
+
+      // คอลัมน์จัดการ: สลับระหว่าง [ปุ่มปกติ] กับ [Checkbox ลบหลายฉบับ]
+      let actionHTML = "";
+      const encFileName = encodeURIComponent(row[2]);
+
+      if (isDbBatchDeleteMode) {
+        const isChecked = selectedBooksToDelete.some(b => b.fileName === row[2]);
+        actionHTML = `
+          <div class="d-flex justify-content-center align-items-center">
+            <input class="form-check-input border-danger db-manage-row-check" type="checkbox" style="width: 1.3rem; height: 1.3rem; cursor: pointer;"
+              ${isChecked ? 'checked' : ''} onchange="toggleSelectBookForDelete('${encFileName}', this.checked)">
+          </div>
+        `;
+      } else {
+        actionHTML = `
+          <div class="d-flex flex-column align-items-center justify-content-center gap-1">
+            <button class="btn btn-sm btn-outline-warning text-dark py-0 px-1 fw-bold shadow-sm d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 26px; border-radius: 6px;" onclick="openEditBookDeptFromDbManage('${encFileName}')" title="แก้ไขกลุ่มงาน/ผู้รับ">
+              <svg class="btn-svg-icon" style="width:13px; height:13px;" viewBox="0 0 24 24"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+            </button>
+            <button class="btn btn-sm btn-outline-danger py-0 px-1 fw-bold shadow-sm d-inline-flex align-items-center justify-content-center" style="width: 28px; height: 26px; border-radius: 6px;" onclick="deleteBookFromDbManage('${encFileName}')" title="ลบหนังสือ">
+              <svg class="btn-svg-icon" style="width:13px; height:13px;" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            </button>
+          </div>
+        `;
+      }
+
+      // คอลัมน์เลขจริง: ส่ง fileUrl ไปด้วยเพื่อให้เปิดดูในหน้าต่าง Modal ได้
       const officialNo = (row[5] || "").toString().trim();
       let officialNoHTML = "";
-      const encFileName = encodeURIComponent(row[2]);
       const encOfficialNo = encodeURIComponent(officialNo);
+      const encFileUrl = encodeURIComponent(fileUrl);
 
       if (officialNo) {
         officialNoHTML = `
           <div class="d-flex flex-column align-items-center justify-content-center gap-1">
             <span class="text-primary fw-bold text-break text-center lh-sm" style="font-size: 0.76rem;">${officialNo}</span>
-            <button class="btn btn-sm btn-outline-success btn-official-mini shadow-sm" onclick="openEditOfficialNoModal('${encFileName}', '${encOfficialNo}')" title="แก้ไขเลขจริง: ${officialNo}">
+            <button class="btn btn-sm btn-outline-success btn-official-mini shadow-sm" onclick="openEditOfficialNoModal('${encFileName}', '${encOfficialNo}', '${encFileUrl}')" title="แก้ไขเลขจริง: ${officialNo}">
               <svg class="btn-svg-icon" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
             </button>
           </div>
@@ -4517,7 +4608,7 @@ function updateDbManageButtonUI() {
       } else {
         officialNoHTML = `
           <div class="d-flex align-items-center justify-content-center">
-            <button class="btn btn-sm btn-warning text-dark btn-official-mini shadow-sm" onclick="openEditOfficialNoModal('${encFileName}', '')" title="ใส่เลขที่หนังสือจริง">
+            <button class="btn btn-sm btn-warning text-dark btn-official-mini shadow-sm" onclick="openEditOfficialNoModal('${encFileName}', '', '${encFileUrl}')" title="ใส่เลขที่หนังสือจริง">
               <svg class="btn-svg-icon" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
             </button>
           </div>
@@ -4526,19 +4617,15 @@ function updateDbManageButtonUI() {
 
       html += `
         <tr class="align-middle fw-bold">
-          <td class="text-start text-dark col-title-wrap" style="width: 48%; font-size: 0.84rem;">
+          <td class="text-start text-dark col-title-wrap" style="width: 68%; font-size: 0.84rem;">
             <div class="fw-bold text-success" style="font-size: 0.85rem; margin-bottom: 2px;">[${bookNumber}]</div>
-            <div class="fw-bold text-dark clamp-3-lines" title="${bookTitle}">${bookTitle}</div>
+            ${titleLinkHTML}
+            ${deptBadges}
           </td>
-          <td class="text-start" style="width: 28%; vertical-align: middle; padding: 6px 8px;">
-            <div class="d-flex flex-wrap align-items-center gap-1">
-              ${deptBadges}
-            </div>
-          </td>
-          <td class="text-center" style="width: 14%; vertical-align: middle; padding: 4px 2px;">
+          <td class="text-center" style="width: 18%; vertical-align: middle; padding: 4px 2px;">
             ${officialNoHTML}
           </td>
-          <td class="text-center" style="width: 10%; padding: 4px 1px;">
+          <td class="text-center" style="width: 14%; padding: 4px 1px;">
             ${actionHTML}
           </td>
         </tr>
@@ -9338,9 +9425,10 @@ function toggleAdminUploadBox() {
   let officialNoModalInstance = null;
   let currentTargetFileNameForOfficialNo = "";
 
-  function openEditOfficialNoModal(encodedFileName, encodedCurrentNo) {
+  function openEditOfficialNoModal(encodedFileName, encodedCurrentNo, encodedFileUrl) {
     currentTargetFileNameForOfficialNo = decodeURIComponent(encodedFileName);
     const currentNo = decodeURIComponent(encodedCurrentNo || "");
+    currentTargetFileUrlForOfficialNo = decodeURIComponent(encodedFileUrl || "");
 
     const titleEl = document.getElementById('modalTargetBookTitle');
     const inputEl = document.getElementById('modalOfficialNoInput');
@@ -9355,6 +9443,15 @@ function toggleAdminUploadBox() {
       officialNoModalInstance = new bootstrap.Modal(document.getElementById('officialNoModal'));
     }
     officialNoModalInstance.show();
+  }
+
+  // ฟังก์ชันสำหรับปุ่มตรงกลางใน Modal: เปิดดู PDF ในแท็บใหม่
+  function openOfficialNoDocNewTab() {
+    if (currentTargetFileUrlForOfficialNo && currentTargetFileUrlForOfficialNo !== "#") {
+      window.open(currentTargetFileUrlForOfficialNo, '_blank');
+    } else {
+      alert("⚠️ ไม่พบลิงก์ไฟล์ของหนังสือฉบับนี้");
+    }
   }
 
   async function saveOfficialNo() {
@@ -9577,8 +9674,12 @@ window.addEventListener('load', function() {
           <label class="form-label fw-bold small text-dark mb-1">เลขที่หนังสือจริง (เช่น ศธ 04007.01/5225):</label>
           <input type="text" id="modalOfficialNoInput" class="form-control form-control-sm border-primary fw-bold" placeholder="ระบุเลขที่หนังสือจริง..." onkeydown="if(event.key==='Enter'){saveOfficialNo();}">
         </div>
-        <div class="modal-footer bg-white p-2 d-flex justify-content-between">
-          <button type="button" class="btn btn-sm btn-secondary px-3" data-bs-dismiss="modal">ยกเลิก</button>
+        <div class="modal-footer bg-white p-2 d-flex justify-content-between align-items-center">
+          <button type="button" class="btn btn-sm btn-secondary px-3" data-bs-dismiss="modal">❌ ยกเลิก</button>
+          <!-- 📄 ปุ่มเปิดดูเอกสารแท็บใหม่ วางไว้ตรงกลางตามต้องการ -->
+          <button type="button" id="modalOpenDocNewTabBtn" class="btn btn-sm btn-outline-primary px-3 fw-bold shadow-sm" onclick="openOfficialNoDocNewTab()">
+            📄 เปิดดูเอกสาร
+          </button>
           <button type="button" id="saveOfficialNoBtn" class="btn btn-sm btn-primary px-4 fw-bold shadow-sm" onclick="saveOfficialNo()">💾 บันทึก</button>
         </div>
       </div>

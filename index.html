@@ -5203,27 +5203,30 @@ window.addEventListener('popstate', () => {
       errDiv.innerText = "กรุณากรอกรหัสผ่านเพื่อยืนยัน";
       return;
     }
-    if (pass !== "1234") {
-      errDiv.innerText = "รหัสผ่านไม่ถูกต้อง";
-      return;
-    }
 
     const btn = document.getElementById('confirmDeleteStaffBtn');
     btn.disabled = true;
-    btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> กำลังลบ...`;
+    btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> กำลังตรวจสอบและลบ...`;
+    errDiv.innerText = "";
 
     try {
       const res = await fetch(SCRIPT_URL, {
         method: 'POST',
-        body: JSON.stringify({ action: "deleteStaff", name: staffNameToDelete })
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: "deleteStaff",
+          name: staffNameToDelete,
+          adminUser: currentUser.user || "admin",
+          adminPass: pass
+        })
       });
       const result = await res.json();
       if (result.success) {
         if (deleteStaffModalInstance) deleteStaffModalInstance.hide();
-        alert(`✅ ลบ "${staffNameToDelete}" ออกจากระบบเรียบร้อยแล้ว`);
+        alert(`✅ ลบข้อมูล "${staffNameToDelete}" ออกจากระบบเรียบร้อยแล้ว`);
         loadStaffList();
       } else {
-        errDiv.innerText = result.message || "ไม่สามารถลบข้อมูลได้";
+        errDiv.innerText = result.message || "รหัสผ่าน Admin ไม่ถูกต้อง";
       }
     } catch (e) {
       errDiv.innerText = "เชื่อมต่อเซิร์ฟเวอร์ล้มเหลว";

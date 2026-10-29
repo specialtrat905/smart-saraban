@@ -2107,11 +2107,20 @@
           <small class="text-muted">รายการทั้งหมด <span id="dutyTripTotalCount" class="fw-bold text-dark">0</span> รายการ</small>
         </div>
         <div class="d-flex flex-wrap gap-2">
-          <!-- ➕ ปุ่มเพิ่มรายการไปราชการใหม่ (เฉพาะ Admin) -->
-          <button id="adminAddDutyTripBtn" class="btn btn-sm btn-success fw-bold shadow-sm" style="display:none;" onclick="openAddDutyTripForm()">
-            <svg class="btn-svg-icon me-1" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg> เพิ่มรายการไปราชการ
-          </button>
-        </div>
+  <!-- 📊 ปุ่มดาวน์โหลด Excel ตามตัวกรอง -->
+  <button class="btn btn-sm btn-outline-success fw-bold shadow-sm bg-white px-2 py-1" onclick="exportDutyTripToExcel()" title="ดาวน์โหลด Excel ตามหน้าจอ">
+    📊 Excel
+  </button>
+  <!-- 🖨️ ปุ่มพิมพ์ / PDF ตามตัวกรอง -->
+  <button class="btn btn-sm btn-outline-dark fw-bold shadow-sm bg-white px-2 py-1" onclick="printDutyTripReport()" title="พิมพ์ / PDF ตามหน้าจอ">
+    🖨️ พิมพ์ / PDF
+  </button>
+  
+  <!-- ➕ ปุ่มเพิ่มรายการไปราชการเดิม (เฉพาะ Admin) -->
+  <button id="adminAddDutyTripBtn" class="btn btn-sm btn-success fw-bold shadow-sm" style="display:none;" onclick="openAddDutyTripForm()">
+    ➕ เพิ่มรายการไปราชการ
+  </button>
+</div>
       </div>
 
       <!-- <svg class="btn-svg-icon me-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg> แถบตัวกรองและค้นหา (เดือน, ปี, บุคลากร, คำค้นหา) -->
@@ -9590,6 +9599,119 @@ window.addEventListener('load', function() {
       console.warn("Auto open personal view error:", err);
     }
   });
+
+  // 📊 ฟังก์ชันดึงข้อมูลรายการไปราชการที่ผ่านการกรองบนหน้าจอแล้วปัจจุบัน
+  function getFilteredDutyTripRows() {
+    const selectedMonth = document.getElementById('dutyTripMonthFilter') ? document.getElementById('dutyTripMonthFilter').value : "all";
+    const selectedYear = document.getElementById('dutyTripYearFilter') ? document.getElementById('dutyTripYearFilter').value : "all";
+    const search = document.getElementById('dutyTripSearchInput') ? document.getElementById('dutyTripSearchInput').value.toLowerCase().trim() : "";
+    const staffFilter = document.getElementById('dutyTripStaffFilter') ? document.getElementById('dutyTripStaffFilter').value.trim() : "";
+
+    return fullDutyTripData.filter(d => {
+      if (!d) return false;
+      const parsed = parseDutyTripDate3Rows(d.date);
+
+      if (selectedMonth !== "all" && parsed.month !== selectedMonth) return false;
+      if (selectedYear !== "all" && parsed.rawYear !== selectedYear) return false;
+      if (staffFilter !== "" && !(d.staff || "").toString().includes(staffFilter)) return false;
+
+      if (search !== "") {
+        const task = toArabicNums(d.task || "").toLowerCase();
+        const date = toArabicNums(d.date || "").toLowerCase();
+        const location = toArabicNums(d.location || "").toLowerCase();
+        const staff = toArabicNums(d.staff || "").toLowerCase();
+        return task.includes(search) || date.includes(search) || location.includes(search) || staff.includes(search);
+      }
+      return true;
+    });
+  }
+
+  // 📥 ดาวน์โหลดข้อมูลไปราชการเป็นไฟล์ Excel (.csv / เปิดใน Google Sheets ได้)
+  function exportDutyTripToExcel() {
+    const list = getFilteredDutyTripRows();
+    if (list.length === 0) return alert("⚠️ ไม่พบข้อมูลไปราชการตามเงื่อนไขที่กรอง สำหรับส่งออก");
+
+    let csvContent = "\uFEFFลำดับ,วันที่ไปราชการ,ราชการที่ปฏิบัติ,สถานที่,ผู้ไปราชการ\n";
+    list.forEach((d, idx) => {
+      const cleanDate = toArabicNums(d.date || "").replace(/\s+/g, ' ').trim();
+      const cleanTask = toArabicNums(d.task || "").replace(/"/g, '""');
+      const cleanLoc = toArabicNums(d.location || "").replace(/"/g, '""');
+      const cleanStaff = toArabicNums(d.staff || "").replace(/\r?\n/g, ", ").replace(/"/g, '""');
+
+      csvContent += `"${idx + 1}","${cleanDate}","${cleanTask}","${cleanLoc}","${cleanStaff}"\n`;
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `รายงานประวัติไปราชการ_${new Date().getTime()}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  // 🖨️ พิมพ์ / บันทึก PDF รายงานประวัติไปราชการตามตัวกรอง
+  function printDutyTripReport() {
+    const list = getFilteredDutyTripRows();
+    if (list.length === 0) return alert("⚠️ ไม่พบข้อมูลไปราชการตามเงื่อนไขที่กรอง สำหรับพิมพ์");
+
+    const printWindow = window.open('', '_blank');
+    let rowsHtml = list.map((d, idx) => {
+      const cleanDate = toArabicNums(d.date || "-");
+      const cleanTask = toArabicNums(d.task || "-");
+      const cleanLoc = toArabicNums(d.location || "-");
+      const cleanStaff = toArabicNums(d.staff || "-").replace(/\r?\n/g, "<br>");
+
+      return `
+        <tr>
+          <td style="text-align:center; vertical-align:middle;">${idx + 1}</td>
+          <td style="text-align:center; vertical-align:middle; white-space:nowrap;">${cleanDate}</td>
+          <td style="vertical-align:middle;">${cleanTask}</td>
+          <td style="vertical-align:middle;">${cleanLoc}</td>
+          <td style="vertical-align:middle; font-size:12px;">${cleanStaff}</td>
+        </tr>
+      `;
+    }).join('');
+
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>รายงานประวัติการไปราชการ ศกศ.ตราด</title>
+          <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;700&display=swap" rel="stylesheet">
+          <style>
+            body { font-family: 'Sarabun', sans-serif; padding: 25px; color: #000; }
+            h3, p { text-align: center; margin: 4px 0; }
+            table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+            th, td { border: 1px solid #000; padding: 6px 8px; font-size: 13px; }
+            th { background-color: #f2f2f2; text-align: center; }
+          </style>
+        </head>
+        <body>
+          <h3>สรุปประวัติการไปราชการ ศูนย์การศึกษาพิเศษประจำจังหวัดตราด</h3>
+          <p>ข้อมูลตามเงื่อนไขที่กรอง (รวมทั้งหมด ${list.length} รายการ)</p>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 6%;">ลำดับ</th>
+                <th style="width: 18%;">วันที่ไปราชการ</th>
+                <th style="width: 30%;">ราชการที่ปฏิบัติ</th>
+                <th style="width: 24%;">สถานที่</th>
+                <th style="width: 22%;">ผู้ไปราชการ</th>
+              </tr>
+            </thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 500);
+  }
 
 </script>
 <!-- 📝 Modal All-in-One: แสดง QR Code ที่พบด้านบน + ข้อความเอกสารและตารางด้านล่าง -->

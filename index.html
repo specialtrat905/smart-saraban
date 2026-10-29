@@ -5472,23 +5472,6 @@ window.addEventListener('popstate', () => {
     });
   }
 
-  // 📡 ตัวดักฟัง Realtime: ดีดออกเฉพาะหน้าจอ PC เมื่อข้ามเที่ยงคืน (มือถือจะไม่ถูกดีดออก)
-  function listenAdminSessionExpiry(sessionDate) {
-    const isPC = window.innerWidth >= 769;
-    if (!isPC) return; // บนมือถือไม่เปิดตัวดีดออกเด็ดขาด
-
-    rtdb.ref('admin_session_date').on('value', (snapshot) => {
-      const activeDate = snapshot.val();
-      const now = new Date();
-      const currentToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-
-      if (currentUser.role === 'Admin' && (!activeDate || activeDate !== currentToday)) {
-        alert("🔒 หมดเวลาเซสชันผู้ดูแลระบบประจำวัน (หลังเที่ยงคืน) กรุณาสแกน QR หรือลงชื่อเข้าใช้ใหม่");
-        logout();
-      }
-    });
-  }
-
 function updateNavForView(viewName) {
   const sarabanNavBtn = document.getElementById('sarabanNavBtn');
   const staffBtn = document.getElementById('manageStaffBtn');
@@ -8869,7 +8852,7 @@ let currentPdfFileName = ''; // เพิ่มตัวแปรเก็บช
     const splash = document.getElementById('appSplashScreen');
     if (splash) {
       splash.classList.add('splash-hidden');
-      setTimeout(() => { splash.style.display = 'none'; }, 550);
+      setTimeout(() => { splash.style.display = 'none'; }, 300);
     }
   }
 
@@ -9041,7 +9024,7 @@ let currentPdfFileName = ''; // เพิ่มตัวแปรเก็บช
 
     const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     if (isMobile) {
-      setTimeout(dismissSplashScreen, 3000);
+      setTimeout(dismissSplashScreen, 1500);
     } else {
       dismissSplashScreen();
     }

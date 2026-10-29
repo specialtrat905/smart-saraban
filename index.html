@@ -5376,6 +5376,18 @@ window.addEventListener('popstate', () => {
       display.innerHTML = `<div class="row g-1 m-0 w-100">${itemsHTML}</div>`;
     }
   }
+  // 🗓️ ฟังก์ชันหาค่าวันที่ของวันจันทร์ต้นสัปดาห์ปัจจุบัน (ใช้ตัดรอบเซสชันทุกเช้าวันจันทร์)
+  function getAdminSessionWeekKey() {
+    const now = new Date();
+    const day = now.getDay(); // 0 = อาทิตย์, 1 = จันทร์, ..., 6 = เสาร์
+    const diff = now.getDate() - (day === 0 ? 6 : day - 1);
+    const monday = new Date(now.getFullYear(), now.getMonth(), diff);
+    const y = monday.getFullYear();
+    const m = String(monday.getMonth() + 1).padStart(2, '0');
+    const d = String(monday.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
   // --- 3. ระบบรักษาความปลอดภัยและจัดการสิทธิ์การเข้าใช้งาน ---
   function checkSession() {
     const savedUser = localStorage.getItem('sarabanUser');
@@ -5384,24 +5396,23 @@ window.addEventListener('popstate', () => {
         const parsedUser = JSON.parse(savedUser);
         const isPC = window.innerWidth >= 769;
 
-        // 🛡️ ถ้าเป็น Admin บน PC: ตรวจเซสชันรายวัน (รีเซ็ตทุกเที่ยงคืน)
+        // 🛡️ ถ้าเป็น Admin บน PC: ตรวจเซสชันรายสัปดาห์ (รีเซ็ตทุกเช้าวันจันทร์)
         if (parsedUser.role === 'Admin' && isPC) {
-          const now = new Date();
-          const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+          const currentWeekKey = getAdminSessionWeekKey();
 
           rtdb.ref('admin_session_date').once('value', (snapshot) => {
-            const activeSessionDate = snapshot.val();
+            const activeSessionKey = snapshot.val();
 
-            // หากข้ามวันแล้ว (วันที่ไม่ตรงกับวันนี้) ให้เคลียร์สิทธิ์บน PC เพื่อให้ล็อกอินใหม่
-            if (!activeSessionDate || activeSessionDate !== todayStr) {
+            // หากขึ้นสัปดาห์ใหม่ (ไม่ตรงกับรอบวันจันทร์นี้) ให้เคลียร์สิทธิ์บน PC เพื่อล็อกอินใหม่
+            if (!activeSessionKey || activeSessionKey !== currentWeekKey) {
               localStorage.removeItem('sarabanUser');
-              document.documentElement.classList.remove('has-session'); // 👈 เพิ่มบรรทัดนี้
+              document.documentElement.classList.remove('has-session');
               document.getElementById('loginPage').style.display = 'block';
               document.getElementById('mainApp').style.display = 'none';
               return;
             }
 
-            // ✅ ถ้ายังเป็นวันเดียวกัน: เข้าหน้าแอปหลักทันที ไม่ต้องล็อกอินใหม่
+            // ✅ ถ้ายังอยู่ในสัปดาห์เดียวกัน: เข้าหน้าแอปหลักทันที ไม่ต้องล็อกอินใหม่
             currentUser = parsedUser;
             document.getElementById('loginPage').style.display = 'none';
             document.getElementById('mainApp').style.display = 'block';
@@ -5417,7 +5428,7 @@ window.addEventListener('popstate', () => {
             updateYearOptions();
             resetAndReloadLogs();
 
-            listenAdminSessionExpiry(todayStr); // เฝ้าระวังกรณีเปิดหน้าจอค้างข้ามเที่ยงคืน
+            listenAdminSessionExpiry(currentWeekKey); // เฝ้าระวังกรณีเปิดหน้าจอค้างข้ามคืนวันอาทิตย์สู่วันจันทร์
           });
           return;
         }
@@ -5443,6 +5454,22 @@ window.addEventListener('popstate', () => {
         updateYearOptions();
         resetAndReloadLogs(); 
     }
+  }
+
+  // 📡 ตัวดักฟัง Realtime: ดีดออกเฉพาะหน้าจอ PC เมื่อขึ้นวันจันทร์ใหม่ (มือถือไม่ถูกดีดออก)
+  function listenAdminSessionExpiry(sessionKey) {
+    const isPC = window.innerWidth >= 769;
+    if (!isPC) return;
+
+    rtdb.ref('admin_session_date').on('value', (snapshot) => {
+      const activeKey = snapshot.val();
+      const currentWeekKey = getAdminSessionWeekKey();
+
+      if (currentUser.role === 'Admin' && (!activeKey || activeKey !== currentWeekKey)) {
+        alert("🔒 หมดเวลาเซสชันผู้ดูแลระบบประจำสัปดาห์ (ขึ้นรอบวันจันทร์ใหม่) กรุณาสแกน QR หรือลงชื่อเข้าใช้ใหม่");
+        logout();
+      }
+    });
   }
 
   // 📡 ตัวดักฟัง Realtime: ดีดออกเฉพาะหน้าจอ PC เมื่อข้ามเที่ยงคืน (มือถือจะไม่ถูกดีดออก)
@@ -7034,13 +7061,13 @@ function generateNewAdminQrSession() {
         name: val.adminName || "ผู้ดูแลระบบ"
       };
 
-      const now = new Date();
-      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      // เปลี่ยนท่อนบันทึกวันที่ใน generateNewAdminQrSession เป็นแบบสัปดาห์
+      const weekKey = getAdminSessionWeekKey();
       
-      rtdb.ref('admin_session_date').set(todayStr);
+      rtdb.ref('admin_session_date').set(weekKey);
       localStorage.setItem('sarabanUser', JSON.stringify(currentUser));
       proceedToMainApp();
-      listenAdminSessionExpiry(todayStr);
+      listenAdminSessionExpiry(weekKey);
     }
   });
 
@@ -7211,13 +7238,12 @@ async function approveComputerQrLogin() {
 
       if (resData.success && resData.user) {
         currentUser = resData.user;
-        const now = new Date();
-        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const weekKey = getAdminSessionWeekKey();
         
-        rtdb.ref('admin_session_date').set(todayStr).then(() => {
+        rtdb.ref('admin_session_date').set(weekKey).then(() => {
           localStorage.setItem('sarabanUser', JSON.stringify(currentUser));
           proceedToMainApp();
-          listenAdminSessionExpiry(todayStr);
+          listenAdminSessionExpiry(weekKey);
         }).catch(() => {
           localStorage.setItem('sarabanUser', JSON.stringify(currentUser));
           proceedToMainApp();

@@ -14,6 +14,39 @@
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <style>
+    /* 🍏 จัดการพื้นที่ Safe Area สำหรับ iPhone (Dynamic Island / Notch) ใน PDF Viewer Modal */
+#pdfViewerModal .modal-dialog {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
+}
+
+#pdfViewerModal .modal-content {
+  border-radius: 0 !important;
+  height: 100% !important;
+}
+
+#pdfViewerModal .modal-header {
+  /* เว้นระยะรอยบาก/เกาะไดนามิกของ iPhone อัตโนมัติ โดยมีขั้นต่ำอย่างน้อย 40px บนจอมือถือ */
+  padding-top: max(env(safe-area-inset-top), 40px) !important;
+  padding-bottom: 10px !important;
+  padding-left: 14px !important;
+  padding-right: 14px !important;
+}
+
+@media (min-width: 769px) {
+  #pdfViewerModal .modal-dialog {
+    height: 90vh !important;
+    margin: 1.75rem auto !important;
+  }
+  #pdfViewerModal .modal-content {
+    border-radius: 16px !important;
+  }
+  #pdfViewerModal .modal-header {
+    padding-top: 10px !important;
+  }
+}
 
     /* ถ้าเครื่องนี้เคยล็อกอินไว้แล้ว ให้ซ่อนหน้าล็อกอินตั้งแต่เฟรมแรกที่เปิดเว็บ */
   html.has-session #loginPage {
@@ -2468,10 +2501,10 @@
                 สแกนข้อความ
               </button>
               
-              <button type="button" class="btn btn-danger btn-sm px-2 py-1 fw-bold shadow-sm d-inline-flex align-items-center gap-1" data-bs-dismiss="modal" title="ปิดหน้าต่าง" style="font-size: 0.8rem; border-radius: 6px;">
-                <svg class="btn-svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                ปิด
-              </button>
+              <button type="button" class="btn btn-danger btn-sm px-3 py-1 fw-bold shadow-sm d-inline-flex align-items-center gap-1 flex-shrink-0" data-bs-dismiss="modal" title="ปิดหน้าต่าง" style="font-size: 0.82rem; border-radius: 8px; min-height: 32px; z-index: 1060;">
+  <svg class="btn-svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+  <span>ปิด</span>
+</button>
             </div>
           </div>
 

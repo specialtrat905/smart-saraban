@@ -3174,6 +3174,144 @@ function loadLogsFromFirebase(year) {
     }
   }
 
+  let currentModalBookIndex = null;
+  let attachmentManageModalInstance = null;
+  let linksPickerModalInstance = null;
+
+  function openAttachmentManageModal(index) {
+    currentModalBookIndex = index;
+    const targetBook = selectedFilesArray[index];
+    if (!targetBook) return;
+
+    if (!targetBook.links) targetBook.links = [];
+    if (!targetBook.attachments) targetBook.attachments = [];
+
+    document.getElementById('attModalBookTitle').innerText = targetBook.file.name;
+    document.getElementById('attModalLinkInput').value = "";
+
+    renderModalAttachmentsList();
+
+    if (!attachmentManageModalInstance) {
+      attachmentManageModalInstance = new bootstrap.Modal(document.getElementById('attachmentManageModal'));
+    }
+    attachmentManageModalInstance.show();
+  }
+
+  function renderModalAttachmentsList() {
+    if (currentModalBookIndex === null || !selectedFilesArray[currentModalBookIndex]) return;
+    const targetBook = selectedFilesArray[currentModalBookIndex];
+
+    const fileContainer = document.getElementById('attModalFileList');
+    const fileCountText = document.getElementById('attModalFileCountText');
+    const atts = targetBook.attachments || [];
+    fileCountText.innerText = atts.length > 0 ? `แนบแล้ว ${atts.length} ไฟล์` : "ยังไม่มีไฟล์แนบ";
+
+    fileContainer.innerHTML = atts.map((att, idx) => `
+      <div class="d-flex justify-content-between align-items-center p-1 px-2 bg-white rounded border shadow-sm" style="font-size: 0.76rem;">
+        <span class="text-truncate text-dark" style="max-width: 85%;">📄 ${att.name}</span>
+        <span role="button" class="text-danger fw-bold cursor-pointer" onclick="removeAttachmentFromModal(${idx})">✕</span>
+      </div>
+    `).join('');
+
+    const linkContainer = document.getElementById('attModalLinkList');
+    const lnks = targetBook.links || [];
+    linkContainer.innerHTML = lnks.map((lnk, idx) => `
+      <div class="d-flex justify-content-between align-items-center p-1 px-2 bg-white rounded border border-info border-opacity-50 shadow-sm" style="font-size: 0.76rem;">
+        <a href="${lnk}" target="_blank" rel="noopener noreferrer" class="text-truncate text-primary text-decoration-none" style="max-width: 85%;">🔗 ${lnk}</a>
+        <span role="button" class="text-danger fw-bold cursor-pointer" onclick="removeLinkFromModal(${idx})">✕</span>
+      </div>
+    `).join('');
+
+    renderFileList();
+  }
+
+  function triggerFileInputFromModal() {
+    currentAttachTargetIndex = currentModalBookIndex;
+    const input = document.getElementById('itemAttachFileInput');
+    if (input) {
+      input.value = "";
+      input.click();
+    }
+  }
+
+  function addLinkFromModal() {
+    if (currentModalBookIndex === null || !selectedFilesArray[currentModalBookIndex]) return;
+    const input = document.getElementById('attModalLinkInput');
+    let url = input.value.trim();
+
+    if (!url) return alert("กรุณากรอกลิงก์ URL ก่อน");
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+      url = "https://" + url;
+    }
+
+    const targetBook = selectedFilesArray[currentModalBookIndex];
+    if (!targetBook.links.includes(url)) {
+      targetBook.links.push(url);
+      input.value = "";
+      renderModalAttachmentsList();
+    }
+  }
+
+  function removeAttachmentFromModal(idx) {
+    if (currentModalBookIndex !== null && selectedFilesArray[currentModalBookIndex]) {
+      selectedFilesArray[currentModalBookIndex].attachments.splice(idx, 1);
+      renderModalAttachmentsList();
+    }
+  }
+
+  function removeLinkFromModal(idx) {
+    if (currentModalBookIndex !== null && selectedFilesArray[currentModalBookIndex]) {
+      selectedFilesArray[currentModalBookIndex].links.splice(idx, 1);
+      renderModalAttachmentsList();
+    }
+  }
+
+  function removeSpecificLink(bIdx, lIdx, event) {
+    if (event) event.stopPropagation();
+    if (selectedFilesArray[bIdx] && selectedFilesArray[bIdx].links) {
+      selectedFilesArray[bIdx].links.splice(lIdx, 1);
+      renderFileList();
+    }
+  }
+
+  // ฟังก์ชันแยกข้อมูลสิ่งที่ส่งมาด้วย (คอลัมน์ G) ออกเป็น [ไฟล์แนบ Drive] และ [ลิงก์ภายนอก]
+  function parseAttachmentField(rawStr) {
+    if (!rawStr) return { driveFolderUrl: "", externalLinks: [] };
+    const parts = rawStr.toString().split('|').map(s => s.trim()).filter(Boolean);
+    let driveUrl = "";
+    let links = [];
+
+    parts.forEach(p => {
+      if (p.includes("drive.google.com") && !driveUrl) {
+        driveUrl = p;
+      } else {
+        links.push(p);
+      }
+    });
+
+    return { driveFolderUrl: driveUrl, externalLinks: links };
+  }
+
+  // ฟังก์ชันเปิด Picker สำหรับกรณีมีหลายลิงก์
+  function openLinksPickerModal(encodedTitle, encodedLinksStr) {
+    const title = decodeURIComponent(encodedTitle);
+    const links = decodeURIComponent(encodedLinksStr).split('|').map(l => l.trim()).filter(Boolean);
+    const container = document.getElementById('linksPickerContainer');
+    document.getElementById('linksPickerTitle').innerText = title;
+
+    container.innerHTML = links.map((l, i) => `
+      <a href="${l}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary text-start d-flex justify-content-between align-items-center py-2 px-3 fw-bold shadow-sm">
+        <span class="text-truncate" style="max-width: 90%;">🔗 ลิงก์ที่ ${i + 1}: ${l}</span>
+        <span>↗</span>
+      </a>
+    `).join('');
+
+    if (!linksPickerModalInstance) {
+      linksPickerModalInstance = new bootstrap.Modal(document.getElementById('linksPickerModal'));
+    }
+    linksPickerModalInstance.show();
+  }
+
   function updateStaffDatalist() {
     const list = document.getElementById('staffList');
     if (list && fullStaffData.length > 0) {
@@ -5679,7 +5817,8 @@ if (qrBtn) {
         selectedFilesArray.push({
           file: file,
           attachments: [],
-          officialNo: existingOfficialNo // 🏷️ ดึงเลขจริงเดิมมาใส่ให้ทันที ไม่ต้องพิมพ์ซ้ำ
+          links: [], // 🔗 รองรับเก็บรายการลิงก์ภายนอก
+          officialNo: existingOfficialNo
         });
       }
     });
@@ -5734,7 +5873,7 @@ function promptOfficialNoForBook(index) {
     }
   }
 
-  // 📄 แสดงรายการหนังสือ พร้อมปุ่มแนบไฟล์ของแต่ละเล่ม
+  // 📄 แสดงรายการหนังสือ พร้อมปุ่ม แนบไฟล์/ลิงก์ (All-in-One Button)
   function renderFileList() {
     const fileBadge = document.getElementById('fileCountBadge');
     const container = document.getElementById('fileChipsContainer');
@@ -5750,51 +5889,59 @@ function promptOfficialNoForBook(index) {
     fileBadge.innerText = `${selectedFilesArray.length} ฉบับ`;
 
     container.innerHTML = selectedFilesArray.map((item, bIdx) => {
-      const attCount = item.attachments.length;
+      const attCount = (item.attachments || []).length;
+      const linkCount = (item.links || []).length;
+      const totalAttached = attCount + linkCount;
       
-      // แสดงชิปไฟล์แนบย่อยใต้ชื่อเล่ม (ถ้ามี)
-      const attachChipsHTML = attCount > 0 ? `
-        <div class="d-flex flex-wrap gap-1 mt-1 ps-3">
-          ${item.attachments.map((att, aIdx) => `
-            <span class="badge border bg-white text-dark d-inline-flex align-items-center gap-1 shadow-sm" style="font-size: 0.70rem; border-color: #facc15 !important;">
-              <span class="text-warning">📎</span>
-              <span class="text-truncate" style="max-width: 150px;">${att.name}</span>
-              <span role="button" class="text-danger fw-bold ms-1" onclick="removeSpecificAttachment(${bIdx},${aIdx}, event)">✕</span>
-            </span>
-          `).join('')}
-        </div>
-      ` : "";
+      let attachBtnText = "📎 แนบไฟล์/ลิงก์";
+      if (totalAttached > 0) {
+        attachBtnText = `📎 แนบ (${attCount > 0 ? `ไฟล์ ${attCount}` : ''}${attCount > 0 && linkCount > 0 ? ', ' : ''}${linkCount > 0 ? `ลิงก์ ${linkCount}` : ''})`;
+      }
+
+      let previewChipsHTML = "";
+      if (totalAttached > 0) {
+        previewChipsHTML = `
+          <div class="d-flex flex-wrap gap-1 mt-1 ps-3">
+            ${(item.attachments || []).map((att, aIdx) => `
+              <span class="badge border bg-white text-dark d-inline-flex align-items-center gap-1 shadow-sm" style="font-size: 0.68rem; border-color: #facc15 !important;">
+                <span class="text-warning">📎</span>
+                <span class="text-truncate" style="max-width: 140px;">${att.name}</span>
+                <span role="button" class="text-danger fw-bold ms-1 cursor-pointer" onclick="removeSpecificAttachment(${bIdx}, ${aIdx}, event)">✕</span>
+              </span>
+            `).join('')}
+            ${(item.links || []).map((lnk, lIdx) => `
+              <span class="badge border bg-white text-primary d-inline-flex align-items-center gap-1 shadow-sm" style="font-size: 0.68rem; border-color: #93c5fd !important;">
+                <span>🔗</span>
+                <span class="text-truncate" style="max-width: 140px;">${lnk}</span>
+                <span role="button" class="text-danger fw-bold ms-1 cursor-pointer" onclick="removeSpecificLink(${bIdx}, ${lIdx}, event)">✕</span>
+              </span>
+            `).join('')}
+          </div>
+        `;
+      }
 
       return `
         <div class="p-1 px-2 bg-white rounded border shadow-sm">
           <div class="d-flex justify-content-between align-items-center" style="font-size: 0.78rem;">
-            <div class="text-truncate me-2" style="max-width: 65%;">
+            <div class="text-truncate me-2" style="max-width: 58%;">
               <span class="badge bg-dark text-white me-1" style="font-size:0.65rem;">${bIdx + 1}</span>
               <span class="text-dark fw-bold">${item.file.name}</span>
             </div>
             
             <div class="d-flex align-items-center gap-1 flex-shrink-0">
-              <!-- 🏷️ ปุ่มกดใส่เลขที่หนังสือจริงเฉพาะเล่มนี้ -->
-           <button type="button" class="btn btn-sm ${item.officialNo ? 'btn-primary text-white' : 'btn-outline-secondary'} py-0 px-2 fw-bold d-inline-flex align-items-center gap-1" style="font-size: 0.70rem; height: 24px; border-radius: 6px;" onclick="promptOfficialNoForBook(${bIdx})" title="ใส่เลขที่หนังสือจริง (ต้นทาง)">
-             <span>🏷️ ${item.officialNo ? 'มีเลขจริง' : 'ใส่เลขจริง'}</span>
-           </button>
+              <button type="button" class="btn btn-sm ${item.officialNo ? 'btn-primary text-white' : 'btn-outline-secondary'} py-0 px-2 fw-bold d-inline-flex align-items-center gap-1" style="font-size: 0.70rem; height: 24px; border-radius: 6px;" onclick="promptOfficialNoForBook(${bIdx})" title="ใส่เลขที่หนังสือจริง">
+                <span>🏷️ ${item.officialNo ? 'มีเลขจริง' : 'ใส่เลขจริง'}</span>
+              </button>
 
-           <!-- 📎 ปุ่มกดแนบไฟล์เฉพาะเล่มนี้ -->
-           <button type="button" class="btn btn-sm ${attCount > 0 ? 'btn-attach text-white' : 'btn-outline-secondary'} py-0 px-2 fw-bold d-inline-flex align-items-center gap-1" style="font-size: 0.70rem; height: 24px; border-radius: 6px;" onclick="triggerAttachForBook(${bIdx})" title="แนบสิ่งที่ส่งมาด้วยสำหรับฉบับนี้">
-             <span>📎 แนบไฟล์</span>
-             <span class="badge ${attCount > 0 ? 'bg-white text-dark' : 'bg-secondary text-white'}" style="font-size: 0.62rem;">${attCount}</span>
-           </button>
+              <button type="button" class="btn btn-sm ${totalAttached > 0 ? 'btn-attach text-white' : 'btn-outline-secondary'} py-0 px-2 fw-bold d-inline-flex align-items-center gap-1" style="font-size: 0.70rem; height: 24px; border-radius: 6px;" onclick="openAttachmentManageModal(${bIdx})" title="จัดการไฟล์แนบและลิงก์สำหรับฉบับนี้">
+                <span>${attachBtnText}</span>
+              </button>
 
-              <!-- ✕ ลบหนังสือเล่มนี้ -->
               <span role="button" class="text-danger fw-bold cursor-pointer ps-1" onclick="removeFile(${bIdx})" title="ลบเล่มนี้">✕</span>
             </div>
           </div>
-          </div>
-       </div>
-       ${item.officialNo ? `<div class="mt-1 ps-3 small text-primary fw-bold" style="font-size:0.72rem;">🏷️ เลขที่หนังสือจริง: ${item.officialNo}</div>` : ''}
-       ${attachChipsHTML}
-     </div>
-          ${attachChipsHTML}
+          ${item.officialNo ? `<div class="mt-1 ps-3 small text-primary fw-bold" style="font-size:0.72rem;">🏷️ เลขที่หนังสือจริง: ${item.officialNo}</div>` : ''}
+          ${previewChipsHTML}
         </div>
       `;
     }).join('');
@@ -6273,12 +6420,33 @@ async function refreshApp() {
         `;
       } else {
         // 📱 มือถือ: แสดงเฉพาะไอคอนมินิมอล ไม่มีข้อความ เรียงแถวแนวตั้งห่าง 14px
-        const attachUrl = (col[6] || "").toString().trim();
-        const attachButtonHTML = attachUrl ? `
-          <a href="${attachUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-attach shadow-sm text-white" title="ไฟล์แนบ (สิ่งที่ส่งมาด้วย)">
-            <svg class="btn-svg-icon" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
-          </a>
-        ` : "";
+        const { driveFolderUrl, externalLinks } = parseAttachmentField(col[6]);
+        let attachButtonsHTML = "";
+
+        // ปุ่ม 1: ไฟล์แนบ (Drive)
+        if (driveFolderUrl) {
+          attachButtonsHTML += `
+            <a href="${driveFolderUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-attach shadow-sm text-white" title="โฟลเดอร์ไฟล์แนบ (Drive)">
+              <svg class="btn-svg-icon" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+            </a>
+          `;
+        }
+
+        // ปุ่ม 2: ลิงก์แนบภายนอก
+        if (externalLinks.length === 1) {
+          attachButtonsHTML += `
+            <a href="${externalLinks[0]}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-info text-white shadow-sm" title="เปิดลิงก์ภายนอก">
+              <svg class="btn-svg-icon" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+            </a>
+          `;
+        } else if (externalLinks.length > 1) {
+          const encLnk = encodeURIComponent(externalLinks.join('|'));
+          attachButtonsHTML += `
+            <button type="button" class="btn btn-sm btn-info text-white shadow-sm fw-bold px-1" style="font-size: 0.65rem;" onclick="openLinksPickerModal('${encodeURIComponent(plainFileName)}', '${encLnk}')" title="มี ${externalLinks.length} ลิงก์">
+              🔗${externalLinks.length}
+            </button>
+          `;
+        }
 
         actionColumnHTML = `
           <div class="action-buttons justify-content-center">
@@ -6288,7 +6456,7 @@ async function refreshApp() {
             <button onclick="copyDeepLink('${col[4]}', '${encodeURIComponent(plainFileName)}')" class="btn btn-sm btn-copy shadow-sm" title="คัดลอกลิงก์เปิดอ่านในแอป">
               <svg class="btn-svg-icon" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
             </button>
-            ${attachButtonHTML}
+            ${attachButtonsHTML}
           </div>
         `;
       }
@@ -6445,27 +6613,46 @@ async function refreshApp() {
           </div>
         `;
       } else {
-        // 💻 PC: ปุ่มตัวอักษรล้วน ไร้ไอคอน ขนาดเท่ากันเป๊ะ แนวนอนเรียงสวยงาม
-        const attachUrl = (col[6] || "").toString().trim();
-        const attachButtonHTML = attachUrl ? `
-          <a href="${attachUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-attach shadow-sm flex-fill px-1 text-nowrap d-inline-flex align-items-center justify-content-center text-white" style="font-size: 0.78rem; min-width: 52px; height: 30px;" title="เปิดโฟลเดอร์ไฟล์แนบ">
-            ไฟล์แนบ
-          </a>
-        ` : "";
+        // 💻 PC: ปุ่มตัวอักษรล้วน รองรับทั้งไฟล์แนบ (สีส้ม) และ ลิงก์แนบ (สีฟ้า)
+        const { driveFolderUrl, externalLinks } = parseAttachmentField(col[6]);
+        let attachButtonsPC = "";
+
+        // 1. ถ้ามีไฟล์แนบใน Google Drive -> แสดงปุ่มสีส้มอำพัน
+        if (driveFolderUrl) {
+          attachButtonsPC += `
+            <a href="${driveFolderUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-attach shadow-sm px-1 text-nowrap d-inline-flex align-items-center justify-content-center text-white" style="font-size: 0.78rem; flex: 1 1 0px; width: 0; min-width: 54px; height: 30px;" title="เปิดโฟลเดอร์ไฟล์แนบ Google Drive">
+              ไฟล์แนบ
+            </a>
+          `;
+        }
+
+        // 2. ถ้ามีลิงก์ภายนอก 1 ลิงก์ -> แสดงปุ่มสีฟ้ากดแล้วเปิดเว็บนั้นเลย
+        if (externalLinks.length === 1) {
+          attachButtonsPC += `
+            <a href="${externalLinks[0]}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-info shadow-sm px-1 text-nowrap d-inline-flex align-items-center justify-content-center text-white fw-bold" style="font-size: 0.78rem; flex: 1 1 0px; width: 0; min-width: 54px; height: 30px;" title="เปิดลิงก์ภายนอก">
+              ลิงก์
+            </a>
+          `;
+        } 
+        // 3. ถ้ามีลิงก์ภายนอกมากกว่า 1 ลิงก์ -> แสดงปุ่มสีฟ้าบอกจำนวน เช่น "ลิงก์ (2)" กดแล้วเด้งหน้าต่างให้เลือก
+        else if (externalLinks.length > 1) {
+          const encLnkPC = encodeURIComponent(externalLinks.join('|'));
+          attachButtonsPC += `
+            <button type="button" class="btn btn-sm btn-info shadow-sm px-1 text-nowrap d-inline-flex align-items-center justify-content-center text-white fw-bold" style="font-size: 0.78rem; flex: 1 1 0px; width: 0; min-width: 54px; height: 30px;" onclick="openLinksPickerModal('${encodeURIComponent(plainFileName)}', '${encLnkPC}')" title="มีทุกลิงก์รวม ${externalLinks.length} รายการ">
+              ลิงก์ (${externalLinks.length})
+            </button>
+          `;
+        }
 
         actionColumnHTML = `
-          <div class="d-flex align-items-center justify-content-center gap-1 w-100" style="max-width: 170px; margin: 0 auto;">
+          <div class="d-flex align-items-center justify-content-center gap-1 w-100" style="max-width: 220px; margin: 0 auto;">
             <button onclick="openPdfViewer('${col[4]}', '${encodeURIComponent(plainFileName)}')" class="btn btn-sm btn-primary shadow-sm px-1 text-nowrap d-inline-flex align-items-center justify-content-center text-white" style="font-size: 0.78rem; flex: 1 1 0px; width: 0; min-width: 54px; height: 30px;" title="เปิดดูเอกสาร">
               เปิดดู
             </button>
             <button onclick="copyDeepLink('${col[4]}', '${encodeURIComponent(plainFileName)}')" class="btn btn-sm btn-copy shadow-sm px-1 text-nowrap d-inline-flex align-items-center justify-content-center text-white" style="font-size: 0.78rem; flex: 1 1 0px; width: 0; min-width: 54px; height: 30px;" title="คัดลอกลิงก์เปิดอ่านในแอป">
               คัดลอก
             </button>
-            ${attachUrl ? `
-              <a href="${attachUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-attach shadow-sm px-1 text-nowrap d-inline-flex align-items-center justify-content-center text-white" style="font-size: 0.78rem; flex: 1 1 0px; width: 0; min-width: 54px; height: 30px;" title="เปิดโฟลเดอร์ไฟล์แนบ">
-                ไฟล์แนบ
-              </a>
-            ` : ""}
+            ${attachButtonsPC}
           </div>
         `;
       }
@@ -7584,10 +7771,12 @@ async function executeUpload() {
       file: item.file,
       finalFileName: finalFileName,
       attachments: [...item.attachments],
+      links: [...(item.links || [])],
       officialNo: item.officialNo || "",
       departments: [...selectedDepartments],
       otherStaffNames: [...otherStaffNames],
       status: 'pending' // pending | uploading | success | failed
+      
     });
   });
 
@@ -7684,6 +7873,7 @@ async function runQueueEngine() {
         fileName: currentTask.finalFileName,
         fileData: fileData,
         attachments: attachPayloads,
+        links: currentTask.links || [],
         officialNo: currentTask.officialNo
       })
     });
@@ -9958,5 +10148,76 @@ window.addEventListener('load', function() {
   </div>
   <div id="uploadDrawerBody"></div>
 </div>
+
+<!-- 📎 Modal จัดการไฟล์แนบและลิงก์ภายนอกสำหรับหนังสือแต่ละเล่ม -->
+<div class="modal fade" id="attachmentManageModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+      <div class="modal-header bg-warning bg-opacity-25 py-2 px-3 border-bottom border-warning border-opacity-50">
+        <h6 class="modal-title fw-bold text-dark d-flex align-items-center gap-1 m-0" style="font-size: 0.9rem;">
+          <span>📎</span>
+          <span>จัดการไฟล์แนบและลิงก์ภายนอก</span>
+        </h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-3 bg-light">
+        <div class="p-2 bg-white rounded border mb-3 shadow-sm">
+          <small class="text-muted d-block" style="font-size: 0.72rem;">หนังสือที่กำลังจัดการ:</small>
+          <div id="attModalBookTitle" class="fw-bold text-dark text-truncate" style="font-size: 0.82rem;"></div>
+        </div>
+
+        <!-- 📂 ส่วนที่ 1: ไฟล์เอกสาร -->
+        <div class="mb-3">
+          <label class="form-label fw-bold text-dark mb-1" style="font-size: 0.8rem;">
+            1. ไฟล์เอกสารแนบ (PDF, Word, Excel, รูปภาพ, ZIP):
+          </label>
+          <div class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-sm btn-outline-primary fw-bold shadow-sm px-3" onclick="triggerFileInputFromModal()">
+              📂 เลือกไฟล์จากเครื่อง
+            </button>
+            <small class="text-muted" id="attModalFileCountText">ยังไม่มีไฟล์แนบ</small>
+          </div>
+          <div id="attModalFileList" class="d-flex flex-column gap-1 mt-2 overflow-y-auto" style="max-height: 110px;"></div>
+        </div>
+
+        <hr class="my-2 text-secondary opacity-25">
+
+        <!-- 🔗 ส่วนที่ 2: ลิงก์ภายนอก -->
+        <div>
+          <label class="form-label fw-bold text-dark mb-1" style="font-size: 0.8rem;">
+            2. ลิงก์ภายนอก (Google Form, เว็บไซต์, Drive นอก):
+          </label>
+          <div class="input-group input-group-sm mb-2 shadow-sm">
+            <span class="input-group-text bg-white">🔗</span>
+            <input type="url" id="attModalLinkInput" class="form-control" placeholder="วางลิงก์ เช่น https://forms.gle/..." onkeydown="if(event.key==='Enter'){event.preventDefault();addLinkFromModal();}">
+            <button class="btn btn-success fw-bold px-3" type="button" onclick="addLinkFromModal()">
+              + เพิ่มลิงก์
+            </button>
+          </div>
+          <div id="attModalLinkList" class="d-flex flex-column gap-1 overflow-y-auto" style="max-height: 110px;"></div>
+        </div>
+      </div>
+      <div class="modal-footer bg-white py-2 px-3 d-flex justify-content-end">
+        <button type="button" class="btn btn-sm btn-success px-4 fw-bold shadow-sm" data-bs-dismiss="modal">
+          ตกลง
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 📋 Modal เมนูเลือกเปิดลิงก์/ไฟล์แนบ (สำหรับกรณีมีหลายรายการ) -->
+<div class="modal fade" id="linksPickerModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 14px;">
+      <div class="modal-header py-2 px-3 bg-light border-bottom">
+        <h6 class="modal-title fw-bold text-dark m-0" style="font-size: 0.85rem;" id="linksPickerTitle">📎 สิ่งที่ส่งมาด้วย</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-3 d-flex flex-column gap-2" id="linksPickerContainer"></div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

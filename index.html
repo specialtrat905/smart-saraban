@@ -3051,7 +3051,7 @@
  // --- 1. การตั้งค่าสิทธิ์พื้นฐานองค์กร ---
   const GH_OWNER = "specialtrat905";
   const GH_REPO = "smart-saraban";
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyuYta4sT-_t3NvdmAPiZw1PETMeQVYsc3fyZDXcBuYJfmcgnnaW7r_2Fc0J8Fmlt-SWQ/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx-e0_hxSK4Ij08cdYygCycYX7X0Uf7FWB8ClLP1It4ucxa4gA3rN6jPESM8194-3JxNw/exec";
 // ⚡ กำหนดค่าเชื่อมต่อ Firebase (ตาม Config ของคุณ)
 const firebaseConfig = {
   apiKey: "AIzaSyBL_Jv3x_UxEkzcVnN6lpQpZdWoIaJvMNM",
@@ -3251,6 +3251,14 @@ function loadLogsFromFirebase(year) {
       renderModalAttachmentsList();
     }
   }
+
+  function saveAndCloseAttachmentModal() {
+  // ถ้ามีข้อความลิงก์พิมพ์ค้างอยู่ในช่องแต่ยังไม่ได้กดปุ่ม + เพิ่มลิงก์ ให้ช่วยเพิ่มเข้าเล่มอัตโนมัติ
+  const input = document.getElementById('attModalLinkInput');
+  if (input && input.value.trim() !== "") {
+    addLinkFromModal();
+  }
+}
 
   function removeAttachmentFromModal(idx) {
     if (currentModalBookIndex !== null && selectedFilesArray[currentModalBookIndex]) {
@@ -7771,12 +7779,11 @@ async function executeUpload() {
       file: item.file,
       finalFileName: finalFileName,
       attachments: [...item.attachments],
-      links: [...(item.links || [])],
+      links: [...(item.links || [])],  // 👈 เพิ่มบรรทัดนี้ลงไป
       officialNo: item.officialNo || "",
       departments: [...selectedDepartments],
       otherStaffNames: [...otherStaffNames],
       status: 'pending' // pending | uploading | success | failed
-      
     });
   });
 
@@ -10198,10 +10205,10 @@ window.addEventListener('load', function() {
         </div>
       </div>
       <div class="modal-footer bg-white py-2 px-3 d-flex justify-content-end">
-        <button type="button" class="btn btn-sm btn-success px-4 fw-bold shadow-sm" data-bs-dismiss="modal">
-          ตกลง
-        </button>
-      </div>
+  <button type="button" class="btn btn-sm btn-success px-4 fw-bold shadow-sm" data-bs-dismiss="modal" onclick="saveAndCloseAttachmentModal()">
+    ตกลง
+  </button>
+</div>
     </div>
   </div>
 </div>

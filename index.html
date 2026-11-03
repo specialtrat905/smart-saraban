@@ -5565,48 +5565,7 @@ window.addEventListener('popstate', () => {
     const savedUser = localStorage.getItem('sarabanUser');
     
     if (savedUser) {
-        const parsedUser = JSON.parse(savedUser);
-        const isPC = window.innerWidth >= 769;
-
-        // 🛡️ ถ้าเป็น Admin บน PC: ตรวจเซสชันรายสัปดาห์ (รีเซ็ตทุกเช้าวันจันทร์)
-        if (parsedUser.role === 'Admin' && isPC) {
-          const currentWeekKey = getAdminSessionWeekKey();
-
-          rtdb.ref('admin_session_date').once('value', (snapshot) => {
-            const activeSessionKey = snapshot.val();
-
-            // หากขึ้นสัปดาห์ใหม่ (ไม่ตรงกับรอบวันจันทร์นี้) ให้เคลียร์สิทธิ์บน PC เพื่อล็อกอินใหม่
-            if (!activeSessionKey || activeSessionKey !== currentWeekKey) {
-              localStorage.removeItem('sarabanUser');
-              document.documentElement.classList.remove('has-session');
-              document.getElementById('loginPage').style.display = 'block';
-              document.getElementById('mainApp').style.display = 'none';
-              return;
-            }
-
-            // ✅ ถ้ายังอยู่ในสัปดาห์เดียวกัน: เข้าหน้าแอปหลักทันที ไม่ต้องล็อกอินใหม่
-            currentUser = parsedUser;
-            document.getElementById('loginPage').style.display = 'none';
-            document.getElementById('mainApp').style.display = 'block';
-            renderUserNavbar();
-
-            document.getElementById('logoutBtn').style.display = 'block';
-            setupExitButton();
-
-            document.getElementById('adminView').style.display = 'block';
-            document.getElementById('deptFilterContainer').style.display = 'block';
-
-            updateNavForView('saraban');
-            updateYearOptions();
-            resetAndReloadLogs();
-
-            listenAdminSessionExpiry(currentWeekKey); // เฝ้าระวังกรณีเปิดหน้าจอค้างข้ามคืนวันอาทิตย์สู่วันจันทร์
-          });
-          return;
-        }
-
-        // 📱 ถ้าเป็น Admin บนมือถือ หรือ User กลุ่มงานทั่วไป: จำสิทธิ์ตลอดไป
-        currentUser = parsedUser;
+        currentUser = JSON.parse(savedUser);
         document.getElementById('loginPage').style.display = 'none';
         document.getElementById('mainApp').style.display = 'block';
         renderUserNavbar();

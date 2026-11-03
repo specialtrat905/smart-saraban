@@ -4582,7 +4582,7 @@ let currentPersonalStaffName = "";
     filterDbManageTable();
   }
 
-  // อัปเดตตัวเลขและสถานะปุ่ม "ลบหนังสือที่เลือก (X)"
+  // 🔄 อัปเดตตัวเลขบนปุ่มและเปิดให้กดได้ทันที
   function updateDbBatchDeleteButtonUI() {
     const btnExecute = document.getElementById('btnExecuteBatchDelete');
     if (!btnExecute) return;
@@ -4592,9 +4592,10 @@ let currentPersonalStaffName = "";
     btnExecute.disabled = (count === 0);
   }
 
-  // ติ๊กเลือก/ไม่เลือก เล่มเดี่ยว
+  // 🗑️ ติ๊กเลือก/ไม่เลือก เล่มเดี่ยว
   function toggleSelectBookForDelete(encodedFileName, isChecked) {
-    const fileName = decodeURIComponent(encodedFileName);
+    const fileName = decodeURIComponent(encodedFileName).trim();
+    
     if (isChecked) {
       if (!selectedBooksToDelete.some(b => b.fileName === fileName)) {
         selectedBooksToDelete.push({ fileName: fileName });
@@ -4607,34 +4608,56 @@ let currentPersonalStaffName = "";
     const master = document.getElementById('masterDbDeleteCheck');
     if (master) {
       const visibleCheckboxes = document.querySelectorAll('.db-manage-row-check');
-      master.checked = visibleCheckboxes.length > 0 && selectedBooksToDelete.length === visibleCheckboxes.length;
+      master.checked = (visibleCheckboxes.length > 0 && selectedBooksToDelete.length === visibleCheckboxes.length);
     }
   }
 
-  // ติ๊กเลือกทั้งหมด (Master Checkbox)
+  // 🗑️ ติ๊กเลือกทั้งหมด (Master Checkbox)
   function toggleMasterDbDeleteCheck(masterChecked) {
     document.querySelectorAll('.db-manage-row-check').forEach(cb => {
       cb.checked = masterChecked;
     });
 
+    selectedBooksToDelete = [];
     if (masterChecked) {
-      selectedBooksToDelete = [];
       const currentRows = window._currentFilteredDbManageRows || [];
       currentRows.forEach(row => {
         if (row && row[0] !== "❌" && row[2]) {
-          selectedBooksToDelete.push({ fileName: row[2].trim() });
+          selectedBooksToDelete.push({ fileName: row[2].toString().trim() });
         }
       });
-    } else {
-      selectedBooksToDelete = [];
     }
     updateDbBatchDeleteButtonUI();
   }
 
-  // กดยืนยันเพื่อเปิดหน้าต่างกรอกรหัสผ่านลบแบบกลุ่ม
+  // 🚀 กดยืนยันเพื่อเปิดหน้าต่างกรอกรหัสผ่านลบแบบกลุ่ม (เรียก Modal ลบจริง)
   function confirmBatchDeleteDb() {
-    if (selectedBooksToDelete.length === 0) return alert("⚠️ กรุณาติ๊กเลือกหนังสือที่ต้องการลบอย่างน้อย 1 ฉบับ");
-    openDeleteConfirmModal();
+    if (selectedBooksToDelete.length === 0) {
+      return alert("⚠️ กรุณาติ๊กเลือกหนังสือที่ต้องการลบอย่างน้อย 1 ฉบับ");
+    }
+
+    const countElem = document.getElementById('deleteModalCount');
+    const listElem = document.getElementById('deleteModalFileList');
+    const passInput = document.getElementById('deleteAdminPassInput');
+    const errDiv = document.getElementById('deleteModalErr');
+
+    if (countElem) countElem.innerText = selectedBooksToDelete.length;
+    if (passInput) passInput.value = "";
+    if (errDiv) errDiv.innerText = "";
+
+    if (listElem) {
+      listElem.innerHTML = selectedBooksToDelete.map((b, idx) => `
+        <li class="list-group-item py-1 px-2 small text-dark d-flex align-items-center justify-content-between">
+          <span class="text-truncate" style="max-width: 90%;">${idx + 1}. ${b.fileName}</span>
+          <span class="badge bg-danger">ลบ</span>
+        </li>
+      `).join('');
+    }
+
+    if (!deleteModalInstance) {
+      deleteModalInstance = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+    }
+    deleteModalInstance.show();
   }
 
   function loadDbManageDataForYear(year) {
@@ -8077,19 +8100,6 @@ window.addEventListener('beforeunload', function(e) {
     }
   }
 
-  function toggleSelectBookForDelete(encodedFileName, isChecked) {
-    const fileName = decodeURIComponent(encodedFileName);
-    if (isChecked) {
-      if (!selectedBooksToDelete.some(b => b.fileName === fileName)) {
-        selectedBooksToDelete.push({ fileName: fileName });
-      }
-    } else {
-      selectedBooksToDelete = selectedBooksToDelete.filter(b => b.fileName !== fileName);
-    }
-    updateEditDbButtonUI();
-    updateDbManageDeleteUI();
-  }
-
   function openDeleteConfirmModal() {
     document.getElementById('deleteModalCount').innerText = selectedBooksToDelete.length;
     document.getElementById('deleteModalFileList').innerHTML = selectedBooksToDelete.map((b, i) => `
@@ -8793,10 +8803,11 @@ let currentPdfFileName = ''; // เพิ่มตัวแปรเก็บช
     }
   });
 
+  // 🗑️ สั่งลบเล่มเดี่ยวจากปุ่มถังขยะในตาราง (คงไว้ตามเดิม)
   function deleteBookFromDbManage(encodedFileName) {
-    const fileName = decodeURIComponent(encodedFileName);
+    const fileName = decodeURIComponent(encodedFileName).trim();
     selectedBooksToDelete = [{ fileName: fileName }];
-    openDeleteConfirmModal();
+    confirmBatchDeleteDb();
   }
 
   // 🗑️ ดำเนินการลบหนังสือพร้อมตรวจสอบรหัสผ่าน Admin

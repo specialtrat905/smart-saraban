@@ -2307,7 +2307,7 @@
           <button type="button" id="btnToggleDbBatchDelete" class="btn btn-sm btn-outline-danger fw-bold shadow-sm px-3" onclick="toggleDbBatchDeleteMode(true)">
             🗑️ ลบหลายฉบับ
           </button>
-          <div id="dbBatchActiveControls" style="display:none;" class="d-flex align-items-center gap-1">
+          <div id="dbBatchActiveControls" class="d-none align-items-center gap-1">
             <button type="button" id="btnExecuteBatchDelete" class="btn btn-sm btn-danger fw-bold shadow-sm px-3" onclick="confirmBatchDeleteDb()" disabled>
               🗑️ ลบหนังสือที่เลือก (0)
             </button>
@@ -4563,8 +4563,13 @@ let currentPersonalStaffName = "";
     const headerCol = document.getElementById('dbManageActionColHeader');
 
     if (enabled) {
-      if (btnStart) btnStart.style.display = 'none';
-      if (controls) controls.style.display = 'inline-flex';
+      if (btnStart) {
+        btnStart.classList.add('d-none');
+      }
+      if (controls) {
+        controls.classList.remove('d-none');
+        controls.classList.add('d-inline-flex');
+      }
       if (headerCol) {
         headerCol.innerHTML = `
           <div class="d-flex justify-content-center align-items-center">
@@ -4573,8 +4578,13 @@ let currentPersonalStaffName = "";
         `;
       }
     } else {
-      if (btnStart) btnStart.style.display = 'inline-block';
-      if (controls) controls.style.display = 'none';
+      if (btnStart) {
+        btnStart.classList.remove('d-none');
+      }
+      if (controls) {
+        controls.classList.remove('d-inline-flex');
+        controls.classList.add('d-none');
+      }
       if (headerCol) headerCol.innerText = "จัดการ";
     }
 

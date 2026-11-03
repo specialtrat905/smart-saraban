@@ -3253,10 +3253,27 @@ function loadLogsFromFirebase(year) {
   }
 
   function saveAndCloseAttachmentModal() {
-  // ถ้ามีข้อความลิงก์พิมพ์ค้างอยู่ในช่องแต่ยังไม่ได้กดปุ่ม + เพิ่มลิงก์ ให้ช่วยเพิ่มเข้าเล่มอัตโนมัติ
+  // ตรวจสอบว่ามีลิงก์พิมพ์ค้างอยู่ในช่องหรือไม่ ถ้ามีให้กดเพิ่มเข้าเล่มทันที
   const input = document.getElementById('attModalLinkInput');
   if (input && input.value.trim() !== "") {
-    addLinkFromModal();
+    let url = input.value.trim();
+    if (!url.startsWith("http://") && !url.startsWith("https://")) {
+      url = "https://" + url;
+    }
+    if (currentModalBookIndex !== null && selectedFilesArray[currentModalBookIndex]) {
+      const targetBook = selectedFilesArray[currentModalBookIndex];
+      if (!targetBook.links) targetBook.links = [];
+      if (!targetBook.links.includes(url)) {
+        targetBook.links.push(url);
+      }
+    }
+    input.value = "";
+  }
+
+  // รีเฟรชป้ายแสดงผลหน้าหลัก และปิด Modal
+  renderFileList();
+  if (attachmentManageModalInstance) {
+    attachmentManageModalInstance.hide();
   }
 }
 
@@ -7779,11 +7796,11 @@ async function executeUpload() {
       file: item.file,
       finalFileName: finalFileName,
       attachments: [...item.attachments],
-      links: [...(item.links || [])],  // 👈 เพิ่มบรรทัดนี้ลงไป
+      links: [...(item.links || [])], // 👈 ต้องมีบรรทัดนี้อยู่
       officialNo: item.officialNo || "",
       departments: [...selectedDepartments],
       otherStaffNames: [...otherStaffNames],
-      status: 'pending' // pending | uploading | success | failed
+      status: 'pending'
     });
   });
 
@@ -10205,7 +10222,7 @@ window.addEventListener('load', function() {
         </div>
       </div>
       <div class="modal-footer bg-white py-2 px-3 d-flex justify-content-end">
-  <button type="button" class="btn btn-sm btn-success px-4 fw-bold shadow-sm" data-bs-dismiss="modal" onclick="saveAndCloseAttachmentModal()">
+  <button type="button" class="btn btn-sm btn-success px-4 fw-bold shadow-sm" onclick="saveAndCloseAttachmentModal()">
     ตกลง
   </button>
 </div>

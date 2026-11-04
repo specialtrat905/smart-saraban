@@ -5622,6 +5622,7 @@ window.addEventListener('popstate', () => {
 
   // 📡 ตัวดักฟัง Realtime: ดีดออกเฉพาะหน้าจอ PC เมื่อขึ้นวันจันทร์ใหม่ (มือถือไม่ถูกดีดออก)
   function listenAdminSessionExpiry(sessionKey) {
+    return; // 👈 ปิดการทำงานถาวร เพื่อไม่ให้ Firebase สั่ง logout รีเฟรชหน้าเว็บเวลาสลับแท็บ
     const isPC = window.innerWidth >= 769;
     if (!isPC) return;
 

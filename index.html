@@ -7826,6 +7826,10 @@ function resetDeptSelection() {
   selectedDepartments = [];
   otherStaffNames = [];
 
+  // 🧹 ล้างหน่วยความจำชั่วคราวทิ้งทันทีเมื่อส่งหนังสือเรียบร้อยแล้ว
+  sessionStorage.removeItem('temp_saved_depts');
+  sessionStorage.removeItem('temp_saved_staff');
+
   // รีเซ็ตป้ายตัวนับกลุ่มงาน
   const badge = document.getElementById('deptCountBadge');
   if (badge) {

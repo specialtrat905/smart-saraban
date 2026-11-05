@@ -3072,15 +3072,23 @@ const rtdb = firebase.database();
 let currentFirebaseYear = null;
 let lastFirebaseDataLength = 0;
 
+// ตัวแปรสำหรับจดจำตัวดักฟังของปีปัจจุบัน
+let currentLogsListener = null;
+
 function loadLogsFromFirebase(year) {
+  // 🧹 1. สั่งถอด Listener ของปีเดิมออกก่อนเสมอ เพื่อไม่ให้ทำงานซ้อนทับกัน
+  if (currentFirebaseYear && currentFirebaseYear !== year) {
+    rtdb.ref('logs_' + currentFirebaseYear).off();
+  }
   currentFirebaseYear = year;
-  
+
+  // 📡 2. ผูกตัวดักฟังเฉพาะปีที่เลือกในปัจจุบัน
   rtdb.ref('logs_' + year).on('value', (snapshot) => {
     const rawData = snapshot.val();
     const dataList = rawData ? (Array.isArray(rawData) ? rawData : Object.values(rawData)) : [];
     
     if (dataList.length > 0) {
-      // ⚡ ตรวจสอบว่าเนื้อหาข้อมูลเปลี่ยนแปลงจริงหรือไม่ (ตรวจทั้งจำนวนเล่ม และข้อมูลฝ่าย/เลขที่อัปเดต)
+      // ⚡ ตรวจสอบว่าเนื้อหาข้อมูลเปลี่ยนแปลงจริงหรือไม่
       const isContentChanged = (allLogs.length !== dataList.length) || (JSON.stringify(allLogs) !== JSON.stringify(dataList));
       allLogs = dataList;
 
@@ -3089,6 +3097,7 @@ function loadLogsFromFirebase(year) {
         applyClientSideFilter();
       }
     } else {
+      // กรณีใน Firebase ยังไม่มีข้อมูล ให้วิ่งไปดึงจาก Google Sheets ผ่าน Apps Script
       fetch(`${SCRIPT_URL}?year=${year}&dept=all&search=&offset=0&limit=500&t=${new Date().getTime()}`)
         .then(res => res.json())
         .then(data => {

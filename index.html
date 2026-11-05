@@ -8640,20 +8640,25 @@ let currentPdfFileName = ''; // เพิ่มตัวแปรเก็บช
       if (statusLabel) statusLabel.innerText = "✨ ถอดข้อความและตารางสำเร็จ:";
       renderCategorizedLinks(ocrData.qrLinks || [], ocrData.urls || [], ocrData.emails || []);
 
-      // 💾 สเต็ป 3: บันทึกลงแคชอัตโนมัติ
-      fetch(SCRIPT_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({
-          action: "saveOcrCache",
-          fileId: currentPdfFileId,
-          text: ocrData.text || "",
-          html: finalHtml,
-          qrLinks: ocrData.qrLinks || [],
-          urls: ocrData.urls || [],
-          emails: ocrData.emails || []
-        })
-      }).catch(err => console.warn("Auto save cache error:", err));
+      // 💾 สเต็ป 3: บันทึกลงแคชอัตโนมัติ (ใส่ await เพื่อให้คำสั่งส่งถึงเซิร์ฟเวอร์เสร็จสมบูรณ์)
+      try {
+        await fetch(SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: "saveOcrCache",
+            fileId: currentPdfFileId,
+            text: ocrData.text || "",
+            html: finalHtml,
+            qrLinks: ocrData.qrLinks || [],
+            urls: ocrData.urls || [],
+            emails: ocrData.emails || []
+          })
+        });
+        console.log("✅ บันทึก OCR Cache สำเร็จสำหรับ File ID:", currentPdfFileId);
+      } catch (errCache) {
+        console.warn("⚠️ บันทึกแคชไม่สำเร็จ:", errCache);
+      }
 
     } catch (err) {
       console.error("Scanner Error:", err);

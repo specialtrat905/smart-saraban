@@ -5531,6 +5531,9 @@ window.addEventListener('popstate', () => {
     document.querySelectorAll('.dept-checkbox:checked').forEach(cb => {
       selectedDepartments.push(cb.value);
     });
+    // 💾 เพิ่ม 2 บรรทัดนี้: จำกลุ่มงานไว้ในหน่วยความจำถาวรของแท็บทันที
+    sessionStorage.setItem('temp_saved_depts', JSON.stringify(selectedDepartments));
+    sessionStorage.setItem('temp_saved_staff', JSON.stringify(otherStaffNames));
 
     const badge = document.getElementById('deptCountBadge');
     const display = document.getElementById('selectedDeptsDisplay');
@@ -9239,6 +9242,17 @@ let currentPdfFileName = ''; // เพิ่มตัวแปรเก็บช
     loadStaffList(); 
     fetchAppVersion(); 
     setupDragAndDrop();
+    // 🔄 กู้คืนกลุ่มงานที่เลือกค้างไว้ทันที หาก Chrome แอบรีโหลดแท็บ
+    const restoreDepts = sessionStorage.getItem('temp_saved_depts');
+    const restoreStaff = sessionStorage.getItem('temp_saved_staff');
+    if (restoreDepts) {
+      selectedDepartments = JSON.parse(restoreDepts);
+      if (restoreStaff) otherStaffNames = JSON.parse(restoreStaff);
+      document.querySelectorAll('.dept-checkbox').forEach(cb => {
+        cb.checked = selectedDepartments.includes(cb.value);
+      });
+      saveDeptSelection();
+    }
 
     const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
     if (isMobile) {

@@ -2,18 +2,32 @@
 const CACHE_NAME = 'saraban-cache-v4';
 
 self.addEventListener('install', (e) => {
-  self.skipWaiting();
+  // ไม่บังคับ skipWaiting ทันที เพื่อป้องกันการรีสตาร์ท Client ขณะทำงาน
 });
 
 self.addEventListener('activate', (e) => {
-  e.waitUntil(clients.claim());
+  // จัดการ Cache เวอร์ชันเก่า
+  e.waitUntil(
+    caches.keys().then((keys) => {
+      return Promise.all(
+        keys.map((key) => {
+          if (key !== CACHE_NAME) {
+            return caches.delete(key);
+          }
+        })
+      );
+    })
+  );
 });
 
 self.addEventListener('fetch', (e) => {
+  // ให้วิ่งออก Network ตามปกติ
   e.respondWith(
     fetch(e.request).catch(() => caches.match(e.request))
   );
 });
+
+// ... โค้ด notificationclick และ push ด้านล่างคงไว้ตามเดิม ...
 
 // 🔔 เมื่อผู้ใช้แตะที่แถบแจ้งเตือนบนหน้าจอมือถือ (เปิดเข้าหน้าหนังสือส่วนตัวทันที)
 self.addEventListener('notificationclick', function(event) {

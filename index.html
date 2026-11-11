@@ -3051,7 +3051,7 @@
  // --- 1. การตั้งค่าสิทธิ์พื้นฐานองค์กร ---
   const GH_OWNER = "specialtrat905";
   const GH_REPO = "smart-saraban";
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx-e0_hxSK4Ij08cdYygCycYX7X0Uf7FWB8ClLP1It4ucxa4gA3rN6jPESM8194-3JxNw/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzphG26yXRjk_kuVBjobpba4-qL_ymfYJGu7HxOsrIhTSmBiV_wa-onrzqQ2O52rXrQZQ/exec";
 // ⚡ กำหนดค่าเชื่อมต่อ Firebase (ตาม Config ของคุณ)
 const firebaseConfig = {
   apiKey: "AIzaSyBL_Jv3x_UxEkzcVnN6lpQpZdWoIaJvMNM",
@@ -8649,23 +8649,55 @@ let currentPdfFileName = ''; // เพิ่มตัวแปรเก็บช
 
       // 💾 สเต็ป 3: บันทึกลงแคชอัตโนมัติ (ใส่ await เพื่อให้คำสั่งส่งถึงเซิร์ฟเวอร์เสร็จสมบูรณ์)
       try {
-        await fetch(SCRIPT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({
-            action: "saveOcrCache",
-            fileId: currentPdfFileId,
-            text: ocrData.text || "",
-            html: finalHtml,
-            qrLinks: ocrData.qrLinks || [],
-            urls: ocrData.urls || [],
-            emails: ocrData.emails || []
-          })
-        });
-        console.log("✅ บันทึก OCR Cache สำเร็จสำหรับ File ID:", currentPdfFileId);
-      } catch (errCache) {
-        console.warn("⚠️ บันทึกแคชไม่สำเร็จ:", errCache);
-      }
+  const cacheSaveRes = await fetch(SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({
+      action: "saveOcrCache",
+      fileId: currentPdfFileId,
+      text: ocrData.text || "",
+      html: finalHtml,
+      qrLinks: ocrData.qrLinks || [],
+      urls: ocrData.urls || [],
+      emails: ocrData.emails || []
+    })
+  });
+
+  const cacheSaveRaw = await cacheSaveRes.text();
+
+  let cacheSaveData = {};
+
+  try {
+    cacheSaveData = JSON.parse(cacheSaveRaw);
+  } catch (eJson) {
+    console.error("❌ Server ตอบกลับไม่ใช่ JSON:", cacheSaveRaw);
+    throw new Error("เซิร์ฟเวอร์ตอบกลับไม่เป็น JSON");
+  }
+
+  if (!cacheSaveData.success) {
+    throw new Error(
+      cacheSaveData.message ||
+      cacheSaveData.error ||
+      "เซิร์ฟเวอร์ไม่สามารถบันทึก OCR Cache ได้"
+    );
+  }
+
+  console.log(
+    "✅ บันทึก OCR Cache สำเร็จ:",
+    cacheSaveData.fileId,
+    "แถว:",
+    cacheSaveData.row
+  );
+
+} catch (errCache) {
+
+  console.error("❌ บันทึก OCR Cache ไม่สำเร็จ:", errCache);
+
+  if (statusLabel) {
+    statusLabel.innerText =
+      "⚠️ อ่านเอกสารสำเร็จ แต่บันทึกแคชไม่สำเร็จ";
+  }
+}
 
     } catch (err) {
       console.error("Scanner Error:", err);

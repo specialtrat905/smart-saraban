@@ -8193,9 +8193,8 @@ let currentPdfFileName = ''; // เพิ่มตัวแปรเก็บช
     const idMatch = fileUrl.match(/[-\w]{25,}/);
     const fileId = idMatch ? idMatch[0] : null;
     const pdfFileUrl =
-  `https://drive.google.com/uc?export=download&id=${fileId}&filename=${encodeURIComponent(title)}`;
-
-const previewUrl =
+  `https://drive.google.com/uc?export=download&id=${fileId}`;
+    const previewUrl =
   `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(pdfFileUrl)}`;
 
     currentPdfFileId = fileId || '';

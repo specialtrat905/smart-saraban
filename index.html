@@ -8540,7 +8540,7 @@ window.addEventListener('beforeunload', function(e) {
 
   let isQrScanning = false;
 
-// 🛠️ 1. ฟังก์ชันแปลงภาพสแกนให้กลายเป็นขาว-ดำสนิท (Adaptive Binary Threshold)
+
   function binarizeForScannedQr(ctx, width, height, customThreshold) {
     const imgData = ctx.getImageData(0, 0, width, height);
     const d = imgData.data;

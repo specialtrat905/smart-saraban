@@ -8082,6 +8082,37 @@ function closeUploadDrawer(e) {
   if (drawer) drawer.style.display = 'none';
 }
 
+// ==========================================
+// 🔎 ตรวจสอบการถูก Freeze / Restore / Reload ของ Chrome
+// ==========================================
+console.log('🟢 APP START:', new Date().toLocaleTimeString());
+
+window.addEventListener('pageshow', function (event) {
+  console.log(
+    '📄 PAGESHOW:',
+    new Date().toLocaleTimeString(),
+    'persisted =',
+    event.persisted
+  );
+});
+
+window.addEventListener('pagehide', function (event) {
+  console.log(
+    '📄 PAGEHIDE:',
+    new Date().toLocaleTimeString(),
+    'persisted =',
+    event.persisted
+  );
+});
+
+document.addEventListener('visibilitychange', function () {
+  console.log(
+    '👁️ VISIBILITY:',
+    document.visibilityState,
+    new Date().toLocaleTimeString()
+  );
+});
+
 window.addEventListener('beforeunload', function(e) {
   if (uploadQueue.some(t => t.status === 'uploading' || t.status === 'pending')) {
     e.preventDefault();

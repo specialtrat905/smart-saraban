@@ -1484,9 +1484,6 @@
   touch-action: auto !important;
 }
 
-#pdfModalIframe {
-  touch-action: auto !important;
-}
 
 /* 📋 สไตล์ตารางที่ AI สกัดออกมา */
 .ocr-content-box table {
@@ -2528,17 +2525,28 @@
               <div id="qrButtonsContainer" class="d-flex flex-wrap gap-1"></div>
             </div>
 
-            <!-- 📄 กล่องพื้นที่แสดงตัวเอกสาร (รองรับการถ่างนิ้วซูมเฉพาะตัวเอกสาร ไม่ขยายหน้าเว็บ) -->
-            <div id="pdfZoomViewport" style="width: 100%; height: 100%; overflow: auto; position: relative; -webkit-overflow-scrolling: touch; touch-action: auto;">
-              <div id="pdfZoomWrapper" style="width: 100%; height: 100%; transform-origin: 0 0; transition: transform 0.1s ease-out;">
-                <iframe
-                  id="pdfModalIframe"
-                  src=""
-                  class="w-100 h-100 border-0"
-                  allow="autoplay; fullscreen">
-                </iframe>
-              </div>
-            </div>
+            <!-- 📄 PDF Viewer แบบ PDF.js รองรับการกางนิ้วบนมือถือ -->
+<div id="pdfZoomViewport"
+     style="width:100%; height:100%; overflow:auto; position:relative; -webkit-overflow-scrolling:touch; touch-action:none; background:#e5e7eb;">
+
+  <div id="pdfZoomWrapper"
+       style="position:relative; transform-origin:0 0; width:100%; min-height:100%;">
+
+    <div id="pdfCanvasContainer"
+         style="width:100%; display:flex; flex-direction:column; align-items:center; gap:12px; padding:12px;">
+    </div>
+
+  </div>
+
+  <div id="pdfViewerLoading"
+       style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,.85); z-index:10;">
+    <div class="text-center">
+      <div class="spinner-border text-success mb-2"></div>
+      <div class="fw-bold">กำลังเปิดเอกสาร...</div>
+    </div>
+  </div>
+
+</div>
           </div>
         </div>
       </div>
@@ -8185,44 +8193,205 @@ window.addEventListener('beforeunload', function(e) {
 let currentPdfFileName = ''; // เพิ่มตัวแปรเก็บชื่อไฟล์
 
   async function openPdfViewer(fileUrl, encodedTitle) {
-    const qrBar = document.getElementById('qrResultBar');
-    const countDisplay = document.getElementById('qrCountDisplay');
-    const container = document.getElementById('qrButtonsContainer');
-    const scanBtn = document.getElementById('scanQrBtn');
-    const title = decodeURIComponent(encodedTitle).replace(/<[^>]*>?/gm, '').trim();
-    const idMatch = fileUrl.match(/[-\w]{25,}/);
-    const fileId = idMatch ? idMatch[0] : null;
-    const pdfFileUrl =
-  `https://drive.google.com/uc?export=download&id=${fileId}`;
-    const previewUrl =
-  `https://docs.google.com/gview?embedded=1&url=${encodeURIComponent(pdfFileUrl)}`;
+  const qrBar = document.getElementById('qrResultBar');
+  const countDisplay = document.getElementById('qrCountDisplay');
+  const container = document.getElementById('qrButtonsContainer');
+  const scanBtn = document.getElementById('scanQrBtn');
 
-    currentPdfFileId = fileId || '';
-    currentPdfFileName = title.toLowerCase().endsWith('.pdf') ? title : `${title}.pdf`; // บันทึกชื่อไฟล์จริงไว้ดาวน์โหลด
+  const title = decodeURIComponent(encodedTitle)
+    .replace(/<[^>]*>?/gm, '')
+    .trim();
 
-    document.getElementById('pdfModalTitle').innerText = title;
-    document.getElementById('pdfModalIframe').src = previewUrl;
+  const idMatch = fileUrl.match(/[-\w]{25,}/);
+  const fileId = idMatch ? idMatch[0] : null;
 
-    if (qrBar) qrBar.style.setProperty('display', 'none', 'important');
-
-    if (!pdfModalInstance) {
-      pdfModalInstance = new bootstrap.Modal(document.getElementById('pdfViewerModal'));
-      document.getElementById('pdfViewerModal').addEventListener('hidden.bs.modal', () => {
-        document.getElementById('pdfModalIframe').src = "";
-        if (qrBar) qrBar.style.setProperty('display', 'none', 'important');
-      });
-    }
-    pdfModalInstance.show();
-
-    currentPdfFileId = fileId || '';
-
-    if (qrBar) qrBar.style.setProperty('display', 'none', 'important');
-    if (countDisplay) countDisplay.innerText = '0';
-    if (container) container.innerHTML = '';
-    if (scanBtn) scanBtn.disabled = !currentPdfFileId;
+  if (!fileId) {
+    alert('ไม่พบรหัสไฟล์ PDF');
+    return;
   }
 
-  let currentPdfFileId = '';
+  currentPdfFileId = fileId;
+  currentPdfFileName = title.toLowerCase().endsWith('.pdf')
+    ? title
+    : `${title}.pdf`;
+
+  document.getElementById('pdfModalTitle').innerText = title;
+
+  if (qrBar) qrBar.style.setProperty('display', 'none', 'important');
+  if (countDisplay) countDisplay.innerText = '0';
+  if (container) container.innerHTML = '';
+  if (scanBtn) scanBtn.disabled = false;
+
+  const viewport = document.getElementById('pdfZoomViewport');
+  const wrapper = document.getElementById('pdfZoomWrapper');
+  const canvasContainer = document.getElementById('pdfCanvasContainer');
+  const loading = document.getElementById('pdfViewerLoading');
+
+  if (!viewport || !wrapper || !canvasContainer) {
+    alert('ไม่พบพื้นที่แสดง PDF');
+    return;
+  }
+
+  canvasContainer.innerHTML = '';
+  wrapper.style.transform = 'scale(1)';
+  wrapper.style.width = '100%';
+  wrapper.style.height = '100%';
+
+  if (loading) loading.style.display = 'flex';
+
+  // เปิด Modal
+  if (!pdfModalInstance) {
+    pdfModalInstance = new bootstrap.Modal(
+      document.getElementById('pdfViewerModal')
+    );
+
+    document.getElementById('pdfViewerModal')
+      .addEventListener('hidden.bs.modal', () => {
+        canvasContainer.innerHTML = '';
+        if (loading) loading.style.display = 'flex';
+        currentPdfScale = 1;
+        initialPinchDist = 0;
+        startScale = 1;
+      });
+  }
+
+  pdfModalInstance.show();
+
+  try {
+    // ใช้ระบบเดิมที่มีอยู่แล้วใน Apps Script
+    const res = await fetch(
+      `${SCRIPT_URL}?action=getPdfBase64&fileId=${encodeURIComponent(fileId)}`
+    );
+
+    const textRaw = await res.text();
+
+    if (
+      textRaw.trim().startsWith('<!DOCTYPE') ||
+      textRaw.trim().startsWith('<html')
+    ) {
+      throw new Error(
+        'เซิร์ฟเวอร์ Apps Script ไม่ตอบกลับข้อมูล PDF'
+      );
+    }
+
+    let data;
+
+    try {
+      data = JSON.parse(textRaw);
+    } catch (e) {
+      throw new Error('เซิร์ฟเวอร์ตอบกลับไม่เป็น JSON');
+    }
+
+    if (!data.success || !data.base64) {
+      throw new Error(
+        data.message || 'ไม่สามารถดึงไฟล์ PDF ได้'
+      );
+    }
+
+    // แปลง Base64 เป็น Uint8Array
+    const raw = atob(data.base64);
+    const uint8Array = new Uint8Array(raw.length);
+
+    for (let i = 0; i < raw.length; i++) {
+      uint8Array[i] = raw.charCodeAt(i);
+    }
+
+    // โหลดด้วย PDF.js
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    const loadingTask = pdfjsLib.getDocument({
+      data: uint8Array
+    });
+
+    const pdf = await loadingTask.promise;
+
+    // แสดงทุกหน้า
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+
+      const page = await pdf.getPage(pageNum);
+
+      const baseViewport = page.getViewport({ scale: 1 });
+
+      const availableWidth =
+        Math.max(viewport.clientWidth - 24, 280);
+
+      const renderScale =
+        availableWidth / baseViewport.width;
+
+      const pageViewport =
+        page.getViewport({ scale: renderScale });
+
+      const pageWrapper = document.createElement('div');
+
+      pageWrapper.style.width = `${pageViewport.width}px`;
+      pageWrapper.style.height = `${pageViewport.height}px`;
+      pageWrapper.style.background = '#fff';
+      pageWrapper.style.boxShadow = '0 1px 5px rgba(0,0,0,.18)';
+      pageWrapper.style.flex = '0 0 auto';
+
+      const canvas = document.createElement('canvas');
+
+      canvas.width = pageViewport.width;
+      canvas.height = pageViewport.height;
+
+      canvas.style.display = 'block';
+      canvas.style.width = `${pageViewport.width}px`;
+      canvas.style.height = `${pageViewport.height}px`;
+
+      pageWrapper.appendChild(canvas);
+      canvasContainer.appendChild(pageWrapper);
+
+      const context = canvas.getContext('2d');
+
+      await page.render({
+        canvasContext: context,
+        viewport: pageViewport
+      }).promise;
+    }
+
+    wrapper.style.width = `${canvasContainer.scrollWidth}px`;
+    wrapper.style.height = `${canvasContainer.scrollHeight}px`;
+
+    if (loading) loading.style.display = 'none';
+
+    // เริ่มระบบกางนิ้ว
+    setupPdfTouchZoom();
+
+  } catch (error) {
+
+    console.error('PDF Viewer Error:', error);
+
+    if (loading) loading.style.display = 'none';
+
+    canvasContainer.innerHTML = `
+      <div class="text-center p-4 text-danger fw-bold">
+        ❌ ไม่สามารถเปิดเอกสาร PDF ได้<br>
+        <small class="text-muted">
+          ${error.message || ''}
+        </small>
+      </div>
+    `;
+  }
+
+  currentPdfFileId = fileId || '';
+
+  if (qrBar) {
+    qrBar.style.setProperty('display', 'none', 'important');
+  }
+
+  if (countDisplay) {
+    countDisplay.innerText = '0';
+  }
+
+  if (container) {
+    container.innerHTML = '';
+  }
+
+  if (scanBtn) {
+    scanBtn.disabled = !currentPdfFileId;
+  }
+}
   let isQrScanning = false;
 
 // 🛠️ 1. ฟังก์ชันแปลงภาพสแกนให้กลายเป็นขาว-ดำสนิท (Adaptive Binary Threshold)
@@ -9620,31 +9789,146 @@ function toggleAdminUploadBox() {
   }
 
 // ==========================================
-  // 🔍 ระบบถ่างนิ้วซูมเฉพาะตัวเอกสาร PDF บนมือถือ
-  // ==========================================
-  let currentPdfScale = 1;
-  let initialPinchDist = 0;
-  let startScale = 1;
+// 📱 PDF.js Pinch Zoom สำหรับมือถือ
+// ==========================================
+let currentPdfScale = 1;
+let initialPinchDist = 0;
+let startScale = 1;
+let lastTapTime = 0;
 
-  function updatePdfTransform() {
-    const wrapper = document.getElementById('pdfZoomWrapper');
-    const viewport = document.getElementById('pdfZoomViewport');
-    if (!wrapper || !viewport) return;
+function applyPdfScale() {
+  const viewport = document.getElementById('pdfZoomViewport');
+  const wrapper = document.getElementById('pdfZoomWrapper');
 
-    wrapper.style.transform = `scale(${currentPdfScale})`;
-    wrapper.style.width = `${100 * currentPdfScale}%`;
-    wrapper.style.height = `${100 * currentPdfScale}%`;
+  if (!viewport || !wrapper) return;
+
+  const baseWidth = viewport.clientWidth;
+  const baseHeight = viewport.clientHeight;
+
+  wrapper.style.transform = `scale(${currentPdfScale})`;
+  wrapper.style.transformOrigin = '0 0';
+
+  wrapper.style.width =
+    `${Math.max(baseWidth, wrapper.scrollWidth / Math.max(currentPdfScale, 0.01))}px`;
+
+  wrapper.style.minHeight =
+    `${Math.max(baseHeight, wrapper.scrollHeight / Math.max(currentPdfScale, 0.01))}px`;
+}
+
+function resetPdfZoom() {
+  currentPdfScale = 1;
+
+  const wrapper = document.getElementById('pdfZoomWrapper');
+  const viewport = document.getElementById('pdfZoomViewport');
+
+  if (wrapper) {
+    wrapper.style.transform = 'scale(1)';
   }
 
-  function resetPdfZoom() {
-    currentPdfScale = 1;
-    updatePdfTransform();
-    const viewport = document.getElementById('pdfZoomViewport');
-    if (viewport) {
-      viewport.scrollTop = 0;
-      viewport.scrollLeft = 0;
+  if (viewport) {
+    viewport.scrollTop = 0;
+    viewport.scrollLeft = 0;
+  }
+}
+
+function getTouchDistance(t1, t2) {
+  return Math.hypot(
+    t1.clientX - t2.clientX,
+    t1.clientY - t2.clientY
+  );
+}
+
+function setupPdfTouchZoom() {
+
+  const viewport = document.getElementById('pdfZoomViewport');
+
+  if (!viewport) return;
+
+  // ป้องกันการผูก Event ซ้ำ
+  if (viewport.dataset.zoomReady === '1') return;
+
+  viewport.dataset.zoomReady = '1';
+
+  viewport.addEventListener('touchstart', function(e) {
+
+    // กาง 2 นิ้ว
+    if (e.touches.length === 2) {
+
+      initialPinchDist =
+        getTouchDistance(
+          e.touches[0],
+          e.touches[1]
+        );
+
+      startScale = currentPdfScale;
+
+      e.preventDefault();
+      return;
     }
-  }
+
+    // Double Tap
+    if (e.touches.length === 1) {
+
+      const now = Date.now();
+
+      if (now - lastTapTime < 300) {
+
+        currentPdfScale =
+          currentPdfScale > 1.05
+            ? 1
+            : 2;
+
+        applyPdfScale();
+
+        e.preventDefault();
+      }
+
+      lastTapTime = now;
+    }
+
+  }, { passive: false });
+
+  viewport.addEventListener('touchmove', function(e) {
+
+    if (
+      e.touches.length !== 2 ||
+      initialPinchDist <= 0
+    ) {
+      return;
+    }
+
+    const currentDist =
+      getTouchDistance(
+        e.touches[0],
+        e.touches[1]
+      );
+
+    const factor =
+      currentDist / initialPinchDist;
+
+    currentPdfScale =
+      Math.min(
+        Math.max(
+          1,
+          startScale * factor
+        ),
+        4
+      );
+
+    applyPdfScale();
+
+    e.preventDefault();
+
+  }, { passive: false });
+
+  viewport.addEventListener('touchend', function(e) {
+
+    if (e.touches.length < 2) {
+      initialPinchDist = 0;
+    }
+
+  }, { passive: false });
+}
 
   
 // 🔔 ฟังก์ชันทดสอบระบบแจ้งเตือนและ Badge ตัวเลขแดงบนไอคอน

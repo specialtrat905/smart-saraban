@@ -1481,41 +1481,7 @@
 #pdfViewerModal .modal-body {
   overflow: hidden !important;
   -webkit-overflow-scrolling: touch !important;
-  touch-action: none !important;
-}
-
-/* 📱 ปุ่มในหัว PDF ต้องไม่ล้นจอมือถือ */
-#pdfViewerModal .pdf-toolbar {
-  min-width: 0;
-  flex: 1 1 auto;
-}
-#pdfViewerModal .pdf-actions {
-  flex: 0 0 auto;
-}
-@media (max-width: 768px) {
-  #pdfViewerModal .pdf-title { max-width: 72vw !important; }
-  #pdfViewerModal .pdf-actions { width: 100%; }
-  #pdfViewerModal .pdf-actions::-webkit-scrollbar { display:none; }
-  #pdfViewerModal .pdf-actions .pdf-zoom-controls { display:none !important; }
-  #pdfViewerModal .pdf-close-btn { display:inline-flex !important; }
-}
-
-/* 📄 PDF.js Viewer: ให้พื้นที่จริงขยายตามขนาดเอกสารเพื่อเลื่อนได้ทุกทิศทาง */
-#pdfZoomViewport {
-  overscroll-behavior: contain;
-  scrollbar-width: thin;
-}
-#pdfCanvasContainer .pdf-page-wrap {
-  position: relative;
-  flex: 0 0 auto;
-  background: #fff;
-  box-shadow: 0 1px 5px rgba(0,0,0,.18);
-  margin: 0 auto;
-}
-#pdfCanvasContainer .pdf-page-wrap canvas {
-  display: block;
-  max-width: none !important;
-  background: #fff !important;
+  touch-action: auto !important;
 }
 
 
@@ -2524,40 +2490,31 @@
     <div class="modal fade" id="pdfViewerModal" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-xl modal-dialog-centered" style="height: 90vh;">
         <div class="modal-content h-100 border-0 shadow-lg">
-          <div class="modal-header bg-dark text-white py-2 px-2 d-block">
-            <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
-              <div class="d-flex align-items-center gap-2 text-truncate pdf-toolbar">
-                <span class="fs-5">📄</span>
-                <span id="pdfModalTitle" class="fw-bold text-truncate pdf-title" style="font-size: 0.9rem;"></span>
-              </div>
-              <button type="button" class="btn btn-danger btn-sm px-3 py-1 fw-bold shadow-sm d-inline-flex align-items-center gap-1 flex-shrink-0 pdf-close-btn" data-bs-dismiss="modal" title="ปิดหน้าต่าง" style="font-size: 0.82rem; border-radius: 8px; min-height: 32px;">
-                <svg class="btn-svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                <span>ปิด</span>
-              </button>
+          <div class="modal-header bg-dark text-white py-2 px-3">
+            <div class="d-flex align-items-center gap-2 text-truncate me-2">
+              <span class="fs-5">📄</span>
+              <span id="pdfModalTitle" class="fw-bold text-truncate" style="font-size: 0.9rem;"></span>
             </div>
-
-            <div class="d-flex align-items-center gap-2 pdf-actions overflow-auto pb-1" style="scrollbar-width:none;">
-              <button id="downloadPdfModalBtn" type="button" class="btn btn-sm btn-outline-light text-nowrap fw-bold d-inline-flex align-items-center gap-1 flex-shrink-0" style="font-size: 0.75rem;" onclick="downloadCurrentPdfFile()" title="ดาวน์โหลดไฟล์ PDF">
+            <div class="d-flex align-items-center gap-2">
+              <!-- 📥 ปุ่มดาวน์โหลดเอกสาร PDF ลงเครื่อง -->
+              <button id="downloadPdfModalBtn" type="button" class="btn btn-sm btn-outline-light text-nowrap fw-bold d-inline-flex align-items-center gap-1" style="font-size: 0.75rem;" onclick="downloadCurrentPdfFile()" title="ดาวน์โหลดไฟล์ PDF">
                 <svg class="btn-svg-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                 ดาวน์โหลด
               </button>
 
-              <button id="scanTextBtn" type="button" class="btn btn-sm btn-outline-warning text-white text-nowrap fw-bold d-inline-flex align-items-center gap-1 flex-shrink-0" style="font-size: 0.75rem;" onclick="scanCurrentPdfText()" title="คัดลอกข้อความหนังสือ">
+              <!-- 📝 ปุ่มสแกนข้อความและตาราง -->
+              <button id="scanTextBtn" type="button" class="btn btn-sm btn-outline-warning text-white text-nowrap fw-bold d-inline-flex align-items-center gap-1" style="font-size: 0.75rem;" onclick="scanCurrentPdfText()" title="คัดลอกข้อความหนังสือ">
                 <svg class="btn-svg-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
                 สแกนข้อความ
               </button>
-
-              <button id="openPdfDriveBtn" type="button" class="btn btn-sm btn-outline-light text-nowrap fw-bold d-inline-flex align-items-center gap-1 flex-shrink-0" style="font-size: 0.75rem;" onclick="openCurrentPdfInDrive()" title="เปิดเอกสารใน Google Drive">
-                ↗ Drive
-              </button>
-
-              <div class="btn-group btn-group-sm flex-shrink-0 pdf-zoom-controls" role="group" aria-label="PDF zoom controls">
-                <button id="pdfZoomOutBtn" type="button" class="btn btn-outline-light fw-bold" onclick="changePdfZoom(-0.25)" title="ย่อ">−</button>
-                <button id="pdfZoomResetBtn" type="button" class="btn btn-outline-light fw-bold" onclick="resetPdfZoom()" title="ขนาดปกติ">100%</button>
-                <button id="pdfZoomInBtn" type="button" class="btn btn-outline-light fw-bold" onclick="changePdfZoom(0.25)" title="ขยาย">+</button>
-              </div>
+              
+              <button type="button" class="btn btn-danger btn-sm px-3 py-1 fw-bold shadow-sm d-inline-flex align-items-center gap-1 flex-shrink-0" data-bs-dismiss="modal" title="ปิดหน้าต่าง" style="font-size: 0.82rem; border-radius: 8px; min-height: 32px; z-index: 1060;">
+  <svg class="btn-svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+  <span>ปิด</span>
+</button>
             </div>
           </div>
+
           <div class="modal-body p-0 bg-secondary bg-opacity-10 h-100 position-relative" style="overflow: hidden;">
             <!-- 📌 แถบแสดงผลเมื่อตรวจพบ QR Code ในเอกสาร -->
             <div id="qrResultBar" class="alert alert-success m-2 p-2 shadow-sm position-absolute top-0 start-0 end-0" style="display: none !important; z-index: 1055; border-radius: 8px; max-height: 40vh; overflow-y: auto;">
@@ -2568,27 +2525,16 @@
               <div id="qrButtonsContainer" class="d-flex flex-wrap gap-1"></div>
             </div>
 
-            <!-- 📄 PDF Viewer แบบ PDF.js รองรับการกางนิ้วบนมือถือ -->
+            <!-- 📄 PDF Viewer แบบ iframe กลับมาใช้ Google Drive Viewer -->
 <div id="pdfZoomViewport"
-     style="width:100%; height:100%; overflow:auto; position:relative; -webkit-overflow-scrolling:touch; touch-action:pan-x pan-y; background:#e5e7eb;">
+     style="width:100%; height:100%; overflow:hidden; position:relative;">
 
-  <div id="pdfZoomWrapper"
-       style="position:relative; width:100%; min-height:100%;">
-
-    <div id="pdfCanvasContainer"
-         style="width:100%; display:flex; flex-direction:column; align-items:center; gap:12px; padding:12px; box-sizing:border-box;">
-    </div>
-
-  </div>
-
-  <div id="pdfViewerLoading"
-       style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,.88); z-index:10;">
-    <div class="text-center">
-      <div class="spinner-border text-success mb-2"></div>
-      <div class="fw-bold">กำลังเปิดเอกสาร...</div>
-      <div id="pdfViewerProgress" class="small text-muted mt-1"></div>
-    </div>
-  </div>
+  <iframe
+    id="pdfModalIframe"
+    src=""
+    class="w-100 h-100 border-0"
+    allow="autoplay; fullscreen">
+  </iframe>
 
 </div>
           </div>
@@ -8234,361 +8180,70 @@ window.addEventListener('beforeunload', function(e) {
 
   // --- 11. ระบบ In-App PDF Viewer (เปิดดูเอกสารในหน้าเว็บ) ---
   let pdfModalInstance = null;
-  let currentPdfFileName = '';
-  let currentPdfDocument = null;
-  let currentPdfPages = [];
-  let currentPdfScale = 1;
-  let currentPdfFitScale = 1;
-  let currentPdfRenderToken = 0;
-  let pdfPinchStartDistance = 0;
-  let pdfPinchStartScale = 1;
-  let pdfLastTapTime = 0;
-  let pdfByteCache = { fileId: '', bytes: null };
-
-  function updatePdfZoomLabel() {
-    const btn = document.getElementById('pdfZoomResetBtn');
-    if (btn) btn.innerText = `${Math.round((currentPdfScale / Math.max(currentPdfFitScale, 0.01)) * 100)}%`;
-  }
-
-  function openCurrentPdfInDrive() {
-    if (!currentPdfFileId) {
-      alert('⚠️ ไม่พบรหัสไฟล์ PDF');
-      return;
-    }
-    window.open(`https://drive.google.com/file/d/${encodeURIComponent(currentPdfFileId)}/view`, '_blank', 'noopener,noreferrer');
-  }
-
-  function getPdfFitScale(page) {
-    const viewport = document.getElementById('pdfZoomViewport');
-    if (!viewport) return 1;
-    const availableWidth = Math.max(viewport.clientWidth - 24, 280);
-    const base = page.getViewport({ scale: 1 });
-    return Math.max(0.1, availableWidth / base.width);
-  }
-
-  function setPdfPageCss(pageInfo, scale) {
-    if (!pageInfo || !pageInfo.wrap) return;
-    const width = pageInfo.baseWidth * scale;
-    const height = pageInfo.baseHeight * scale;
-    pageInfo.wrap.style.width = `${width}px`;
-    pageInfo.wrap.style.height = `${height}px`;
-    pageInfo.canvas.style.width = `${width}px`;
-    pageInfo.canvas.style.height = `${height}px`;
-  }
-
-  async function renderPdfPage(pageInfo, scale, token) {
-    if (!pageInfo || !currentPdfDocument || token !== currentPdfRenderToken) return;
-
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const cssViewport = pageInfo.page.getViewport({ scale: scale });
-    const renderViewport = pageInfo.page.getViewport({ scale: scale * dpr });
-
-    pageInfo.wrap.style.width = `${cssViewport.width}px`;
-    pageInfo.wrap.style.height = `${cssViewport.height}px`;
-    pageInfo.canvas.style.width = `${cssViewport.width}px`;
-    pageInfo.canvas.style.height = `${cssViewport.height}px`;
-
-    const canvas = pageInfo.canvas;
-    const ctx = canvas.getContext('2d', { alpha: true });
-    canvas.width = Math.ceil(renderViewport.width);
-    canvas.height = Math.ceil(renderViewport.height);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // ยกเลิกการ render เดิมของหน้านี้ก่อนเริ่ม render ใหม่
-    if (pageInfo.renderTask) {
-      try { pageInfo.renderTask.cancel(); } catch (e) {}
-    }
-
-    const task = pageInfo.page.render({
-      canvasContext: ctx,
-      viewport: renderViewport
-    });
-    pageInfo.renderTask = task;
-
-    try {
-      await task.promise;
-      if (token !== currentPdfRenderToken) return;
-      pageInfo.renderedScale = scale;
-      pageInfo.rendered = true;
-    } catch (e) {
-      if (e && e.name === 'RenderingCancelledException') return;
-      throw e;
-    } finally {
-      if (pageInfo.renderTask === task) pageInfo.renderTask = null;
-    }
-  }
-  async function renderVisiblePdfPages(forceHighQuality = false) {
-    if (!currentPdfDocument) return;
-    const token = currentPdfRenderToken;
-    const viewport = document.getElementById('pdfZoomViewport');
-    if (!viewport) return;
-
-    const top = viewport.scrollTop - viewport.clientHeight * 1.5;
-    const bottom = viewport.scrollTop + viewport.clientHeight * 2.5;
-
-    for (const pageInfo of currentPdfPages) {
-      if (token !== currentPdfRenderToken) return;
-      const y = pageInfo.wrap.offsetTop;
-      const h = pageInfo.wrap.offsetHeight;
-      const near = forceHighQuality || (y + h >= top && y <= bottom);
-      if (!near) continue;
-      if (!pageInfo.rendered || Math.abs((pageInfo.renderedScale || 0) - currentPdfScale) > 0.15) {
-        try {
-          await renderPdfPage(pageInfo, currentPdfScale, token);
-        } catch (e) {
-          console.warn('PDF page render skipped:', e);
-        }
-      }
-    }
-  }
-
-  function positionPdfAfterZoom(oldScale, focalX, focalY) {
-    const viewport = document.getElementById('pdfZoomViewport');
-    if (!viewport || !oldScale) return;
-    const ratio = currentPdfScale / oldScale;
-    viewport.scrollLeft = (viewport.scrollLeft + focalX) * ratio - focalX;
-    viewport.scrollTop = (viewport.scrollTop + focalY) * ratio - focalY;
-  }
-
-  function applyPdfZoom(newScale, focalX, focalY, rerender = true) {
-    const oldScale = currentPdfScale;
-    currentPdfScale = Math.min(Math.max(newScale, currentPdfFitScale || 1), Math.max((currentPdfFitScale || 1) * 4, 4));
-    updatePdfZoomLabel();
-
-    for (const pageInfo of currentPdfPages) setPdfPageCss(pageInfo, currentPdfScale);
-    positionPdfAfterZoom(oldScale, focalX, focalY);
-
-    if (rerender) {
-      window.clearTimeout(window.__pdfZoomRenderTimer);
-      window.__pdfZoomRenderTimer = window.setTimeout(() => renderVisiblePdfPages(true), 120);
-    }
-  }
-
-  function changePdfZoom(delta) {
-    const viewport = document.getElementById('pdfZoomViewport');
-    if (!viewport) return;
-    applyPdfZoom(currentPdfScale + delta * (currentPdfFitScale || 1), viewport.clientWidth / 2, viewport.clientHeight / 2, true);
-  }
-
-  function resetPdfZoom() {
-    const viewport = document.getElementById('pdfZoomViewport');
-    if (!viewport) return;
-    currentPdfScale = currentPdfFitScale || 1;
-    for (const pageInfo of currentPdfPages) setPdfPageCss(pageInfo, currentPdfScale);
-    updatePdfZoomLabel();
-    viewport.scrollTop = 0;
-    viewport.scrollLeft = 0;
-    renderVisiblePdfPages(true);
-  }
-
-  function getTouchDistance(t1, t2) {
-    return Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
-  }
-
-  function setupPdfTouchZoom() {
-    const viewport = document.getElementById('pdfZoomViewport');
-    if (!viewport || viewport.dataset.zoomReady === '1') return;
-    viewport.dataset.zoomReady = '1';
-
-    viewport.addEventListener('touchstart', function(e) {
-      if (e.touches.length === 2) {
-        pdfPinchStartDistance = getTouchDistance(e.touches[0], e.touches[1]);
-        pdfPinchStartScale = currentPdfScale;
-        e.preventDefault();
-        return;
-      }
-
-      if (e.touches.length === 1) {
-        const now = Date.now();
-        if (now - pdfLastTapTime < 300) {
-          const rect = viewport.getBoundingClientRect();
-          const x = e.touches[0].clientX - rect.left;
-          const y = e.touches[0].clientY - rect.top;
-          const target = currentPdfScale > (currentPdfFitScale * 1.05) ? currentPdfFitScale : Math.min(currentPdfFitScale * 2, currentPdfFitScale * 4);
-          applyPdfZoom(target, x, y, true);
-          e.preventDefault();
-        }
-        pdfLastTapTime = now;
-      }
-    }, { passive: false });
-
-    viewport.addEventListener('touchmove', function(e) {
-      if (e.touches.length !== 2 || pdfPinchStartDistance <= 0) return;
-      const distance = getTouchDistance(e.touches[0], e.touches[1]);
-      const factor = distance / pdfPinchStartDistance;
-      const rect = viewport.getBoundingClientRect();
-      const focalX = ((e.touches[0].clientX + e.touches[1].clientX) / 2) - rect.left;
-      const focalY = ((e.touches[0].clientY + e.touches[1].clientY) / 2) - rect.top;
-      applyPdfZoom(pdfPinchStartScale * factor, focalX, focalY, false);
-      e.preventDefault();
-    }, { passive: false });
-
-    viewport.addEventListener('touchend', function(e) {
-      if (e.touches.length < 2 && pdfPinchStartDistance > 0) {
-        pdfPinchStartDistance = 0;
-        window.clearTimeout(window.__pdfZoomRenderTimer);
-        window.__pdfZoomRenderTimer = window.setTimeout(() => renderVisiblePdfPages(true), 80);
-      }
-    }, { passive: false });
-
-    viewport.addEventListener('scroll', function() {
-      if (!currentPdfDocument) return;
-      window.clearTimeout(window.__pdfScrollRenderTimer);
-      window.__pdfScrollRenderTimer = window.setTimeout(() => renderVisiblePdfPages(false), 80);
-    }, { passive: true });
-  }
+let currentPdfFileName = ''; // เพิ่มตัวแปรเก็บชื่อไฟล์
 
   async function openPdfViewer(fileUrl, encodedTitle) {
-    const qrBar = document.getElementById('qrResultBar');
-    const countDisplay = document.getElementById('qrCountDisplay');
-    const container = document.getElementById('qrButtonsContainer');
-    const scanBtn = document.getElementById('scanQrBtn');
-    const progress = document.getElementById('pdfViewerProgress');
 
-    const title = decodeURIComponent(encodedTitle).replace(/<[^>]*>?/gm, '').trim();
-    const idMatch = fileUrl.match(/[-\w]{25,}/);
-    const fileId = idMatch ? idMatch[0] : null;
-    if (!fileId) {
-      alert('ไม่พบรหัสไฟล์ PDF');
-      return;
-    }
+  const qrBar = document.getElementById('qrResultBar');
+  const countDisplay = document.getElementById('qrCountDisplay');
+  const container = document.getElementById('qrButtonsContainer');
+  const scanBtn = document.getElementById('scanQrBtn');
 
-    currentPdfFileId = fileId;
-    currentPdfFileName = title.toLowerCase().endsWith('.pdf') ? title : `${title}.pdf`;
-    document.getElementById('pdfModalTitle').innerText = title;
+  const title = decodeURIComponent(encodedTitle)
+    .replace(/<[^>]*>?/gm, '')
+    .trim();
 
-    if (qrBar) qrBar.style.setProperty('display', 'none', 'important');
-    if (countDisplay) countDisplay.innerText = '0';
-    if (container) container.innerHTML = '';
-    if (scanBtn) scanBtn.disabled = false;
+  const idMatch = fileUrl.match(/[-\w]{25,}/);
+  const fileId = idMatch ? idMatch[0] : null;
 
-    const viewport = document.getElementById('pdfZoomViewport');
-    const wrapper = document.getElementById('pdfZoomWrapper');
-    const canvasContainer = document.getElementById('pdfCanvasContainer');
-    const loading = document.getElementById('pdfViewerLoading');
-    if (!viewport || !wrapper || !canvasContainer) {
-      alert('ไม่พบพื้นที่แสดง PDF');
-      return;
-    }
-
-    currentPdfRenderToken++;
-    currentPdfDocument = null;
-    currentPdfPages = [];
-    currentPdfScale = 1;
-    currentPdfFitScale = 1;
-    canvasContainer.innerHTML = '';
-    wrapper.style.width = '100%';
-    wrapper.style.minHeight = '100%';
-    viewport.scrollTop = 0;
-    viewport.scrollLeft = 0;
-    if (progress) progress.innerText = '';
-    if (loading) loading.style.display = 'flex';
-
-    if (!pdfModalInstance) {
-      pdfModalInstance = new bootstrap.Modal(document.getElementById('pdfViewerModal'));
-      document.getElementById('pdfViewerModal').addEventListener('hidden.bs.modal', () => {
-        currentPdfRenderToken++;
-        currentPdfDocument = null;
-        currentPdfPages = [];
-        canvasContainer.innerHTML = '';
-        if (loading) loading.style.display = 'flex';
-        if (progress) progress.innerText = '';
-        currentPdfScale = 1;
-        currentPdfFitScale = 1;
-        updatePdfZoomLabel();
-      });
-    }
-
-    pdfModalInstance.show();
-
-    try {
-      if (typeof pdfjsLib === 'undefined') throw new Error('ไม่พบ PDF.js');
-
-      let uint8Array;
-      if (pdfByteCache.fileId === fileId && pdfByteCache.bytes) {
-        uint8Array = new Uint8Array(pdfByteCache.bytes);
-      } else {
-        const res = await fetch(`${SCRIPT_URL}?action=getPdfBase64&fileId=${encodeURIComponent(fileId)}`);
-        const textRaw = await res.text();
-        if (textRaw.trim().startsWith('<!DOCTYPE') || textRaw.trim().startsWith('<html')) {
-          throw new Error('เซิร์ฟเวอร์ Apps Script ไม่ตอบกลับข้อมูล PDF');
-        }
-        const data = JSON.parse(textRaw);
-        if (!data.success || !data.base64) throw new Error(data.message || 'ไม่สามารถดึงไฟล์ PDF ได้');
-        const raw = atob(data.base64);
-        uint8Array = new Uint8Array(raw.length);
-        for (let i = 0; i < raw.length; i++) uint8Array[i] = raw.charCodeAt(i);
-        pdfByteCache = { fileId, bytes: new Uint8Array(uint8Array) };
-      }
-
-      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-      const pdf = await pdfjsLib.getDocument({ data: uint8Array }).promise;
-      currentPdfDocument = pdf;
-
-      const firstPage = await pdf.getPage(1);
-      currentPdfFitScale = getPdfFitScale(firstPage);
-      currentPdfScale = currentPdfFitScale;
-      updatePdfZoomLabel();
-
-      // สร้างหน้าแรกและ render ทันที เพื่อให้ผู้ใช้เห็นเอกสารเร็วที่สุด
-      const firstBase = firstPage.getViewport({ scale: 1, rotation: firstPage.rotate || 0 });
-      const firstWrap = document.createElement('div');
-      firstWrap.className = 'pdf-page-wrap';
-      const firstCanvas = document.createElement('canvas');
-      firstWrap.appendChild(firstCanvas);
-      canvasContainer.appendChild(firstWrap);
-      const firstInfo = { pageNum: 1, page: firstPage, baseWidth: firstBase.width, baseHeight: firstBase.height, wrap: firstWrap, canvas: firstCanvas, rendered:false, renderedScale:0, renderTask:null };
-      currentPdfPages.push(firstInfo);
-      setPdfPageCss(firstInfo, currentPdfScale);
-
-      if (progress) progress.innerText = `กำลังแสดงหน้า 1 / ${pdf.numPages}`;
-      await renderPdfPage(firstInfo, currentPdfScale, currentPdfRenderToken);
-      if (loading) loading.style.display = 'none';
-      setupPdfTouchZoom();
-
-      // สร้างหน้าที่เหลือแบบเบื้องหลัง ไม่บล็อกการแสดงหน้าแรก
-      (async () => {
-        for (let pageNum = 2; pageNum <= pdf.numPages; pageNum++) {
-          if (!currentPdfDocument) return;
-          try {
-            const page = await pdf.getPage(pageNum);
-            if (!currentPdfDocument) return;
-            const base = page.getViewport({ scale: 1, rotation: page.rotate || 0 });
-            const wrap = document.createElement('div');
-            wrap.className = 'pdf-page-wrap';
-            const canvas = document.createElement('canvas');
-            wrap.appendChild(canvas);
-            canvasContainer.appendChild(wrap);
-            const info = { pageNum, page, baseWidth: base.width, baseHeight: base.height, wrap, canvas, rendered:false, renderedScale:0, renderTask:null };
-            currentPdfPages.push(info);
-            setPdfPageCss(info, currentPdfScale);
-
-            // Renderเฉพาะหน้าที่อยู่ใกล้จอ หรือหน้าถัดไปก่อน
-            const near = pageNum <= 3 || (wrap.offsetTop < viewport.scrollTop + viewport.clientHeight * 2.5);
-            if (near) {
-              await renderPdfPage(info, currentPdfScale, currentPdfRenderToken);
-            }
-            if (progress) progress.innerText = `กำลังเตรียมหน้า ${pageNum} / ${pdf.numPages}`;
-          } catch (e) {
-            console.warn('PDF background page:', pageNum, e);
-          }
-        }
-        if (progress) progress.innerText = `${pdf.numPages} หน้า`;
-        setTimeout(() => { if (progress) progress.innerText = ''; }, 1200);
-      })();
-
-    } catch (error) {
-      console.error('PDF Viewer Error:', error);
-      if (loading) loading.style.display = 'none';
-      canvasContainer.innerHTML = `<div class="text-center p-4 text-danger fw-bold">❌ ไม่สามารถเปิดเอกสาร PDF ได้<br><small class="text-muted">${error.message || ''}</small></div>`;
-    }
-
-    if (qrBar) qrBar.style.setProperty('display', 'none', 'important');
-    if (countDisplay) countDisplay.innerText = '0';
-    if (container) container.innerHTML = '';
-    if (scanBtn) scanBtn.disabled = !currentPdfFileId;
+  if (!fileId) {
+    alert('ไม่พบรหัสไฟล์ PDF');
+    return;
   }
 
+  currentPdfFileId = fileId;
+  currentPdfFileName = title.toLowerCase().endsWith('.pdf')
+    ? title
+    : `${title}.pdf`;
+
+  document.getElementById('pdfModalTitle').innerText = title;
+
+  // เปิด PDF ผ่าน Google Drive Viewer โดยตรง
+  const previewUrl =
+    `https://drive.google.com/file/d/${fileId}/preview`;
+
+  const iframe = document.getElementById('pdfModalIframe');
+  if (iframe) {
+    iframe.src = previewUrl;
+  }
+
+  if (qrBar) qrBar.style.setProperty('display', 'none', 'important');
+  if (countDisplay) countDisplay.innerText = '0';
+  if (container) container.innerHTML = '';
+  if (scanBtn) scanBtn.disabled = !currentPdfFileId;
+
+  // เปิด Modal
+  if (!pdfModalInstance) {
+    pdfModalInstance = new bootstrap.Modal(
+      document.getElementById('pdfViewerModal')
+    );
+
+    document.getElementById('pdfViewerModal')
+      .addEventListener('hidden.bs.modal', () => {
+        const iframe = document.getElementById('pdfModalIframe');
+        if (iframe) iframe.src = '';
+
+        if (qrBar) {
+          qrBar.style.setProperty('display', 'none', 'important');
+        }
+
+        if (countDisplay) countDisplay.innerText = '0';
+        if (container) container.innerHTML = '';
+      });
+  }
+
+  pdfModalInstance.show();
+}
   let isQrScanning = false;
 
 // 🛠️ 1. ฟังก์ชันแปลงภาพสแกนให้กลายเป็นขาว-ดำสนิท (Adaptive Binary Threshold)
@@ -9985,7 +9640,7 @@ function toggleAdminUploadBox() {
     document.body.removeChild(a);
   }
 
-
+  
 // 🔔 ฟังก์ชันทดสอบระบบแจ้งเตือนและ Badge ตัวเลขแดงบนไอคอน
   async function testDirectBadgeAndNotification() {
     // 1. ทดสอบยิงตัวเลขแดงที่ไอคอนแอป

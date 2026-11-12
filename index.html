@@ -1485,7 +1485,7 @@
 }
 
 #pdfModalIframe {
-  touch-action: none !important;
+  touch-action: auto !important;
 }
 
 /* 📋 สไตล์ตารางที่ AI สกัดออกมา */
@@ -2529,7 +2529,7 @@
             </div>
 
             <!-- 📄 กล่องพื้นที่แสดงตัวเอกสาร (รองรับการถ่างนิ้วซูมเฉพาะตัวเอกสาร ไม่ขยายหน้าเว็บ) -->
-            <div id="pdfZoomViewport" style="width: 100%; height: 100%; overflow: hidden; position: relative; touch-action: none;">
+            <div id="pdfZoomViewport" style="width: 100%; height: 100%; overflow: auto; position: relative; -webkit-overflow-scrolling: touch; touch-action: auto;">
               <div id="pdfZoomWrapper" style="width: 100%; height: 100%; transform-origin: 0 0; transition: transform 0.1s ease-out;">
                 <iframe
                   id="pdfModalIframe"
@@ -9642,58 +9642,6 @@ function toggleAdminUploadBox() {
       viewport.scrollLeft = 0;
     }
   }
-
-  function setupPinchZoom() {
-  const viewport = document.getElementById('pdfZoomViewport');
-  if (!viewport) return;
-
-  let pinchActive = false;
-
-  viewport.addEventListener('touchstart', function (e) {
-    if (e.touches.length === 2) {
-      pinchActive = true;
-
-      initialPinchDist = Math.hypot(
-        e.touches[0].pageX - e.touches[1].pageX,
-        e.touches[0].pageY - e.touches[1].pageY
-      );
-
-      startScale = currentPdfScale;
-    }
-  }, { passive: false });
-
-  viewport.addEventListener('touchmove', function (e) {
-    if (!pinchActive || e.touches.length !== 2) return;
-
-    e.preventDefault();
-
-    const currentDist = Math.hypot(
-      e.touches[0].pageX - e.touches[1].pageX,
-      e.touches[0].pageY - e.touches[1].pageY
-    );
-
-    if (initialPinchDist <= 0) return;
-
-    const factor = currentDist / initialPinchDist;
-
-    currentPdfScale = Math.min(
-      Math.max(1, startScale * factor),
-      3.5
-    );
-
-    updatePdfTransform();
-  }, { passive: false });
-
-  viewport.addEventListener('touchend', function (e) {
-    if (e.touches.length < 2) {
-      pinchActive = false;
-      initialPinchDist = 0;
-    }
-  }, { passive: false });
-}
-    // เริ่มระบบถ่างนิ้วซูม PDF
-  setupPinchZoom();
-
 
   
 // 🔔 ฟังก์ชันทดสอบระบบแจ้งเตือนและ Badge ตัวเลขแดงบนไอคอน

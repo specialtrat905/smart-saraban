@@ -8192,7 +8192,8 @@ let currentPdfFileName = ''; // เพิ่มตัวแปรเก็บช
     const title = decodeURIComponent(encodedTitle).replace(/<[^>]*>?/gm, '').trim();
     const idMatch = fileUrl.match(/[-\w]{25,}/);
     const fileId = idMatch ? idMatch[0] : null;
-    const previewUrl = `https://drive.google.com/file/d/${fileId}/view`;
+    const directPdfUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+    const previewUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
 
     currentPdfFileId = fileId || '';
     currentPdfFileName = title.toLowerCase().endsWith('.pdf') ? title : `${title}.pdf`; // บันทึกชื่อไฟล์จริงไว้ดาวน์โหลด

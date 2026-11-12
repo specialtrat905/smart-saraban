@@ -1481,7 +1481,23 @@
 #pdfViewerModal .modal-body {
   overflow: hidden !important;
   -webkit-overflow-scrolling: touch !important;
-  touch-action: auto !important;
+  touch-action: none !important;
+}
+
+/* 📱 ปุ่มในหัว PDF ต้องไม่ล้นจอมือถือ */
+#pdfViewerModal .pdf-toolbar {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+#pdfViewerModal .pdf-actions {
+  flex: 0 0 auto;
+}
+@media (max-width: 768px) {
+  #pdfViewerModal .pdf-title { max-width: 72vw !important; }
+  #pdfViewerModal .pdf-actions { width: 100%; }
+  #pdfViewerModal .pdf-actions::-webkit-scrollbar { display:none; }
+  #pdfViewerModal .pdf-actions .pdf-zoom-controls { display:none !important; }
+  #pdfViewerModal .pdf-close-btn { display:inline-flex !important; }
 }
 
 /* 📄 PDF.js Viewer: ให้พื้นที่จริงขยายตามขนาดเอกสารเพื่อเลื่อนได้ทุกทิศทาง */
@@ -1499,6 +1515,7 @@
 #pdfCanvasContainer .pdf-page-wrap canvas {
   display: block;
   max-width: none !important;
+  background: #fff !important;
 }
 
 
@@ -2507,43 +2524,40 @@
     <div class="modal fade" id="pdfViewerModal" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-xl modal-dialog-centered" style="height: 90vh;">
         <div class="modal-content h-100 border-0 shadow-lg">
-          <div class="modal-header bg-dark text-white py-2 px-3">
-            <div class="d-flex align-items-center gap-2 text-truncate me-2">
-              <span class="fs-5">📄</span>
-              <span id="pdfModalTitle" class="fw-bold text-truncate" style="font-size: 0.9rem;"></span>
+          <div class="modal-header bg-dark text-white py-2 px-2 d-block">
+            <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+              <div class="d-flex align-items-center gap-2 text-truncate pdf-toolbar">
+                <span class="fs-5">📄</span>
+                <span id="pdfModalTitle" class="fw-bold text-truncate pdf-title" style="font-size: 0.9rem;"></span>
+              </div>
+              <button type="button" class="btn btn-danger btn-sm px-3 py-1 fw-bold shadow-sm d-inline-flex align-items-center gap-1 flex-shrink-0 pdf-close-btn" data-bs-dismiss="modal" title="ปิดหน้าต่าง" style="font-size: 0.82rem; border-radius: 8px; min-height: 32px;">
+                <svg class="btn-svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                <span>ปิด</span>
+              </button>
             </div>
-            <div class="d-flex align-items-center gap-2">
-              <!-- 📥 ปุ่มดาวน์โหลดเอกสาร PDF ลงเครื่อง -->
-              <button id="downloadPdfModalBtn" type="button" class="btn btn-sm btn-outline-light text-nowrap fw-bold d-inline-flex align-items-center gap-1" style="font-size: 0.75rem;" onclick="downloadCurrentPdfFile()" title="ดาวน์โหลดไฟล์ PDF">
+
+            <div class="d-flex align-items-center gap-2 pdf-actions overflow-auto pb-1" style="scrollbar-width:none;">
+              <button id="downloadPdfModalBtn" type="button" class="btn btn-sm btn-outline-light text-nowrap fw-bold d-inline-flex align-items-center gap-1 flex-shrink-0" style="font-size: 0.75rem;" onclick="downloadCurrentPdfFile()" title="ดาวน์โหลดไฟล์ PDF">
                 <svg class="btn-svg-icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                 ดาวน์โหลด
               </button>
 
-              <!-- 📝 ปุ่มสแกนข้อความและตาราง -->
-              <button id="scanTextBtn" type="button" class="btn btn-sm btn-outline-warning text-white text-nowrap fw-bold d-inline-flex align-items-center gap-1" style="font-size: 0.75rem;" onclick="scanCurrentPdfText()" title="คัดลอกข้อความหนังสือ">
+              <button id="scanTextBtn" type="button" class="btn btn-sm btn-outline-warning text-white text-nowrap fw-bold d-inline-flex align-items-center gap-1 flex-shrink-0" style="font-size: 0.75rem;" onclick="scanCurrentPdfText()" title="คัดลอกข้อความหนังสือ">
                 <svg class="btn-svg-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
                 สแกนข้อความ
               </button>
 
-              <!-- 🔗 เปิดเอกสารต้นฉบับใน Google Drive -->
-              <button id="openPdfDriveBtn" type="button" class="btn btn-sm btn-outline-light text-nowrap fw-bold d-inline-flex align-items-center gap-1" style="font-size: 0.75rem;" onclick="openCurrentPdfInDrive()" title="เปิดเอกสารใน Google Drive">
+              <button id="openPdfDriveBtn" type="button" class="btn btn-sm btn-outline-light text-nowrap fw-bold d-inline-flex align-items-center gap-1 flex-shrink-0" style="font-size: 0.75rem;" onclick="openCurrentPdfInDrive()" title="เปิดเอกสารใน Google Drive">
                 ↗ Drive
               </button>
 
-              <!-- 🔎 ปุ่มซูม PDF -->
-              <div class="btn-group btn-group-sm flex-shrink-0" role="group" aria-label="PDF zoom controls">
+              <div class="btn-group btn-group-sm flex-shrink-0 pdf-zoom-controls" role="group" aria-label="PDF zoom controls">
                 <button id="pdfZoomOutBtn" type="button" class="btn btn-outline-light fw-bold" onclick="changePdfZoom(-0.25)" title="ย่อ">−</button>
                 <button id="pdfZoomResetBtn" type="button" class="btn btn-outline-light fw-bold" onclick="resetPdfZoom()" title="ขนาดปกติ">100%</button>
                 <button id="pdfZoomInBtn" type="button" class="btn btn-outline-light fw-bold" onclick="changePdfZoom(0.25)" title="ขยาย">+</button>
               </div>
-              
-              <button type="button" class="btn btn-danger btn-sm px-3 py-1 fw-bold shadow-sm d-inline-flex align-items-center gap-1 flex-shrink-0" data-bs-dismiss="modal" title="ปิดหน้าต่าง" style="font-size: 0.82rem; border-radius: 8px; min-height: 32px; z-index: 1060;">
-  <svg class="btn-svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-  <span>ปิด</span>
-</button>
             </div>
           </div>
-
           <div class="modal-body p-0 bg-secondary bg-opacity-10 h-100 position-relative" style="overflow: hidden;">
             <!-- 📌 แถบแสดงผลเมื่อตรวจพบ QR Code ในเอกสาร -->
             <div id="qrResultBar" class="alert alert-success m-2 p-2 shadow-sm position-absolute top-0 start-0 end-0" style="display: none !important; z-index: 1055; border-radius: 8px; max-height: 40vh; overflow-y: auto;">
@@ -8264,23 +8278,45 @@ window.addEventListener('beforeunload', function(e) {
 
   async function renderPdfPage(pageInfo, scale, token) {
     if (!pageInfo || !currentPdfDocument || token !== currentPdfRenderToken) return;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
-    const renderViewport = pageInfo.page.getViewport({ scale: scale * dpr });
-    const cssViewport = pageInfo.page.getViewport({ scale });
 
-    pageInfo.canvas.width = Math.ceil(renderViewport.width);
-    pageInfo.canvas.height = Math.ceil(renderViewport.height);
-    pageInfo.canvas.style.width = `${cssViewport.width}px`;
-    pageInfo.canvas.style.height = `${cssViewport.height}px`;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const cssViewport = pageInfo.page.getViewport({ scale: scale });
+    const renderViewport = pageInfo.page.getViewport({ scale: scale * dpr });
+
     pageInfo.wrap.style.width = `${cssViewport.width}px`;
     pageInfo.wrap.style.height = `${cssViewport.height}px`;
+    pageInfo.canvas.style.width = `${cssViewport.width}px`;
+    pageInfo.canvas.style.height = `${cssViewport.height}px`;
 
-    const ctx = pageInfo.canvas.getContext('2d', { alpha: false });
-    await pageInfo.page.render({ canvasContext: ctx, viewport: renderViewport }).promise;
-    pageInfo.renderedScale = scale;
-    pageInfo.rendered = true;
+    const canvas = pageInfo.canvas;
+    const ctx = canvas.getContext('2d', { alpha: true });
+    canvas.width = Math.ceil(renderViewport.width);
+    canvas.height = Math.ceil(renderViewport.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // ยกเลิกการ render เดิมของหน้านี้ก่อนเริ่ม render ใหม่
+    if (pageInfo.renderTask) {
+      try { pageInfo.renderTask.cancel(); } catch (e) {}
+    }
+
+    const task = pageInfo.page.render({
+      canvasContext: ctx,
+      viewport: renderViewport
+    });
+    pageInfo.renderTask = task;
+
+    try {
+      await task.promise;
+      if (token !== currentPdfRenderToken) return;
+      pageInfo.renderedScale = scale;
+      pageInfo.rendered = true;
+    } catch (e) {
+      if (e && e.name === 'RenderingCancelledException') return;
+      throw e;
+    } finally {
+      if (pageInfo.renderTask === task) pageInfo.renderTask = null;
+    }
   }
-
   async function renderVisiblePdfPages(forceHighQuality = false) {
     if (!currentPdfDocument) return;
     const token = currentPdfRenderToken;
@@ -8494,33 +8530,48 @@ window.addEventListener('beforeunload', function(e) {
       currentPdfScale = currentPdfFitScale;
       updatePdfZoomLabel();
 
-      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-        const page = pageNum === 1 ? firstPage : await pdf.getPage(pageNum);
-        const base = page.getViewport({ scale: 1 });
-        const wrap = document.createElement('div');
-        wrap.className = 'pdf-page-wrap';
-        const canvas = document.createElement('canvas');
-        wrap.appendChild(canvas);
-        canvasContainer.appendChild(wrap);
-        const info = { pageNum, page, baseWidth: base.width, baseHeight: base.height, wrap, canvas, rendered:false, renderedScale:0 };
-        currentPdfPages.push(info);
-        setPdfPageCss(info, currentPdfScale);
-      }
+      // สร้างหน้าแรกและ render ทันที เพื่อให้ผู้ใช้เห็นเอกสารเร็วที่สุด
+      const firstBase = firstPage.getViewport({ scale: 1, rotation: firstPage.rotate || 0 });
+      const firstWrap = document.createElement('div');
+      firstWrap.className = 'pdf-page-wrap';
+      const firstCanvas = document.createElement('canvas');
+      firstWrap.appendChild(firstCanvas);
+      canvasContainer.appendChild(firstWrap);
+      const firstInfo = { pageNum: 1, page: firstPage, baseWidth: firstBase.width, baseHeight: firstBase.height, wrap: firstWrap, canvas: firstCanvas, rendered:false, renderedScale:0, renderTask:null };
+      currentPdfPages.push(firstInfo);
+      setPdfPageCss(firstInfo, currentPdfScale);
 
       if (progress) progress.innerText = `กำลังแสดงหน้า 1 / ${pdf.numPages}`;
-      await renderPdfPage(currentPdfPages[0], currentPdfScale, currentPdfRenderToken);
+      await renderPdfPage(firstInfo, currentPdfScale, currentPdfRenderToken);
       if (loading) loading.style.display = 'none';
       setupPdfTouchZoom();
 
+      // สร้างหน้าที่เหลือแบบเบื้องหลัง ไม่บล็อกการแสดงหน้าแรก
       (async () => {
-        for (let i = 1; i < currentPdfPages.length; i++) {
+        for (let pageNum = 2; pageNum <= pdf.numPages; pageNum++) {
           if (!currentPdfDocument) return;
           try {
-            await renderPdfPage(currentPdfPages[i], currentPdfScale, currentPdfRenderToken);
+            const page = await pdf.getPage(pageNum);
+            if (!currentPdfDocument) return;
+            const base = page.getViewport({ scale: 1, rotation: page.rotate || 0 });
+            const wrap = document.createElement('div');
+            wrap.className = 'pdf-page-wrap';
+            const canvas = document.createElement('canvas');
+            wrap.appendChild(canvas);
+            canvasContainer.appendChild(wrap);
+            const info = { pageNum, page, baseWidth: base.width, baseHeight: base.height, wrap, canvas, rendered:false, renderedScale:0, renderTask:null };
+            currentPdfPages.push(info);
+            setPdfPageCss(info, currentPdfScale);
+
+            // Renderเฉพาะหน้าที่อยู่ใกล้จอ หรือหน้าถัดไปก่อน
+            const near = pageNum <= 3 || (wrap.offsetTop < viewport.scrollTop + viewport.clientHeight * 2.5);
+            if (near) {
+              await renderPdfPage(info, currentPdfScale, currentPdfRenderToken);
+            }
+            if (progress) progress.innerText = `กำลังเตรียมหน้า ${pageNum} / ${pdf.numPages}`;
           } catch (e) {
-            console.warn('PDF background render:', e);
+            console.warn('PDF background page:', pageNum, e);
           }
-          if (progress) progress.innerText = `กำลังเตรียมหน้า ${i + 1} / ${pdf.numPages}`;
         }
         if (progress) progress.innerText = `${pdf.numPages} หน้า`;
         setTimeout(() => { if (progress) progress.innerText = ''; }, 1200);
@@ -8540,7 +8591,7 @@ window.addEventListener('beforeunload', function(e) {
 
   let isQrScanning = false;
 
-
+// 🛠️ 1. ฟังก์ชันแปลงภาพสแกนให้กลายเป็นขาว-ดำสนิท (Adaptive Binary Threshold)
   function binarizeForScannedQr(ctx, width, height, customThreshold) {
     const imgData = ctx.getImageData(0, 0, width, height);
     const d = imgData.data;

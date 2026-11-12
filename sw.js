@@ -1,35 +1,34 @@
 // 📱 Service Worker ควบคุม PWA และระบบแจ้งเตือน
-const CACHE_NAME = 'saraban-cache-v4';
+// เวอร์ชันนี้เน้นให้ Web App รับไฟล์ index.html รุ่นใหม่ทันที
 
-self.addEventListener('install', (e) => {
-  // ไม่บังคับ skipWaiting ทันที เพื่อป้องกันการรีสตาร์ท Client ขณะทำงาน
+const CACHE_NAME = 'saraban-cache-v5';
+
+self.addEventListener('install', (event) => {
+  // ให้ Service Worker รุ่นใหม่ขึ้นทำงานทันที
+  event.waitUntil(self.skipWaiting());
 });
 
-self.addEventListener('activate', (e) => {
-  // จัดการ Cache เวอร์ชันเก่า
-  e.waitUntil(
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
-        })
+        keys
+          .filter((key) => key !== CACHE_NAME)
+          .map((key) => caches.delete(key))
       );
-    })
+    }).then(() => self.clients.claim())
   );
 });
 
-self.addEventListener('fetch', (e) => {
-  // ให้วิ่งออก Network ตามปกติ
-  e.respondWith(
-    fetch(e.request).catch(() => caches.match(e.request))
+self.addEventListener('fetch', (event) => {
+  // ใช้ Network ก่อนเสมอ เพื่อให้ได้ไฟล์ล่าสุดจาก GitHub Pages
+  // ถ้าไม่มีอินเทอร์เน็ตจึงค่อยใช้ Cache ที่มีอยู่
+  event.respondWith(
+    fetch(event.request).catch(() => caches.match(event.request))
   );
 });
 
-// ... โค้ด notificationclick และ push ด้านล่างคงไว้ตามเดิม ...
-
-// 🔔 เมื่อผู้ใช้แตะที่แถบแจ้งเตือนบนหน้าจอมือถือ (เปิดเข้าหน้าหนังสือส่วนตัวทันที)
+// 🔔 เมื่อผู้ใช้แตะที่แถบแจ้งเตือนบนหน้าจอมือถือ
 self.addEventListener('notificationclick', function(event) {
   event.notification.close();
 
@@ -41,14 +40,19 @@ self.addEventListener('notificationclick', function(event) {
   const targetUrl = './index.html?view=personal';
 
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(clientList) {
+    clients.matchAll({
+      type: 'window',
+      includeUncontrolled: true
+    }).then(function(clientList) {
       for (let i = 0; i < clientList.length; i++) {
         let client = clientList[i];
+
         if (client.url.includes('index.html') && 'focus' in client) {
           client.navigate(targetUrl);
           return client.focus();
         }
       }
+
       if (clients.openWindow) {
         return clients.openWindow(targetUrl);
       }
@@ -56,7 +60,7 @@ self.addEventListener('notificationclick', function(event) {
   );
 });
 
-// 📥 ตัวดักรับ Push Message แม้ขณะปิดแอปอยู่ (สำหรับระบบ Background Push)
+// 📥 ตัวดักรับ Push Message แม้ขณะปิดแอปอยู่
 self.addEventListener('push', function(event) {
   let title = '📥 มีหนังสือราชการส่วนตัวส่งถึงคุณ';
   let body = 'มีหนังสือใหม่มอบหมายถึงท่าน แตะเพื่อเปิดอ่าน';
@@ -78,7 +82,9 @@ self.addEventListener('push', function(event) {
     vibrate: [200, 100, 200],
     tag: 'personal-doc-alert',
     renotify: true,
-    data: { url: './index.html?view=personal' }
+    data: {
+      url: './index.html?view=personal'
+    }
   };
 
   event.waitUntil(
